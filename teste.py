@@ -1,47 +1,64 @@
 from ete3 import Tree, TreeNode
-from Levenshtein import distance as levenshtein_distance
 
 
-def distance(n: TreeNode, m: TreeNode):
-    return levenshtein_distance(
-        n.get_ascii(attributes=["seq"]), m.get_ascii(attributes=["seq"])
-    )
+def standard_parsimony(tree: Tree, character_names: list, outgroup: set) -> int:
+    parsimony = 0
+    for character in character_names:
+        for node in tree.traverse("postorder"):
+            if not node.is_leaf():
+                char_value = ""
+                children = [set(child.__dict__[character]) for child in node.children]
+                intersection = set.intersection(*children)
+                if not intersection:
+                    char_value = set.union(*children)
+                    if node.name not in outgroup:
+                        parsimony += 1
+                else:
+                    char_value = intersection
+                node.add_feature(character, char_value)
 
-
-def tree_parsimony(tree: Tree):
-    for node in tree.traverse("postorder"):
-        if node.is_leaf():
-            node.dist = 0
-        else:
-            node.dist = distance(node.children[0], node.children[1])
+    return parsimony
 
 
 def main():
     min_evolution = float("inf")
-    min_topology = None
+    min_topologies = []
 
-    with open("apes.txt") as f:
+    with open("dicynodonts.txt") as f:
         taxa = f.readlines()
     taxa = [t.split() for t in taxa]
     taxa = {t[0].strip(): t[1].strip() for t in taxa}
 
-    for _ in range(100):
+    outgroup = ["Dicynodon", "Lystrosaurus"]
+
+    for _ in range(10000):
         tree = Tree()
         tree.populate(len(taxa), taxa.keys())
-        for leaf in tree:
-            leaf.add_feature("seq", taxa[leaf.name])
+        character_names = [f"char_{i}" for i in range(len(list(taxa.values())[0]))]
+        for node in tree:
+            characters = dict(zip(character_names, taxa[node.name]))
+            for char, value in characters.items():
+                node.add_feature(char, value)
 
-        tree_parsimony(tree)
+        parsimony = standard_parsimony(tree, character_names, outgroup)
 
-        if tree.dist < min_evolution:
-            min_evolution = tree.dist
-            min_topology = tree.copy()
+        if parsimony == min_evolution:
+            min_topologies.append(tree.copy())
 
-    min_topology.set_outgroup(
-        min_topology.search_nodes(name="orangutan")[0]
-    )
-    print(min_evolution)
-    print(min_topology)
+        if parsimony < min_evolution:
+            min_evolution = parsimony
+            min_topologies.clear()
+            min_topologies.append(tree.copy())
+
+    print("Min. numeber of steps:", min_evolution)
+    print("Most parsimonious trees:", len(min_topologies))
+    print("Trees:")
+    for topology in min_topologies:
+        dicynodon = topology.get_leaves_by_name("Dicynodon")[0]
+        lystrosaurus = topology.get_leaves_by_name("Lystrosaurus")[0]
+        outgroup = dicynodon.get_common_ancestor(lystrosaurus)
+        topology.set_outgroup(outgroup)
+        print(topology)
 
 
 if __name__ == "__main__":
