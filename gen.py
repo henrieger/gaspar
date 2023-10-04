@@ -2,7 +2,7 @@ from ete3 import Tree
 
 
 def tuples_to_newick(tree) -> str:
-    return str(tree) + ";"
+    return str(tree).replace("'", "") + ";"
 
 
 def insert_taxon(taxon, tree):

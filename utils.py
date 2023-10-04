@@ -18,4 +18,5 @@ def root_tree(tree: Tree, alignment: Alignment):
     rest = (get_unique_leaf_by_name(tree, t) for t in alignment.outgroup_taxa[1:])
 
     common_ancestor = first.get_common_ancestor(*rest)
-    tree.set_outgroup(common_ancestor)
+    if common_ancestor != tree:
+        tree.set_outgroup(common_ancestor)
