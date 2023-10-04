@@ -1,18 +1,22 @@
 from ete3 import Tree
+from progressbar import progressbar
 from parsimony import standard_parsimony
 from alignments import Alignment
+from gen import generate_all, tuples_to_newick
 from utils import root_tree
 
 
-def main():
+def main(alignment_file: str):
     min_evolution = float("inf")
     min_topologies = []
 
-    alignment = Alignment("test_alignments/dicynodonts.txt")
+    alignment = Alignment(alignment_file)
 
-    for _ in range(10000):
-        tree = Tree()
-        tree.populate(len(alignment.taxa), alignment.taxa.keys())
+    taxa_names = set(alignment.taxa.keys())
+    for t in progressbar(generate_all(taxa_names)):
+        tree = Tree(tuples_to_newick(t))
+        root_tree(tree, alignment)
+
         for leaf in tree:
             for char, value in alignment.taxa[leaf.name].items():
                 leaf.add_feature(char, value)
@@ -31,9 +35,10 @@ def main():
     print("Most parsimonious trees:", len(min_topologies))
     print("Trees:")
     for topology in min_topologies:
-        root_tree(topology, alignment)
+        topology.ladderize()
         print(topology)
 
 
 if __name__ == "__main__":
-    main()
+    from sys import argv
+    main(argv[1])
