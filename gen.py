@@ -1,46 +1,49 @@
-from ete3 import Tree, TreeNode
-from itertools import combinations
+from ete3 import Tree
 
 
-def generate_all(taxons: set) -> list:
-    if len(taxons) < 4:
-        return
+def tuples_to_newick(tree) -> str:
+    return str(tree) + ";"
 
-    if len(taxons) == 4:
-        taxon_pairs = [f"({c[0]},{c[1]})" for c in combinations(taxons, 2)]
 
-        first_half = taxon_pairs[:3]
-        second_half = taxon_pairs[3:]
-        second_half.reverse()
+def insert_taxon(taxon, tree):
+    if len(tree) != 3:
+        raise Exception('a valid unrooted tree must have exactly 3 branches')
 
-        newick_trees = []
-        for i in range(3):
-            newick_trees.append(f"({first_half[i]},{second_half[i]});")
+    def insert_recursive(taxon, tree):
+        yield (taxon, tree)
+        if type(tree) == tuple and len(tree) == 2:
+            for subtree in insert_recursive(taxon, tree[0]):
+                yield (subtree, tree[1])
+            for subtree in insert_recursive(taxon, tree[1]):
+                yield (tree[0], subtree)
 
-        return [Tree(n) for n in newick_trees]
+    for subtree in insert_recursive(taxon, tree[0]):
+        yield (subtree, tree[1], tree[2])
+    for subtree in insert_recursive(taxon, tree[1]):
+        yield (tree[0], subtree, tree[2])
+    for subtree in insert_recursive(taxon, tree[2]):
+        yield (tree[0], tree[1], subtree)
 
-    new_trees = []
-    for taxon in taxons:
-        new_node = TreeNode(name=taxon)
-        curr_trees = generate_all(taxons - set([taxon]))
-        for tree in curr_trees:
-            for node in tree.iter_descendants():
-                parent = node.up
-                node.detach()
-                substitute = parent.add_child()
-                substitute.add_child(node)
-                substitute.add_child(new_node)
-                new_trees.append(tree.copy())
-                node.detach()
-                new_node.detach()
-                substitute.delete()
-                parent.add_child(node)
 
-    return new_trees
+def generate_all(taxa: set):
+    if len(taxa) < 3:
+        raise Exception('taxon set must have at least 3 taxa')
+
+    if len(taxa) == 3:
+        yield tuple(taxa)
+    else:
+        taxon = taxa.pop()
+        for tree in generate_all(taxa):
+            yield from insert_taxon(taxon, tree)
 
 
 if __name__ == "__main__":
-    trees = generate_all(set(range(5)))
+    from sys import argv
+
+    trees = list(generate_all(set(range(int(argv[1])))))
     print(len(trees))
     for tree in trees:
-        print(tree)
+        newick = tuples_to_newick(tree)
+        tree_structure = Tree(newick)
+        tree_structure.set_outgroup('0')
+        print(tree_structure)
