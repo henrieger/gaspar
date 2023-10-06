@@ -1,9 +1,9 @@
 from ete3 import Tree
-from progressbar import progressbar
+from progressbar import ProgressBar
 from parsimony import standard_parsimony
 from alignments import Alignment
 from gen import generate_all, tuples_to_newick
-from utils import root_tree
+from utils import root_tree, max_trees
 
 
 def main(alignment_file: str):
@@ -13,9 +13,9 @@ def main(alignment_file: str):
     alignment = Alignment(alignment_file)
 
     taxa_names = set(alignment.taxa.keys())
-    for t in progressbar(generate_all(taxa_names)):
+    bar = ProgressBar(max_value=max_trees(len(taxa_names))-1)
+    for i, t in enumerate(generate_all(taxa_names)):
         tree = Tree(tuples_to_newick(t))
-        root_tree(tree, alignment)
 
         for leaf in tree:
             for char, value in alignment.taxa[leaf.name].items():
@@ -31,10 +31,13 @@ def main(alignment_file: str):
             min_topologies.clear()
             min_topologies.append(tree.copy())
 
+        bar.update(i)
+
     print("Min. numeber of steps:", min_evolution)
     print("Most parsimonious trees:", len(min_topologies))
     print("Trees:")
     for topology in min_topologies:
+        root_tree(topology, alignment)
         topology.ladderize()
         print(topology)
 

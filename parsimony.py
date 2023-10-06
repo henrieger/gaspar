@@ -6,20 +6,22 @@ def standard_parsimony(tree: Tree, alignment: Alignment) -> int:
     parsimony = 0
     for character in alignment.char_list:
         for node in tree.traverse("postorder"):
-            if not node.is_leaf():
-                char_value = ""
-                children = [
-                    set(child.__dict__[character]) for child in node.children
-                ]
+            if node.is_leaf():
+                continue
 
-                intersection = set.intersection(*children)
-                if not intersection:
-                    char_value = set.union(*children)
-                    if node.name not in alignment.outgroup_taxa:
-                        parsimony += 1
-                else:
-                    char_value = intersection
+            char_value = ""
+            children = [
+                set(child.__dict__[character]) for child in node.children
+            ]
 
-                node.add_feature(character, char_value)
+            intersection = set.intersection(*children)
+            if not intersection:
+                char_value = set.union(*children)
+                if node.name not in alignment.outgroup_taxa:
+                    parsimony += 1
+            else:
+                char_value = intersection
+
+            node.add_feature(character, char_value)
 
     return parsimony

@@ -2,6 +2,15 @@ from ete3 import Tree
 from alignments import Alignment
 
 
+def max_trees(n: int):
+    base = 2*n - 5
+    mult = 1
+    for i in range(base, 1, -2):
+        mult *= i
+
+    return mult
+
+
 def get_unique_leaf_by_name(tree: Tree, name: str):
     return tree.get_leaves_by_name(name)[0]
 
