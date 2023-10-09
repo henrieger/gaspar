@@ -13,9 +13,10 @@ def main(alignment_file: str):
     alignment = Alignment(alignment_file)
 
     taxa_names = set(alignment.taxa.keys())
-    bar = ProgressBar(max_value=max_trees(len(taxa_names))-1)
+    bar = ProgressBar(max_value=max_trees(len(taxa_names)))
     for i, t in enumerate(generate_all(taxa_names)):
         tree = Tree(tuples_to_newick(t))
+        root_tree(tree, alignment)
 
         for leaf in tree:
             for char, value in alignment.taxa[leaf.name].items():
@@ -31,9 +32,9 @@ def main(alignment_file: str):
             min_topologies.clear()
             min_topologies.append(tree.copy())
 
-        bar.update(i)
+        bar.update(i+1)
 
-    print("Min. numeber of steps:", min_evolution)
+    print("Min. number of steps:", min_evolution)
     print("Most parsimonious trees:", len(min_topologies))
     print("Trees:")
     for topology in min_topologies:
