@@ -2,8 +2,12 @@ from ete3 import Tree
 from alignments import Alignment
 
 
+def tuples_to_newick(tree) -> str:
+    return str(tree).replace("'", "") + ";"
+
+
 def max_trees(n: int):
-    base = 2*n - 5
+    base = 2 * n - 5
     mult = 1
     for i in range(base, 1, -2):
         mult *= i
