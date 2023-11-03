@@ -1,0 +1,77 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+
+\sloppy
+
+\title{Relatório TCC 1}
+\author{Henrique Luiz Rieger\inst{1}}
+\address{Departamento de Informática -- Universidade Federal do Paraná
+  (UFPR)\\
+  Curitiba -- PR -- Brasil
+}
+
+\begin{document} 
+
+\maketitle
+
+\begin{resumo} 
+\end{resumo}
+
+\begin{abstract}
+\end{abstract}
+
+\section{Introdução}
+- Importância da filogenia para a ciência e, principalmente, paleontologia \\
+- Quais são os principais problemas computacionais em se fazer filogenia \\
+  - Alto custo computacional da solução exata \\
+  - Não há como garantir a solução correta, toda tentativa é uma hipótese \\
+- Descrição da ideia geral do trabalho
+\subsection{Análises filogenéticas}
+- O que é uma filogenia \\
+- Quais são as etapas de uma busca por árvores \\
+  - Algoritmos de busca \\
+  - Algoritmos de avaliação \\
+  - Consenso \\
+  - Cálculo do suporte \\
+\subsection{Algoritmos genéticos}
+- O que são algoritmos genéticos \\
+- Vantagens e desvantagens dos GA \\
+- Como um algoritmo genético pode ser usado em filogenia \\
+
+\section{Trabalhos anteriores}
+- Trabalhos que já usaram GA ou ML para filogenia: \\
+  - \cite{cotta2002inferring} \\
+  - \cite{mo-phylogenetics} \\
+  - \cite{mo-phynet} \\
+  - \cite{azouri2021harnessing} \\
+  - \cite{parallel-gaml} \\
+  - \cite{garli} \\
+
+\section{Softwares atuais}
+- Falar sobre TNT, PAUP*, MO-Phylogenetics e outros
+
+\section{Experimentos preliminares}
+- Experimentos com dados de \cite{dicynodonts-cris}, \cite{bremer-support} e algum dos bancos maiores
+
+\section{Resultados}
+
+\section{Proposta}
+- Algoritmo genético baseado majoritariamente em \cite{cotta2002inferring} e \cite{garli} para busca de árvores usando os critérios de MP e IWMP a partir de dados morfológicos.
+
+
+% \begin{figure}[ht]
+% \centering
+% \includegraphics[width=.3\textwidth]{fig2.jpg}
+% \caption{This figure is an example of a figure caption taking more than one
+%   line and justified considering margins mentioned in Section~\ref{sec:figs}.}
+% \label{fig:exampleFig2}
+% \end{figure}
+
+\bibliographystyle{sbc}
+\bibliography{sbc-template}
+
+\end{document}
