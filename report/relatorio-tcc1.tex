@@ -4,10 +4,12 @@
 \usepackage{graphicx,url}
 \usepackage[utf8]{inputenc}
 \usepackage[brazil]{babel}
+\usepackage{xcolor}
+\usepackage{subcaption}
 
 \sloppy
 
-\title{Relatório TCC 1}
+\title{Relatório de TCC1}
 \author{Henrique Luiz Rieger\inst{1}}
 \address{Departamento de Informática -- Universidade Federal do Paraná
   (UFPR)\\
@@ -25,51 +27,184 @@
 \end{abstract}
 
 \section{Introdução}
-- Importância da filogenia para a ciência e, principalmente, paleontologia \\
-- Quais são os principais problemas computacionais em se fazer filogenia \\
-  - Alto custo computacional da solução exata \\
-  - Não há como garantir a solução correta, toda tentativa é uma hipótese \\
-- Descrição da ideia geral do trabalho
+% - Importância da filogenia para a ciência e, principalmente, paleontologia \\
+% - Quais são os principais problemas computacionais em se fazer filogenia \\
+%   - Alto custo computacional da solução exata \\
+%   - Não há como garantir a solução correta, toda tentativa é uma hipótese \\
+% - Descrição da ideia geral do trabalho
+
+Árvores filogenéticas são fundamentais para compreender a evolução da vida no planeta Terra, e apresentam usos em diversas áreas do conhecimento, como dinâmica de populações e estudo de proliferação de doenças. Em especial, pesquisas em taxonomia dependem de filogenias para traçar a história evolutiva e poder explicar certos fenômenos observados nos grupos de foco.
+
+Fósseis são excelentes ferramentas para melhorar estudos filogenéticos, abrindo janelas para o passado que normalmente não são analisadas usando-se apenas táxons viventes \cite{mongiardino2021fossils}. Trabalhar com táxons fósseis, porém, é bastante desafiador, uma vez que o material é amplamente incompleto e dependente de caracteres morfológicos, de difícil coleta. Além disso, em comparação a sequências moleculares, os resultados de análises filogenéticas usando apenas morfologia tendem a ser menos precisos \cite{berger2010accuracy}. No entanto, a grande maioria dos trabalhos em Paleontologia dependem exclusivamente do uso de fósseis para suas análises.
+
+Em vista destes problemas, diversos \emph{softwares} focados em filogenia já foram desenvolvidos. Mesmo assim, toda filogenia é apenas uma tentativa de recuperar um passado que não pode ser observado diretamente, bem como é um problema muitas vezes intratável de forma exata, dependendo de métodos heurísticos.
+
+Este relatório apresenta uma proposta de aplicação de algoritmos genéticos, um tipo especial de heurística de busca, na análise filogenética com caracteres morfológicos. Inicialmente, são contextualizados os temas abordados neste trabalho. Depois, é realizada uma revisão de outras pesquisas similares realizadas nessas áreas, bem como uma amostra dos programas existentes utilizados para análises filogenéticas. Experimentos utilizando um desses \emph{softwares} (TNT) foram realizados para fins de demonstração dos métodos atuais. Por fim, a proposta para um experimento de investigação do uso de algoritmos genéticos em filogenia é apresentada.
+
 \subsection{Análises filogenéticas}
-- O que é uma filogenia \\
-- Quais são as etapas de uma busca por árvores \\
-  - Algoritmos de busca \\
-  - Algoritmos de avaliação \\
-  - Consenso \\
-  - Cálculo do suporte \\
+Uma filogenia é uma representação da história evolutiva de um grupo de seres vivos. Essa representação é feita através de uma árvore, em que cada nó corresponde a um \textbf{táxon}, uma unidade básica que pode representar uma família, um gênero, uma espécie ou mesmo um indivíduo. Um grupo de táxons que inclui um ancestral em comum e todos os seus descendentes é denominado um \textbf{clado}. Um exemplo de árvore filogenética pode ser observado na Figura \ref{fig:phylogeny}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.8\textwidth]{img/phylogeny}
+  \caption{Exemplo de árvore filogenética}
+  \label{fig:phylogeny}
+\end{figure}
+
+Em uma análise filogenética, os táxons são representados por sequências de caracteres, \emph{strings} dentro de um alfabeto geralmente discreto em que cada símbolo representa uma característica do táxon que pode ser passada hereditariamente. Essas sequências podem ser formadas por trechos de DNA, aminoácidos de proteínas ou mesmo características fenotípicas, como aspectos morfológicos. Para que a análise funcione, as sequências de todos os táxons devem ter o mesmo tamanho, e cada posição deve representar a mesma característica. O conjunto de todas as sequências análisadas forma a matriz de caracteres.
+
+% O modelo assume que os táxons se diversificam ao longo do tempo através de um processo conhecido como \textbf{cladogênese}, pelo qual um táxon se diversifica em dois (ou mais) táxons descendentes pelo processo de evolução. Na árvore, essa relação fica representada com os descendentes sendo nós filhos do táxon ancestral. Assume-se que o mais provável é que um táxon evolua apenas para dois descendentes, embora possam ser aceitos mais numa relação conhecida como \textbf{politomia}.
+
+O modelo assume que os táxons se diversificam ao longo do tempo em dois (ou mais) táxons descendentes pelo processo de evolução. Na árvore, essa relação fica representada com os descendentes sendo nós filhos do táxon ancestral. Assume-se que o mais provável é que um táxon evolua apenas para dois descendentes, embora possam ser aceitos mais numa relação conhecida como \textbf{politomia}.
+
+Uma filogenia pode ser enraizada ou não-enraizada. Em uma árvore filogenética enraizada, o tempo ``flui'' da raiz para as folhas, ou seja, quanto mais próximos das folhas, mais recentes são os táxons e vice-versa. Em uma árvore não-enraizada, não é possível determinar quais nós internos representam os táxons mais antigos. Uma árvore não-enraizada pode ter uma raiz atribuída com a inclusão de um \textbf{grupo externo} à análise, isto é, um conjunto de táxons que sabe-se ter divergido antes do grupo analisado, chamado de grupo interno.
+
+O objetivo de uma análise filogenética é encontrar a melhor filogenia para um determinado grupo de táxons, isto é, dada uma matriz $n \times m$ com $n$ táxons e $m$ caracteres, a análise retorna uma árvore com exatamente $n$ folhas que melhor representa a história evolutiva do grupo a partir de um determinado critério.
+
+% consiste em uma árvore binária completa com $n$ folhas, em que cada uma representa um , ou também OTU (\emph{operational taxonomical unit}), da análise sendo realizada. Cada táxon é representado por uma sequência de um número pré-definido de \textbf{caracteres}, que podem ser quaisquer características passadas hereditariamente por seres vivos, como sequências de DNA, proteínas ou mesmo características fenotípicas, como morfologia, que são codificadas por um pesquisador em um alfabeto discretizado. Cada nó interno da árvore, também denominado HTU (\emph{hypotetical taxonomical unit}) representa um ancestral hipotético de dois outros nós na árvore, uma vez que a análise assume um modelo de evolução conhecido como \textbf{cladogênese}, pelo qual novos táxons surgem pela diversificação a partir de um táxon ancestral. Normalmente, assume-se que os táxons sendo analisados não representam ancestrais diretos de outros. O objetivo da análise filogenética é encontrar a filogenia que melhor representa a história evolutiva de um determinado grupo de táxons, isto é, a melhor topologia de árvore, incluindo OTUs e HTUs, que explica a evolução do grupo como um todo, dado um determinado critério de avaliação.
+
+\subsection{Etapas de uma análise filogenética}
+
+Os métodos para análises filogenéticas podem ser divididos em dois grupos principais: os baseados em distância e os baseados em sequências \cite{cotta2002inferring}. Métodos por distância agreagam iterativamente os clados mais próximos entre si baseados em alguma métrica absoluta, criando uma matriz de distâncias entre todos e resumindo cada táxon a um vetor de números. Fazem parte desse grupo os métodos UPGMA e Neighbor-Joining, por exemplo. Métodos baseados em sequências dependem da análise individual de cada caracter das sequências associadas aos táxons, baseada em algum critério. Análises por sequência podem ser divididas grosseiramente em quatro etapas: busca, avaliação, consenso e suporte. Essas etapas não necessariamente representam um processo linear e não são totalmente dissociadas, porém tal separação facilita a compreensão do método.
+
+A etapa de busca consiste em determinar um método para percorrer o \emph{espaço de busca} de árvores filogenéticas, isto é, o espaço que contém todas as possíveis filogenias válidas para um determinado conjunto de táxons de entrada. Assume-se para esta etapa que apenas árvores binárias completas (sem politomias) são válidas. \cite{cavalli1967phylogenetic} calcularam o  tamanho do espaço das árvores não-enraizadas $U_n$ para um conjunto de $n$ táxons como
+\begin{equation}
+  U_n = (2n-5)!!,
+\end{equation}
+onde $!!$ representa a operação fatorial duplo. Para as árvores enraizadas o tamanho do espaço corresponde a 
+\begin{equation}
+  R_n = U_{n+1} = (2n-3)!!.
+\end{equation}
+Como o espaço para árvores não-enraizadas é menor, a maioria dos métodos foca nesse tipo, enraizando as respostas com a inclusão de grupos externos, se necessário.
+
+Determinar a filogenia ótima, buscando por todos os elementos do espaço de busca, consiste em um problema NP-Difícil \cite{np-hardness}, tornando uma busca ingênua imprática para mais do que alguns poucos táxons. Mesmo sem percorrer todo o espaço, usando métodos como \emph{branch and bound} \cite{branch-and-bound}, realizar uma busca exata (garantindo o resultado ótimo) ainda é muito custoso. Por essa razão, a maioria das análises utiliza métodos heurísticos, que consistem em trocar iterativamente ramos de lugar na melhor árvore encontrada até o momento na esperança de achar um resultado melhor (algoritmos de \emph{hill climbing}). Alguns operadores comuns para essa busca são o TBR (\emph{tree bissection-reconnection}), o SPR (\emph{subtree prune-regraft}) e o NNI (\emph{nearest-neighbor interchange}).
+
+A fase de avaliação ocorre intercaladamente com a fase de busca, e permite analisar a qualidade de cada árvore gerada. Para isso, um critério de avaliação precisa ser definido. Os mais comuns são \emph{máxima parcimônia} \cite{maximum-parsimony}, que determina que as árvores que necessitam do menor número de passos evolutivos são as mais prováveis, e \emph{máxima verossimilhança} \cite{cavalli1967phylogenetic, maximum-likelihood}, que se baseia em modelos estatísticos de substituição dos caracteres para determinar a filogenia mais provável. Ambos os modelos apresentam benefícios e fraquezas para determinadas situações, mas todos apresentam modelos simplificados de processos evolutivos e portanto, não são capazes de refletir com fidelidade a realidade \cite{cavalli1967phylogenetic}.
+
+A criação de uma árvore de consenso se faz necessária uma vez que a busca pode retornar mais de uma filogenia com a mesma avaliação, ou valores muito próximos dentro de um intervalo determinado. Surge então o desafio de quais clados serão mantidos para a resposta final. O método mais comum é o \emph{consenso estrito}, que determina que apenas os clados presentes em todas as filogenias obtidas pela busca devem ser mantidos na resposta final. Note que ``colapsar'' clados exige quebrar a propriedade binária das árvores obtidas nas fases anteriores, gerando politomias. Outros métodos para consenso incluem a regra da maioria \cite{majority-rule} e o consenso de Adams \cite{adams}.
+
+Por fim, é preciso avaliar a qualidade da solução obtida. Para essa finalidade, o método mais comum é o \emph{bootstrapping}, adaptado do campo da estatística por \cite{bootstrap}. Esse se baseia em replicar a análise diversas vezes, reamostrando os caracteres utilizando sorteios com repetição, e medindo a porcentagem de análises nas quais os clados são obtidos. Clados com boas porcentagens representam chances altas de serem representativos no mundo real. Como alternativa, \emph{jackkniffing} realiza réplicas da análise descartando um caracter por vez.
+
+No caso de buscas utilizando o critério de máxima parcimônia, o suporte de Bremer \cite{bremer-support} pode ser utilizado como complemento ao \emph{bootstrap}. Esse analisa quantas \textbf{homoplasias} são necessárias para que um clado seja eliminado do consenso, isto é, quantos passos evolutivos extras precisam ser considerados para que a filogenia seja desmanchada. Valores maiores representam maior robustez da resposta.
+% \textcolor{red}{Explicar a justificativa por trás do método, de que assumir mínima evolução é uma afirmativa muito forte (novamente com a possível citação de \cite{cavalli1967phylogenetic})}
+
 \subsection{Algoritmos genéticos}
-- O que são algoritmos genéticos \\
-- Vantagens e desvantagens dos GA \\
-- Como um algoritmo genético pode ser usado em filogenia \\
 
-\section{Trabalhos anteriores}
-- Trabalhos que já usaram GA ou ML para filogenia: \\
-  - \cite{cotta2002inferring} \\
-  - \cite{mo-phylogenetics} \\
-  - \cite{mo-phynet} \\
-  - \cite{azouri2021harnessing} \\
-  - \cite{parallel-gaml} \\
-  - \cite{garli} \\
+Algortimos genéticos pertencem a uma classe de algoritmos denominados \emph{evolutivos}, que se baseiam em princípios de evolução darwiniana para obter respostas para problemas computacionais. AGs funcionam codificando possíveis soluções para um problema de otimização em \emph{cromossomos} ou indivíduos, cujo conjunto forma uma população. Esses cromossomos são inicializados aleatoriamente e então recombinados entre si a cada iteração do algoritmo, gerando novas respostas. Cada novo cromossomo também está sujeito a mutações, pequenas alterações probabilísticas que podem ocorrer em cada pedaço da resposta. Dois cromossomos são escolhidos para recombinação baseados em um critério de \emph{aptidão}, que determina a qualidade da solução. Cromossomos mais aptos devem escolhidos mais vezes, mas dependem da escolha eventual de respostas não-ótimas para manter uma certa ``variabilidade genética'' na população. Os operadores de seleção, recombinação e mutação precisam ser definidos para cada problema.
 
-\section{Softwares atuais}
-- Falar sobre TNT, PAUP*, MO-Phylogenetics e outros
+Em comparação a métodos \emph{hill climbing}, algoritmos genéticos são menos propensos a ficar presos em ótimos locais \cite{garli}. Isso é proporcionado tanto pela inclusão de cromossomos sub-ótimos na recombinação, quanto pela inclusão de pequenas variações individuais através das mutações. Algoritmos genéticos também são particularmente úteis em problemas multiobjetivo \cite{mo-phylogenetics}.
+% , ou com grandes espaços de busca \cite{??};
+No entanto, por dependerem de fatores aleatórios, não são facilmente reprodutíveis e podem necessitar de várias execuções independentes para obter respostas consistentes. Também dependem de vários hiperparâmetros (tamanho das populações, taxas de mutação e recombinação, número de gerações etc.), e não garantem a resposta ótima, podendo igualmente cair em ótimos locais bem como não atingir convergência.
+
+No contexto de filogenia, algoritmos genéticos podem ser usados para a etapa de busca de métodos baseados em sequência, servindo como alternativa às buscas utilizando \emph{hill climbing}. Como cromossomos, podem ser utilizadas as várias topologias possíveis de árvores, ou mesmo codificações em vetores lineares das mesmas \cite{cotta2002inferring}. Já os clássicos SPR, TBR e NNI podem ser adaptados como operadores de mutação, enquanto o operador PDR (\emph{prune-delete-regraft}) pode ser utilizado para recombinação.
+
+\section{Trabalhos relacionados}
+
+\cite{parsigal} apresenta o \emph{software} PARSIGAL, que realiza buscas utilizando algoritmos genéticos para encontrar topologias candidatas e heurísticas de \emph{hill climbing} para alterar os candidatos, avaliando a melhor filogenia pelo critério de máxima parcimônia. O trabalho também apresenta diversas otimizações feitas na linguagem C para o cálculo da parcimônia de uma árvore.  Também é apresentado o algoritmo PDR como operador de recombinação.
+  
+\cite{cotta2002inferring} comparam diversos métodos para obter filogenias baseadas em distâncias usando algoritmos evolutivos. Os autores compararam o uso da estrutura da árvore e codificações em \emph{strings} numéricas como cromossomos para o algoritmo, chegando a conclusão de que, para a maioria dos casos, a representação em árvore obtém maior acurácia.
+
+Em \cite{mo-phylogenetics}, os autores utilizam o algoritmo de otimização multiobjetivo NSGA-II para implementar o \emph{software} MO-Phylogenetics, capaz de realizar análises filogenéticas baseadas em máxima parcimônia e máxima verossimilhança simultaneamente, retornando árvores ótimas via fronteira de Pareto. Já \cite{mo-phynet} extendem a aplicação do método para redes filogenéticas, modelos evolutivos que aceitam a transmissão de informações entre ramos que já divergiram, ampliando as possibilidades de usos da inferência multiobjetivo através do \emph{software} MO-PhyNet.
+
+Focando na análise baseada em MV, a tese de \cite{garli} explica em detalhes um algoritmo genético utilizando apenas mutações (sem recombinações), compilado no \emph{software} GARLI. Também são apresentados diversos \emph{benchmarks} do método em comparação a \emph{softwares} tradicionais, medindo, entre outros aspectos, acurácia da busca e tempo de execução. No mesmo trabalho, ainda é apresentada a variante p-GARLI, utilizando diversas populações com intercâmbio de indivíduos rodando em paralelo, a fim de permitir buscas simultâneas na mesma ordem de tempo da versão sequencial. \cite{parallel-gaml} também apresentam uma versão paralela do \emph{software} GAML, porém focando na paralelização do cálculo de aptidão de cada população. 
+
+Utilizando outros algoritmos de busca, \cite{azouri2021harnessing} desenvolveram um método para inferência filogenética otimizando a escolha de passos em uma busca heurística usando \emph{random forest}. Já \cite{berger2010accuracy} demonstram um método de inclusão de táxons fósseis, codificados por morfologia, em uma árvore obtida previamente por MV com sequências moleculares de táxons viventes.
+
+% \textcolor{red}{Talvez citar também \cite{gatc}}
+
+\section{\emph{Softwares} atuais}
+
+Entre os \emph{softwares} de análise filogenética, talvez o PAUP* \cite{paup} seja o mais conhecido, podendo realizar buscas pelos critérios de máxima parcimônia, verossimilhança ou por métodos baseados em distância. Já o TNT \cite{tnt} é focado em análises por parcimônia, e contém uma implementação do algoritmo de avaliação de Máxima Parcimônia de Pesos Implícitos \cite{iwmp}, ou MPPI, que atribui pesos aos caracteres da análise proporcionalmente à quantidade de homoplasias que esses apresentam em uma determinada árvore.
+
+Para análises sob o critério de máxima verossimilhança, além do PAUP*, o programa RAxML \cite{raxml} apresenta bastante popularidade, devido a seus algoritmos de rápida execução, excelentes para uso com conjuntos grandes de dados. O \emph{software} PhyML \cite{phyml} também é bastante utilizado, originalmente aplicando o operador NNI para as buscas heurísticas. O mesmo também faz uso de cálculos de parcimônia para eliminar árvores pouco promissoras.
+
+Além dos métodos mais tradicionais já elaborados, uma técnica que vem ganhando bastante popularidade é o uso de Inferência Bayesiana \cite{tschopp2018challenges}, partindo de técnicas de MCMC, como Metropolis-Hastings. Alguns dos \emph{softwares}  que permitem o uso de caracteres morfológicos por essa técnica são o MrBayes \cite{mr-bayes} e o BEAST \cite{beast}. Embora bastante recentes, \cite{mongiardino2021fossils} demonstraram que o modelo ``Fossil Birth-Death rate'', cominado com IB, pode produzir bons resultados para matrizes com dados paleontológicos, enquanto \cite{implied-ranting} comprovaram que o mesmo apresenta acurácia bastante próxima de análises por parcimônia em \emph{datasets} sintéticos. Já \cite{cau2017specimen} realizou com sucesso uma análise utilizando BEAST para filogenia de peixes Dipnoi a nível de espécime.
 
 \section{Experimentos preliminares}
-- Experimentos com dados de \cite{dicynodonts-cris}, \cite{bremer-support} e algum dos bancos maiores
 
-\section{Resultados}
+Para fins de demonstração dos métodos atuais usados em análises filogenéticas, os dados de três trabalhos de filogenia anteriores foram testados. As matrizes de cada publicação apresentam características bastante distintas, como tipo e quantidade de caracteres, bem como quantidade de táxons e de dados faltantes, de forma a demonstrar os desafios de se realizar inferência filogenética e como os dados demandam processos diferentes.
 
-\section{Proposta}
-- Algoritmo genético baseado majoritariamente em \cite{cotta2002inferring} e \cite{garli} para busca de árvores usando os critérios de MP e IWMP a partir de dados morfológicos.
+A análise de \cite{dicynodonts-cris} apresenta uma matriz de caracteres morfológicos cranianos e pós-cranianos de dicinodontes, um grupo extinto de répteis parentes dos mamíferos atuais. O objetivo era encontrar o posicionamento da espécie brasileira \emph{Jachaleria candelariensis} na árvore deste grupo. A busca original foi feita por \emph{branch and bound}, pelo critério de máxima parcimônia. A matriz de caracteres consiste em 14 táxons, sendo dois pertencentes ao grupo externo, com 44 caracteres. Como resultado original, foi obtido um consenso estrito a partir de seis árvores igualmente parcimoniosas, com 111 passos cada. 
 
+O artigo de \cite{bremer-support} apresenta a ideia por trás do suporte de Bremer. Neste trabalho, o autor exemplifica sua ideia com um estudo de caso contendo dois alinhamentos de sequências de RNA de plantas angiospermas: um com nove sequências de 64 nucleotídeos e outro com seis sequências de 82 nucleotídeos. Em ambos os casos, um táxon (Poacea) foi reservado como grupo externo. As buscas foram feitas por método exato e pelo critério MP. A análise da primeira matriz retornou duas árvores de 151 passos, enquanto a segunda retornou uma filogenia de 161 passos.
 
-% \begin{figure}[ht]
-% \centering
-% \includegraphics[width=.3\textwidth]{fig2.jpg}
-% \caption{This figure is an example of a figure caption taking more than one
-%   line and justified considering margins mentioned in Section~\ref{sec:figs}.}
-% \label{fig:exampleFig2}
-% \end{figure}
+Por fim, o trabalho de \cite{cryolophosaurus} faz uma descrição osteológica completa dos fósseis do dinossauro \emph{Cryolophosaurus ellioti}. A partir dos dados obtidos por esse processo, uma análise foi realizada para determinar sua posição filogenética dentro do grupo Theropoda. A matriz usada apresenta 347 caracteres, com 56 táxons amostrados (seis no grupo externo). Essa enorme quantidade de dados só pode ser processada por métodos heurísticos, de forma que os autores optaram por realizar a busca usando o algoritmo TBR no programa PAUP* com 25000 réplicas de sequência de adição aleatória. O consenso resultante da avaliação por MP consiste em 108 árvores de 833 passos, agrupadas por consenso estrito e de Adams, com o mesmo resultado. Suportes por \emph{bootstrapping} e Bremer também foram calculados.
+
+Para os testes, foi utilizado o \emph{software} TNT na versão 1.6. As análises de terópodes foram feitas utilizando a opção ``Traditional search'', que corresponde a análise por \emph{hill climbing}, com os resultados das matrizes menores (dicinodontes e angiospermas) sendo calculados com a opção ``Implicit enumeration'' (\emph{branch and bound}, busca exata). Em todos os casos, os caracteres foram configurados como discretos e não-ordenados. Foram testados tanto o critério de máxima parcimônia padrão quanto parcimônia de pesos implícitos (função de concavidade padrão, $k = 3$). Todas as árvores foram agregadas utilizando consenso estrito.
+% e os suportes foram calculados por \emph{bootstrap} e Bremer.
+Por simplicidade, não foram calculados valores de suporte nem índices de convergência e retenção.
+
+\subsection{Resultados}
+
+A filogenia obtida pelos dados de dicinodontes usando máxima parcimônia padrão está presente na Figura \ref{fig:dicynodons-smp}. O resultado é exatamente o mesmo descrito no artigo original, à exceção de que a busca forçando a monofilia do grupo interno retornou apenas quatro árvores, em vez das seis descritas. O algoritmo retorna seis árvores caso seja permitido que o gênero \emph{Lystrosaurus} esteja presente dentro do grupo interno, formando uma politomia na base do mesmo.
+
+Já a busca utilizando pesos implícitos, presente na Figura \ref{fig:dicynodons-iwmp}, obteve um consenso um pouco mais resolvido de três árvores com pontuação 11,55, no qual os gêneros \emph{Wadiasaurs} e \emph{Kannemeyeria} deixaram de fazer parte da politomia na base do grupo interno e passam a enraizar um novo clado seguido pelo mesmo clado enraizado por \emph{Dinodontosaurus} na análise anterior. Por não haver cálculo de suportes para esse exemplo, e por falta de uma explicação com fundamentação biológica, fica difícil prever a coerência desse resultado.
+
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}{.4\textwidth}
+    \includegraphics[width=\textwidth]{img/dicynodons-smp_svg-tex.pdf}
+    \caption{Máxima parcimônia padrão}
+    \label{fig:dicynodons-smp}
+  \end{subfigure}
+  \begin{subfigure}{.4\textwidth}
+    \includegraphics[width=\textwidth]{img/dicynodons-iwmp_svg-tex.pdf}
+    \caption{Máxima parcimônia de pesos implícitos}
+    \label{fig:dicynodons-iwmp}
+  \end{subfigure}
+  \caption{Árvore de consenso do \emph{dataset} de dicinodontes.}
+  \label{fig:dicynodons}
+\end{figure}
+
+As árvores obtidas pelos alinhamentos de sequência de angiospermas avaliadas por MPP, tanto de nove (Figura \ref{fig:angiosperms-smp}) quanto seis táxons (Figura \ref{fig:angiosperms2}), resultaram exatamente nas filogenias descritas originalmente. Como ambos os trabalhos foram realizados por buscas exatas, é de se esperar que os valores de suporte também sejam os mesmos. Já a análise usando MPPI no alinhamento de 9 táxons, apresentado na Figura \ref{fig:angiosperms-iwmp}, mostra algumas diferenças significativas em relação ao resultado original, com a família Asteracea na base do grupo interno e Apiacea como grupo irmão de Chenopodiacea. No entanto, como o suporte de Bremer do resultado original já era baixo ($\leq 3$), também pode se esperar que o suporte nesse caso seja baixo. A aplicação de MPPI no \emph{dataset} de seis táxons não obteve nenhuma diferença do original.
+
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}{.4\textwidth}
+    \includegraphics[width=\textwidth]{img/angiosperms-smp_svg-tex.pdf}
+    \caption{9 táxons -- MPP}
+    \label{fig:angiosperms-smp}
+  \end{subfigure}
+  \begin{subfigure}{.4\textwidth}
+    \includegraphics[width=\textwidth]{img/angiosperms-iwmp_svg-tex.pdf}
+    \caption{9 táxons -- MPPI}
+    \label{fig:angiosperms-iwmp}
+  \end{subfigure}
+  \begin{subfigure}{.4\textwidth}
+    \includegraphics[width=\textwidth]{img/angiosperms2_svg-tex.pdf}
+    \caption{6 táxons -- MPP e MPPI}
+    \label{fig:angiosperms2}
+  \end{subfigure}
+  \caption{Árvore de consenso dos \emph{datasets} de angiospermas.}
+  \label{fig:angiosperms}
+\end{figure}
+
+Por fim, a análise da matriz geral de terópodes sob o critério de máxima parcimônia padrão (Figura \ref{fig:theropods-smp}) obteve um resultado bastante similar ao reportado originalmente, embora os números obtidos tenham sido significativamente diferentes. Em vez das 108 árvores originais de 833 passos, foram retornadas apenas oito árvores de 853 passos. O número reduzido de árvores, similar ao ocorrido no caso dos dicinodontes, é provavelmente um artefato da monofilia forçada no relatório oferecido pelo TNT, enquanto o valor das árvores mais parcimoniosas possivelmente se deve a limitações de memória do \emph{software}. Em relação ao consenso obtido, a única diferença em relação ao original foi o posicionamento do gênero \emph{Coelurus}, que passou a integrar a posição mais ancestral em (\emph{Coelurus} + ``Paraves''). O resultado da análise com o critério MPPI (Figura \ref{fig:theropods-iwmp}) retornou três árvores com pontuação $\approx 80,76$, cuja maior diferença em relação à analise por MPP se dá nos posicionamentos dentro do clado Spinosauroidea. 
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{img/theropods-smp_svg-tex.pdf}
+  \caption{Árvore de consenso do \emph{dataset} de terópodes sob o critério de máxima parcimônia padrão}
+  \label{fig:theropods-smp}
+\end{figure}
+\begin{figure}[ht]
+  \includegraphics[width=\textwidth]{img/theropods-iwmp_svg-tex.pdf}
+  \caption{Árvore de consenso do \emph{dataset} de terópodes sob o critério de máxima parcimônia de pesos implícitos}
+  \label{fig:theropods-iwmp}
+\end{figure}
+
+\section{Proposta de trabalho}
+
+Para este trabalho, a proposta consiste na elaboração de um algoritmo genético para busca de árvores filogenéticas, utilizando como entrada matrizes de caracteres morfológicos sob o critério de máxima parcimônia. O algoritmo será testado utilizando tanto bases de dados sintéticas, cuja resposta correta pode ser determinada, mas que apresentam baixa correspondência com problemas reais; quanto com bases de dados reais retiradas de artigos da área de Paleontologia, cuja acurácia apenas pode ser obtida em relação aos resultads publicados e aplicação de outros métodos semelhantes.
+
+O algoritmo será baseado principalmente em três dos trabalhos citados anteriormente: no \emph{software} GARLI de \cite{garli}, utilizando-se majoritariamente de seus operadores de mutação, seus hiperparâmetros definidos para o \emph{software} e seu método de avaliação dos resultados obtidos; e nos trabalhos de \cite{cotta2002inferring} e \cite{parsigal}, adaptando o operador de recombinação PDR e possivelmente, utilizando as codificações de cromossomos e otimizações de código desenvolvidas para ambos os trabalhos. Para as análises, serão utilizadas avaliações por MP tanto convencional quanto de pesos implícitos, aplicadas como funções de aptidão para o AG. O consenso será calculado de forma estrita, e os suportes deverão se basear em \emph{bootstrapping} e pelo método de Bremer. O algoritmo será comparado com buscas \emph{hill climbing} tradicionais sob o mesmo \emph{framework}, bem como com o algoritmo de \emph{branch and bound} quando cabível.
+
+Além da acurácia da resposta, também serão coletadas outras métricas de desempenho do algoritmo, como distância para a resposta correta, tempo de execução, e possivelmente uso de memória e CPU. O objetivo é avaliar o custo do algoritmo em relação aos métodos tradicionais caso o mesmo tenha acurácia superior, ou mesmo delimitar que o mesmo gasta muito mais recursos com desempenho similiar. Para isso, é importante que todos os algoritmos sejam executados em uma mesma base de código, para eliminar ao máximo artefatos de implementação nesses resultados. Em último caso, o resultado pode ser comparado a \emph{softwares} existentes, como TNT e PAUP*.
+
+Por fim, vale ressaltar que o objetivo deste trabalho não será desenvolver um \emph{software} completo de análise filogenética, mas sim testar o desempenho de algoritmos genéticos como mecanismos de busca para filogenias baseadas em dados paleontológicos. O desenvolvimento de uma ferramenta pronta para uso requer a elaboração de vários detalhes que não serão levados em conta para este trabalho, como otimizações de código, criação de interface de usuário intuitiva, habilitação de configurações para o usuário, entre outras. O objetivo é demonstrar (ou não) que há benefício na implementação futura de \emph{softwares} com esse conceito, e pavimentar o caminho para as próximas pesquisas na área de algoritmos genéticos para análises filogenéticas.
+
+\section*{Reconhecimentos}
+Este trabalho foi feito usando a versão 1.6 do software TNT, disponibilizado gratuitamente para usuários finais pela Willi Hennig Society.
 
 \bibliographystyle{sbc}
 \bibliography{relatorio-tcc1}
