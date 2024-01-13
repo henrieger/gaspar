@@ -1,7 +1,9 @@
 CC = gcc
 CFLAGS = -Wall
 OBJECTS = *.o
-EXECUTABLE = test-trees
+EXECUTABLE = test-trees test-sequence-alignment
+
+all: $(EXECUTABLE)
 
 test-trees: test-trees.c tree.o
 test-sequence-alignment: test-sequence-alignment.c sequence-alignment.o
