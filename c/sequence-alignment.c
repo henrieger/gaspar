@@ -27,10 +27,10 @@ inline void setCharacterWeight(int i, float w) { weights[i] = w; }
 
 // Allocate space for a sequence
 sequence_t *newSequence(const char *name) {
-  uint8_t *charset = malloc(getSequenceSize());
+  charset_t *charsets = malloc(getSequenceSize());
   sequence_t *sequence = malloc(sizeof(sequence_t));
   sequence->name = name;
-  sequence->charset = charset;
+  sequence->charsets = charsets;
 
   return sequence;
 }
@@ -38,9 +38,9 @@ sequence_t *newSequence(const char *name) {
 // Allocate space for an aligment
 alignment_t newAlignment() {
   alignment_t alignment = malloc(getAlignmentSize() * sizeof(sequence_t));   
-  alignment->charset = malloc(getAlignmentSize() * getSequenceSize());
+  alignment->charsets = malloc(getAlignmentSize() * getSequenceSize());
   for (int i = 1; i < getAlignmentSize(); i++)
-    alignment[i].charset = alignment[0].charset+(i*getSequenceSize());
+    alignment[i].charsets = alignment[0].charsets+(i*getSequenceSize());
   return alignment;
 }
 
@@ -52,7 +52,7 @@ void createCharacterWeights() {
 }
 
 // Print a single character
-void printCharacter(uint8_t character) {
+void printCharacter(charset_t character) {
   if (!character) {
     printf("-");
     return;
@@ -68,7 +68,7 @@ void printCharacter(uint8_t character) {
   if (multipleCharacters)
     printf("[");
   
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 8*sizeof(charset_t); i++) {
     int mask = 1 << i;
     if (mask & character)
       printf("%d", i);
@@ -82,7 +82,7 @@ void printCharacter(uint8_t character) {
 void printSequence(sequence_t *sequence) {
   printf("%s: ", sequence->name);
   for (int i = 0; i < getSequenceSize(); i++)
-    printCharacter(sequence->charset[i]);
+    printCharacter(sequence->charsets[i]);
   printf(";\n");
 }
 
@@ -106,7 +106,7 @@ inline void destroyAlignment(alignment_t alignment) { destroySequence(alignment)
 
 // Destroy sequence
 void destroySequence(sequence_t *sequence) {
-  free(sequence->charset);
+  free(sequence->charsets);
   free(sequence);
 }
 

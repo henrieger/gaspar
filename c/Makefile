@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall
 OBJECTS = *.o
 EXECUTABLE = test-trees
 

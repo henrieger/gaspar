@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 
+#define charset_t uint8_t
+
 typedef struct sequence {
   const char *name;
-  uint8_t *charset;
+  charset_t *charsets;
 } sequence_t;
 
 #define alignment_t sequence_t *
