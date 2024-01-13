@@ -13,6 +13,8 @@ node_t *newNode(info_t *info) {
 
 info_t *newInfo() {
   info_t *info = malloc(sizeof(info_t));
+  info->validSequence = 0;
+  info->parsimonyScore = 0;
   return info;
 }
 

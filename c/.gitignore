@@ -1,3 +1,4 @@
 test-trees
 test-sequence-alignment
+test-parsimony
 *.o

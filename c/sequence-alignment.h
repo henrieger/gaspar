@@ -4,6 +4,8 @@
 #include <stdint.h>
 
 #define charset_t uint8_t
+#define CHARSET_EMPTY 0b00000000
+#define CHARSET_FULL  0b11111111
 
 typedef struct sequence {
   const char *name;
@@ -64,4 +66,4 @@ void destroyCharacterWeights();
 // Reset array of weights with new size
 void resetCharacterWeights();
 
-#endif
+#endif // !__SEQUENCE_ALIGNMENT_H__

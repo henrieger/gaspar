@@ -2,9 +2,13 @@
 #define __TREE_H__
 
 #include <stdint.h>
+#include "sequence-alignment.h"
 
 typedef struct info {
   const char *name;
+  sequence_t *sequence;
+  int parsimonyScore;
+  uint8_t validSequence;
 } info_t;
 
 typedef struct node {
