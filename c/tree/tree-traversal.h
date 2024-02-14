@@ -18,9 +18,9 @@ typedef struct traversal {
 traversal_t *traverse(node_t *node, uint8_t flags);
 
 // Prints the names (if any) of traversed nodes.
-void print_traversal(traversal_t *traversal);
+void printTraversal(traversal_t *traversal);
 
 // Deletes traversal structure
-void deleteTraversal(traversal_t *traversal);
+void destroyTraversal(traversal_t *traversal);
 
 #endif // !__TREE_TRAVERSAL_H__

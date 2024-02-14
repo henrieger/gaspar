@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Create a new node.
 node_t *newNode(info_t *info) {
   node_t *n = calloc(1, sizeof(node_t));
   if (info)
@@ -11,6 +12,7 @@ node_t *newNode(info_t *info) {
   return n;
 }
 
+// Create info of node.
 info_t *newInfo() {
   info_t *info = malloc(sizeof(info_t));
   info->validSequence = 0;
@@ -45,6 +47,7 @@ node_t *nodeWithPredecessor(const char *name) {
   return ancestor;
 }
 
+// Create the smallest possible unrooted tree with three leaves.
 tree_t *smallUnrootedTree(const char *a, const char *b, const char *c) {
   node_t *ancestorA = nodeWithPredecessor(a);
   node_t *ancestorB = nodeWithPredecessor(b);
@@ -62,8 +65,10 @@ tree_t *smallUnrootedTree(const char *a, const char *b, const char *c) {
   return ancestorA;
 }
 
+// Return TRUE if node is leaf, FALSE otherwise.
 inline uint8_t isLeaf(node_t *node) { return node->next == NULL; }
 
+// Adds a child to current node.
 void addChild(node_t *node, const char *name) {
   node_t *oldNext = node->next;
   node->next = nodeWithPredecessor(name);
@@ -71,6 +76,7 @@ void addChild(node_t *node, const char *name) {
   node->next->next = oldNext;
 }
 
+// Create a brother to node with one empty end
 node_t *addAnonymousBrother(node_t *node) {
   // Create a new ring
   info_t *ringInfo = newInfo();
@@ -79,17 +85,18 @@ node_t *addAnonymousBrother(node_t *node) {
   ringStart->next->next = newNode(ringInfo);
   ringStart->next->next->next = ringStart;
 
-  // Connect points of ring to edge
+  // Connect ends of ring to edge
   node_t *oldOut = node->out;
   ringStart->out = node;
   node->out = ringStart;
   oldOut->out = ringStart->next;
   ringStart->next->out = oldOut;
 
-  // Return reference to remaining link of the node
+  // Return reference to remaining end of the node
   return ringStart->next->next;
 }
 
+// Adds a brother to current node, splitting its branch.
 void addBrother(node_t *node, const char *name) {
   // Creates two disconnected new nodes between current node and its neighbor
   node_t *oldOut = node->out;
@@ -152,8 +159,10 @@ tree_t *copyRecursive(tree_t *tree, node_t *from) {
   return newTree;
 }
 
+// Returns a copy of the tree.
 tree_t *copyTree(tree_t *tree) { return copyRecursive(tree, NULL); }
 
+// Prunes a node from tree and returns the new tree as unrooted.
 tree_t *prune(node_t *node) {
   node_t *newTree = node->out;
   newTree->out = NULL;
@@ -161,6 +170,7 @@ tree_t *prune(node_t *node) {
   return unrootTree(newTree);
 }
 
+// Graft a subtree into a tree. Assumes subtree as rooted.
 void graft(tree_t *tree, tree_t *subtree) {
   if (!tree || !subtree)
     return;
@@ -177,12 +187,14 @@ void graft(tree_t *tree, tree_t *subtree) {
   }
 }
 
-inline void deleteInfo(info_t *info) { free(info); }
+// Free space of node info.
+inline void destroyInfo(info_t *info) { free(info); }
 
-inline void deleteNode(node_t *node) { free(node); }
+// Free space of node.
+inline void destroyNode(node_t *node) { free(node); }
 
 // Delete subtrees recursevely, keeping track of origin of call.
-void deleteRecursive(node_t *node) {
+void destroyRecursive(node_t *node) {
   if (!node)
     return;
 
@@ -196,24 +208,25 @@ void deleteRecursive(node_t *node) {
 #ifdef DEBUG
       printf("Removing node in loop %s\n", next->info->name);
 #endif
-      deleteRecursive(next->out);
+      destroyRecursive(next->out);
       node_t *oldNext = next;
       next = next->next;
-      deleteNode(oldNext);
+      destroyNode(oldNext);
     }
   }
 
-  deleteInfo(node->info);
-  deleteNode(node);
+  destroyInfo(node->info);
+  destroyNode(node);
 }
 
-void deleteTree(tree_t *tree) {
+// Delete tree recursevely.
+void destroyTree(tree_t *tree) {
 #ifdef DEBUG
   printf("Removing tree at %p\n", tree);
 #endif
   if (tree->out)
-    deleteRecursive(tree->out);
-  deleteRecursive(tree);
+    destroyRecursive(tree->out);
+  destroyRecursive(tree);
 #ifdef DEBUG
   printf("Tree at %p removed successfully\n", tree);
 #endif
@@ -237,6 +250,7 @@ void printNode(node_t *node) {
   }
 }
 
+// Print tree in Newick format as rooted.
 void printTree(tree_t *tree) {
   if (tree->out) {
     printf("(");
@@ -250,6 +264,7 @@ void printTree(tree_t *tree) {
   }
 }
 
+// Search node by its name, keeping track of origin of call.
 node_t *searchNodeByNameRecursive(tree_t *tree, const char *name,
                                   node_t *from) {
   if (!tree)
@@ -269,10 +284,12 @@ node_t *searchNodeByNameRecursive(tree_t *tree, const char *name,
   return answer;
 }
 
+// Search a node by its name.
 tree_t *searchNodeByName(tree_t *tree, const char *name) {
   return searchNodeByNameRecursive(tree, name, NULL);
 }
 
+// Root tree based on reference node. Returns new root.
 tree_t *rootTree(node_t *node) {
   info_t *rootInfo = newInfo();
 
@@ -291,6 +308,8 @@ tree_t *rootTree(node_t *node) {
   return root;
 }
 
+// Unroot tree. Assumes passed node is the root. Returns a pointer to new
+// reference point on tree.
 tree_t *unrootTree(node_t *root) {
   // Check if tree is already unrooted
   if (root->out)
@@ -303,16 +322,16 @@ tree_t *unrootTree(node_t *root) {
     while (ringEnd->next != root)
       ringEnd = ringEnd->next;
     ringEnd->next = newReferencePoint;
-    deleteNode(root);
+    destroyNode(root);
     return newReferencePoint;
   }
 
   // Remove root and the corresponding branches
   node_t *left = root->next->out;
   node_t *right = root->next->next->out;
-  deleteNode(left->out);
-  deleteNode(right->out);
-  deleteNode(root);
+  destroyNode(left->out);
+  destroyNode(right->out);
+  destroyNode(root);
   left->out = right;
   right->out = left;
   return left;

@@ -26,10 +26,10 @@ inline void setAlignmentSize(int size) { alignmentSize = size; }
 inline void setCharacterWeight(int i, float w) { weights[i] = w; }
 
 // Allocate space for a sequence
-sequence_t *newSequence(char *name) {
+sequence_t *newSequence(char *label) {
   charset_t *charsets = malloc(getSequenceSize() * sizeof(charset_t));
   sequence_t *sequence = malloc(sizeof(sequence_t));
-  sequence->name = name;
+  sequence->label = label;
   sequence->charsets = charsets;
 
   return sequence;
@@ -38,11 +38,11 @@ sequence_t *newSequence(char *name) {
 // Allocate space for an aligment
 alignment_t newAlignment() {
   alignment_t alignment = malloc(getAlignmentSize() * sizeof(sequence_t));   
-  alignment->name = malloc(getAlignmentSize() * NAMESIZE);
+  alignment->label = malloc(getAlignmentSize() * LABEL_SIZE);
   alignment->charsets = malloc(getAlignmentSize() * getSequenceSize() * sizeof(charset_t));
   for (int i = 1; i < getAlignmentSize(); i++) {
-    alignment[i].name = alignment[0].name+(i*NAMESIZE);
-    alignment[i].charsets = alignment[0].charsets+(i*getSequenceSize());
+    alignment[i].label = alignment->label+(i*LABEL_SIZE);
+    alignment[i].charsets = alignment->charsets+(i*getSequenceSize());
   }
   return alignment;
 }
@@ -83,7 +83,7 @@ void printCharacter(charset_t character) {
 
 // Print information about a sequence
 void printSequence(sequence_t *sequence) {
-  printf("%s: ", sequence->name);
+  printf("%s: ", sequence->label);
   for (int i = 0; i < getSequenceSize(); i++)
     printCharacter(sequence->charsets[i]);
   printf(";\n");
@@ -91,7 +91,7 @@ void printSequence(sequence_t *sequence) {
 
 // Print information about an alignment
 void printAlignment(alignment_t alignment) {
-  printf("%d %d\n", getAlignmentSize(), getSequenceSize());
+  printf("Taxa: %d\nCharacters: %d\n\n", getAlignmentSize(), getSequenceSize());
   for (int i = 0; i < getAlignmentSize(); i++)
     printSequence(alignment+i);
 }
@@ -106,7 +106,7 @@ void printCharacterWeights() {
 
 // Destroy alignment
 void destroyAlignment(alignment_t alignment) {
-  free(alignment->name);
+  free(alignment->label);
   destroySequence(alignment);
 }
 
@@ -119,10 +119,12 @@ void destroySequence(sequence_t *sequence) {
 // Destroy array of weights
 void destroyCharacterWeights() {
   free(weights);
+  weights = NULL;
 }
 
 // Reset array of weights with new size
 void resetCharacterWeights() {
-  destroyCharacterWeights();
+  if (weights)
+    destroyCharacterWeights();
   createCharacterWeights();
 }

@@ -1,10 +1,10 @@
 %{
 
-#include "inputfile.h"
+#include "gaspar.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../sequence-alignment.h"
+#include "sequence-alignment/sequence-alignment.h"
 
 %}
 
@@ -17,11 +17,14 @@
 %%
 
 file:
-  MIMETYPE alignment_sizes { alignment = newAlignment(); createCharacterWeights(); } alignment { checkNumberOfTaxa(); } commands
+  MIMETYPE alignment_sizes { initializeAlignment(); }
+  alignment { checkNumberOfTaxa(); }
+  commands
 ;
 
 alignment_sizes:
-  taxa characters | characters taxa
+  taxa characters
+  | characters taxa
 ;
 
 taxa:
@@ -33,14 +36,15 @@ characters:
 ;
 
 alignment:
-  alignment sequence { checkNumberOfCharacters(); taxon++; }
-  | sequence { checkNumberOfCharacters(); taxon++; }
+  alignment sequence { checkNumberOfCharacters(); }
+  | sequence { checkNumberOfCharacters(); }
 ;
 
 sequence:
   IDENT
-  { strncpy(alignment[taxon].name, token, TOKEN_SIZE); character = 0; }
+  { strncpy(alignment[taxon].label, token, TOKEN_SIZE); character = 0; }
   sequence_chars
+  { taxon++; }
 ;
 
 sequence_chars:
@@ -49,7 +53,7 @@ sequence_chars:
 ;
 
 char_seq:
-  NUMBER { convertNumberToSequence(); }
+  NUMBER { addNumbersToSequence(); }
   | charset
 ;
 
@@ -75,7 +79,7 @@ int main(int argc, char **argv) {
   } else {
     fp = fopen(argv[1], "r");
     if (fp == NULL) {
-      printf("Usage: %s <arq>b\n", argv[0]);
+      printf("Usage: %s <arq>\n", argv[0]);
       return -1;
     }
   }
@@ -88,11 +92,19 @@ int main(int argc, char **argv) {
   if (argc != 1)
     fclose(fp);
 
+#ifdef DEBUG
   printf("Alignment size: %d\nSequence size: %d\n", getAlignmentSize(), getSequenceSize());
+# endif
+
   printAlignment(alignment);
 
+#ifdef DEBUG
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
+#endif
 
   if (alignment)
     destroyAlignment(alignment);
+
+  if (weights)
+    destroyCharacterWeights();
 }

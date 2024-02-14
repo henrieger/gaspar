@@ -54,8 +54,8 @@ traversal_t *traverse(node_t *node, uint8_t flags) {
   return link(newTraversalNode(node), t);
 }
 
-void print_traversal(traversal_t *traversal) {
-  for (traversal_t *t; t != NULL; t = t->next) {
+void printTraversal(traversal_t *traversal) {
+  for (traversal_t *t = traversal; t != NULL; t = t->next) {
     printf("%s", t->info->name);
     if (t->next != NULL)
       printf(" ->");
@@ -63,8 +63,8 @@ void print_traversal(traversal_t *traversal) {
   printf("\n");
 }
 
-void deleteTraversal(traversal_t *traversal) {
-  traversal_t *start, *next;
+void destroyTraversal(traversal_t *traversal) {
+  traversal_t *start = traversal, *next;
   while(start)
   {
     next = start->next;

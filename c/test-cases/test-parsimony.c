@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "sequence-alignment.h"
-#include "tree.h"
-#include "parsimony.h"
+#include <string.h>
+#include <sequence-alignment/sequence-alignment.h>
+#include <tree/tree.h>
+#include <eval/parsimony.h>
 
 int main(int argc, char **argv) {
   setSequenceSize(6);
@@ -11,7 +12,7 @@ int main(int argc, char **argv) {
   
   alignment_t alignment = newAlignment();
 
-  alignment[0].name = "Alpha";
+  strncpy(alignment[0].label, "Alpha", LABEL_SIZE);
   alignment[0].charsets[0] = 0b00000010;
   alignment[0].charsets[1] = 0b00000001;
   alignment[0].charsets[2] = 0b00000001;
@@ -19,7 +20,7 @@ int main(int argc, char **argv) {
   alignment[0].charsets[4] = 0b00000010;
   alignment[0].charsets[5] = 0b00000001;
 
-  alignment[1].name = "Beta";
+  strncpy(alignment[1].label, "Beta", LABEL_SIZE);
   alignment[1].charsets[0] = 0b00000001;
   alignment[1].charsets[1] = 0b00000001;
   alignment[1].charsets[2] = 0b00000010;
@@ -27,7 +28,7 @@ int main(int argc, char **argv) {
   alignment[1].charsets[4] = 0b00000001;
   alignment[1].charsets[5] = 0b00000001;
 
-  alignment[2].name = "Gamma";
+  strncpy(alignment[2].label, "Gamma", LABEL_SIZE);
   alignment[2].charsets[0] = 0b00000010;
   alignment[2].charsets[1] = 0b00000010;
   alignment[2].charsets[2] = 0b00000001;
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
   alignment[2].charsets[4] = 0b00000001;
   alignment[2].charsets[5] = 0b00000001;
 
-  alignment[3].name = "Delta";
+  strncpy(alignment[3].label, "Delta", LABEL_SIZE);
   alignment[3].charsets[0] = 0b00000010;
   alignment[3].charsets[1] = 0b00000010;
   alignment[3].charsets[2] = 0b00000001;
@@ -43,7 +44,7 @@ int main(int argc, char **argv) {
   alignment[3].charsets[4] = 0b00000010;
   alignment[3].charsets[5] = 0b00000010;
 
-  alignment[4].name = "Epsilon";
+  strncpy(alignment[4].label, "Epsilon", LABEL_SIZE);
   alignment[4].charsets[0] = 0b00000001;
   alignment[4].charsets[1] = 0b00000001;
   alignment[4].charsets[2] = 0b00000010;
@@ -82,7 +83,7 @@ int main(int argc, char **argv) {
   destroySequence(alpha->out->info->sequence);
   destroySequence(beta->out->info->sequence);
   destroySequence(gamma->out->info->sequence);
-  deleteTree(tree);
+  destroyTree(tree);
   destroyAlignment(alignment);
   destroyCharacterWeights();
 }

@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "inputfile.h"
-#include "inputfile.tab.h"
+#include "gaspar.h"
+#include "gaspar.tab.h"
 
 void assignToken(const char *typeForPrint);
 int lineNumber = 1;
@@ -17,6 +17,9 @@ ident [a-zA-Z\-_]+
 number [0-9]+
 missing_data [?]
 mimetype "text/x-gaspar"
+
+%option nounput
+%option noinput
 
 %%
 

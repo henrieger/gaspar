@@ -6,10 +6,10 @@
 #define charset_t uint8_t
 #define CHARSET_EMPTY 0b00000000
 #define CHARSET_FULL  0b11111111
-#define NAMESIZE 64
+#define LABEL_SIZE 64
 
 typedef struct sequence {
-  char *name;
+  char *label;
   charset_t *charsets;
 } sequence_t;
 
@@ -38,7 +38,7 @@ void setAlignmentSize(int size);
 void setCharacterWeight(int i, float w);
 
 // Allocate space for a sequence
-sequence_t *newSequence(char *name);
+sequence_t *newSequence(char *label);
 
 // Allocate space for an aligment
 alignment_t newAlignment();

@@ -1,4 +1,6 @@
-test-trees
-test-sequence-alignment
-test-parsimony
+gaspar
 *.o
+gaspar.tab.*
+gaspar.output
+lex.yy.c
+.clangd

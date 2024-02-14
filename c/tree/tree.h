@@ -2,7 +2,7 @@
 #define __TREE_H__
 
 #include <stdint.h>
-#include "sequence-alignment.h"
+#include <sequence-alignment/sequence-alignment.h>
 
 typedef struct info {
   const char *name;
@@ -47,18 +47,18 @@ tree_t *prune(node_t *node);
 void graft(tree_t *tree, tree_t *subtree);
 
 // Free space of node.
-void deleteNode(node_t *node);
+void destroyNode(node_t *node);
 
 // Free space of node info.
-void deleteInfo(info_t *info);
+void destroyInfo(info_t *info);
 
 // Delete tree recursevely.
-void deleteTree(tree_t *tree);
+void destroyTree(tree_t *tree);
 
 // Print tree in Newick format as rooted.
 void printTree(tree_t *tree);
 
-// Search a node by its name
+// Search a node by its name.
 node_t *searchNodeByName(tree_t *tree, const char *name);
 
 // Root tree based on reference node. Returns new root.

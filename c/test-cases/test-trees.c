@@ -1,4 +1,4 @@
-#include "tree.h"
+#include <tree/tree.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -52,8 +52,8 @@ int main(int argc, char *argv[]) {
   printTree(rootedTree);
   printf("\n");
 
-  deleteTree(rootedTree);
-  deleteTree(newTree);
+  destroyTree(rootedTree);
+  destroyTree(newTree);
 
   return 0;
 }

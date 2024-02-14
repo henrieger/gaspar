@@ -1,7 +1,7 @@
 #include "parsimony.h"
 
-#include "sequence-alignment.h"
-#include "tree.h"
+#include <sequence-alignment/sequence-alignment.h>
+#include <tree/tree.h>
 #include <stdint.h>
 #include <stdlib.h>
 
