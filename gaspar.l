@@ -13,9 +13,9 @@ int lineNumber = 1;
 
 line_feed [\n]
 blank [\t ]+
-ident [a-zA-Z\-_]+
+ident [a-zA-Z_\']+
 number [0-9]+
-missing_data [?]
+missing_data [?\-]
 mimetype "text/x-gaspar"
 
 %option nounput

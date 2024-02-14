@@ -6,7 +6,7 @@
 #define charset_t uint8_t
 #define CHARSET_EMPTY 0b00000000
 #define CHARSET_FULL  0b11111111
-#define LABEL_SIZE 64
+#define LABEL_SIZE 512
 
 typedef struct sequence {
   char *label;

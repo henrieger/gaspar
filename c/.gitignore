@@ -1,6 +1,0 @@
-gaspar
-*.o
-gaspar.tab.*
-gaspar.output
-lex.yy.c
-.clangd
