@@ -26,7 +26,7 @@ inline void setAlignmentSize(int size) { alignmentSize = size; }
 inline void setCharacterWeight(int i, float w) { weights[i] = w; }
 
 // Allocate space for a sequence
-sequence_t *newSequence(const char *name) {
+sequence_t *newSequence(char *name) {
   charset_t *charsets = malloc(getSequenceSize() * sizeof(charset_t));
   sequence_t *sequence = malloc(sizeof(sequence_t));
   sequence->name = name;
@@ -38,9 +38,12 @@ sequence_t *newSequence(const char *name) {
 // Allocate space for an aligment
 alignment_t newAlignment() {
   alignment_t alignment = malloc(getAlignmentSize() * sizeof(sequence_t));   
+  alignment->name = malloc(getAlignmentSize() * NAMESIZE);
   alignment->charsets = malloc(getAlignmentSize() * getSequenceSize() * sizeof(charset_t));
-  for (int i = 1; i < getAlignmentSize(); i++)
+  for (int i = 1; i < getAlignmentSize(); i++) {
+    alignment[i].name = alignment[0].name+(i*NAMESIZE);
     alignment[i].charsets = alignment[0].charsets+(i*getSequenceSize());
+  }
   return alignment;
 }
 
@@ -102,7 +105,10 @@ void printCharacterWeights() {
 }
 
 // Destroy alignment
-inline void destroyAlignment(alignment_t alignment) { destroySequence(alignment); }
+void destroyAlignment(alignment_t alignment) {
+  free(alignment->name);
+  destroySequence(alignment);
+}
 
 // Destroy sequence
 void destroySequence(sequence_t *sequence) {
