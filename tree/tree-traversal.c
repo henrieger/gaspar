@@ -46,7 +46,7 @@ traversal_t *traverse(node_t *node, uint8_t flags) {
 
   traversal_t *t = NULL;
   for (node_t *n = node->next; n != node; n = n->next) {
-    t = link(t, traverse(n, flags));
+    t = link(t, traverse(n->out, flags));
   }
 
   if (flags & POSTORDER)

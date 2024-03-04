@@ -1,4 +1,5 @@
 #include "tree.h"
+#include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,8 @@ node_t *newNode(info_t *info) {
 // Create info of node.
 info_t *newInfo() {
   info_t *info = malloc(sizeof(info_t));
+  info->sequence = newSequence(NULL);
+  info->name = NULL;
   info->validSequence = 0;
   info->parsimonyScore = 0;
   return info;
@@ -96,27 +99,33 @@ node_t *addAnonymousBrother(node_t *node) {
   return ringStart->next->next;
 }
 
-// Adds a brother to current node, splitting its branch.
-void addBrother(node_t *node, const char *name) {
+// Adds a brother to current node, splitting its branch. Returns a pointer to
+// new brother.
+node_t *addBrother(node_t *node, const char *name) {
   // Creates two disconnected new nodes between current node and its neighbor
   node_t *oldOut = node->out;
   node->out = newNode(NULL);
   oldOut->out = newNode(NULL);
 
   // Creates brother with predecessor and closes new ring
-  node->out->next = nodeWithPredecessor(name);
-  node->out->next->next = oldOut->out;
+  node_t *brotherPredecessor = nodeWithPredecessor(name);
+  node->out->next = brotherPredecessor;
+  brotherPredecessor->next = oldOut->out;
   oldOut->out->next = node->out;
 
   // Connects new ring to same info
   info_t *newNodeInfo = newInfo();
-  node->out->next->info = newNodeInfo;
-  node->out->next->next->info = newNodeInfo;
+  newNodeInfo->sequence = newSequence(NULL);
+  brotherPredecessor->info = newNodeInfo;
+  brotherPredecessor->next->info = newNodeInfo;
   oldOut->out->next->info = newNodeInfo;
 
   // Assigns remaining out connections of ring
   node->out->out = node;
   oldOut->out->out = oldOut;
+
+  // Return pointer to brother
+  return brotherPredecessor->out;
 }
 
 // Copy a node info
@@ -188,7 +197,14 @@ void graft(tree_t *tree, tree_t *subtree) {
 }
 
 // Free space of node info.
-inline void destroyInfo(info_t *info) { free(info); }
+void destroyInfo(info_t *info) {
+  if (!info)
+    return;
+
+  destroySequence(info->sequence);
+  info->sequence = NULL;
+  free(info);
+}
 
 // Free space of node.
 inline void destroyNode(node_t *node) { free(node); }
@@ -221,8 +237,12 @@ void destroyRecursive(node_t *node) {
 
 // Delete tree recursevely.
 void destroyTree(tree_t *tree) {
+  if (!tree)
+    return;
 #ifdef DEBUG
-  printf("Removing tree at %p\n", tree);
+  printf("Removing tree at %p ", tree);
+  printTree(tree);
+  printf("\n");
 #endif
   if (tree->out)
     destroyRecursive(tree->out);
@@ -257,10 +277,10 @@ void printTree(tree_t *tree) {
     printNode(tree->out);
     printf(",");
     printNode(tree);
-    printf(");");
+    printf(")");
   } else {
     printNode(tree);
-    printf(";");
+    // printf(";");
   }
 }
 

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int sequenceSize;  // Global amount of characters in a sequence
 int alignmentSize; // Global amount of taxa in the alignment
@@ -45,6 +46,14 @@ alignment_t newAlignment() {
     alignment[i].charsets = alignment->charsets+(i*getSequenceSize());
   }
   return alignment;
+}
+
+// Return a pointer to a complete copy of the sequence
+sequence_t *copySequence(sequence_t *src) {
+  sequence_t *copy = newSequence(NULL);
+  copy->label = malloc(LABEL_SIZE);
+  memcpy(copy->charsets, src->charsets, getSequenceSize() * sizeof(charset_t));
+  return copy;
 }
 
 // Allocate space for character weights and assign all as 1
@@ -112,6 +121,9 @@ void destroyAlignment(alignment_t alignment) {
 
 // Destroy sequence
 void destroySequence(sequence_t *sequence) {
+  if (!sequence)
+    return;
+
   free(sequence->charsets);
   free(sequence);
 }

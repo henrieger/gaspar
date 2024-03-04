@@ -66,23 +66,16 @@ int main(int argc, char **argv) {
   addBrother(beta, "Epsilon");
   node_t *epsilon = searchNodeByName(tree, "Epsilon");
 
-  alpha->info->sequence   = alignment+0;
-  beta->info->sequence    = alignment+1;
-  gamma->info->sequence   = alignment+2;
-  delta->info->sequence   = alignment+3;
-  epsilon->info->sequence = alignment+4;
-
-  alpha->out->info->sequence = newSequence(NULL);
-  beta->out->info->sequence = newSequence(NULL);
-  gamma->out->info->sequence = newSequence(NULL);
+  alpha->info->sequence   = copySequence(alignment+0);
+  beta->info->sequence    = copySequence(alignment+1);
+  gamma->info->sequence   = copySequence(alignment+2);
+  delta->info->sequence   = copySequence(alignment+3);
+  epsilon->info->sequence = copySequence(alignment+4);
 
   printf("Parsimony of tree ");
   printTree(tree);
   printf(" : %d\n", fitch_parsimony(tree));
 
-  destroySequence(alpha->out->info->sequence);
-  destroySequence(beta->out->info->sequence);
-  destroySequence(gamma->out->info->sequence);
   destroyTree(tree);
   destroyAlignment(alignment);
   destroyCharacterWeights();

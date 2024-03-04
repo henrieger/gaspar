@@ -1,4 +1,5 @@
 #include <tree/tree.h>
+#include <tree/tree-traversal.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {

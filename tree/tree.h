@@ -34,8 +34,8 @@ uint8_t isLeaf(node_t *node);
 // Adds a child to current node.
 void addChild(node_t *node, const char *name);
 
-// Adds a brother to current node, splitting its branch.
-void addBrother(node_t *node, const char *name);
+// Adds a brother to current node, splitting its branch. Returns a pointer to new brother.
+node_t *addBrother(node_t *node, const char *name);
 
 // Returns a copy of the tree.
 tree_t *copyTree(tree_t *tree);

@@ -2,9 +2,9 @@ CC = gcc
 LDLIBS = -ll -ly -lc
 OBJECTS = *.o */*.o
 EXECUTABLE = gaspar
-SUBDIRS = eval/ sequence-alignment/ tree/
+SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/
 TESTS = test-cases/
-CFLAGS = -Wall -I=${CURDIR}
+CFLAGS = -Wall -I${CURDIR}
 TARGETS = 
 
 all: $(SUBDIRS) gaspar

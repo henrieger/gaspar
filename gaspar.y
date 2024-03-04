@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sequence-alignment/sequence-alignment.h"
+#include "answer/answer.h"
+#include "search/branch-and-bound.h"
+#include "eval/parsimony.h"
 
 %}
 
@@ -101,6 +104,9 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
+
+  answer_t *answer = branchAndBoundSearch(alignment, fitch_parsimony);
+  printAnswer(answer);
 
   if (alignment)
     destroyAlignment(alignment);

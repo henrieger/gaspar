@@ -40,6 +40,9 @@ void setCharacterWeight(int i, float w);
 // Allocate space for a sequence
 sequence_t *newSequence(char *label);
 
+// Return a pointer to a complete copy of the sequence
+sequence_t *copySequence(sequence_t *src);
+
 // Allocate space for an aligment
 alignment_t newAlignment();
 
