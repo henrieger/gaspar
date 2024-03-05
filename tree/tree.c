@@ -39,7 +39,7 @@ int ringSize(node_t *node) {
 }
 
 // Create a new node and its predecessor. Returns pointer to predecessor.
-node_t *nodeWithPredecessor(const char *name) {
+node_t *nodeWithPredecessor(char *name) {
   node_t *tip = newNode(newInfo());
   node_t *ancestor = newNode(NULL);
 
@@ -51,7 +51,7 @@ node_t *nodeWithPredecessor(const char *name) {
 }
 
 // Create the smallest possible unrooted tree with three leaves.
-tree_t *smallUnrootedTree(const char *a, const char *b, const char *c) {
+tree_t *smallUnrootedTree(char *a, char *b, char *c) {
   node_t *ancestorA = nodeWithPredecessor(a);
   node_t *ancestorB = nodeWithPredecessor(b);
   node_t *ancestorC = nodeWithPredecessor(c);
@@ -72,7 +72,7 @@ tree_t *smallUnrootedTree(const char *a, const char *b, const char *c) {
 inline uint8_t isLeaf(node_t *node) { return node->next == NULL; }
 
 // Adds a child to current node.
-void addChild(node_t *node, const char *name) {
+void addChild(node_t *node, char *name) {
   node_t *oldNext = node->next;
   node->next = nodeWithPredecessor(name);
   node->next->info = node->info;
@@ -101,7 +101,7 @@ node_t *addAnonymousBrother(node_t *node) {
 
 // Adds a brother to current node, splitting its branch. Returns a pointer to
 // new brother.
-node_t *addBrother(node_t *node, const char *name) {
+node_t *addBrother(node_t *node, char *name) {
   // Creates two disconnected new nodes between current node and its neighbor
   node_t *oldOut = node->out;
   node->out = newNode(NULL);
@@ -135,7 +135,8 @@ info_t *copyNodeInfo(node_t *node) {
 
   info_t *newNodeInfo = newInfo();
   memcpy(newNodeInfo, node->info, sizeof(info_t));
-  // memcpy((void *) newNodeInfo->name, (void *) node->info->name, 128);
+  // memcpy(newNodeInfo->name, node->info->name, LABEL_SIZE);
+  newNodeInfo->sequence = copySequence(node->info->sequence);
 
   return newNodeInfo;
 }
@@ -349,6 +350,7 @@ tree_t *unrootTree(node_t *root) {
   // Remove root and the corresponding branches
   node_t *left = root->next->out;
   node_t *right = root->next->next->out;
+  destroyInfo(root->info);
   destroyNode(left->out);
   destroyNode(right->out);
   destroyNode(root);

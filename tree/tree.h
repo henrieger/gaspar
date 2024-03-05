@@ -5,7 +5,7 @@
 #include <sequence-alignment/sequence-alignment.h>
 
 typedef struct info {
-  const char *name;
+  char *name;
   sequence_t *sequence;
   int parsimonyScore;
   uint8_t validSequence;
@@ -26,16 +26,16 @@ node_t *newNode(info_t *info);
 info_t *newInfo();
 
 // Create the smallest possible unrooted tree with three leaves.
-tree_t *smallUnrootedTree(const char *a, const char *b, const char *c);
+tree_t *smallUnrootedTree(char *a, char *b, char *c);
 
 // Return TRUE if node is leaf, FALSE otherwise.
 uint8_t isLeaf(node_t *node);
 
 // Adds a child to current node.
-void addChild(node_t *node, const char *name);
+void addChild(node_t *node, char *name);
 
 // Adds a brother to current node, splitting its branch. Returns a pointer to new brother.
-node_t *addBrother(node_t *node, const char *name);
+node_t *addBrother(node_t *node, char *name);
 
 // Returns a copy of the tree.
 tree_t *copyTree(tree_t *tree);

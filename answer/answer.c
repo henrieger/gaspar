@@ -9,7 +9,7 @@ answer_t *initializeAnswer(int numTrees) {
   answer->numTrees = numTrees;
   answer->trees = calloc(numTrees, sizeof(tree_t *));
   answer->currTree = 0;
-  answer->score = 0xffffffff;
+  answer->score = -1;
   return answer;
 }
 
@@ -24,6 +24,7 @@ void insertAnswer(answer_t *answer, tree_t *tree) {
 
 // Delete all trees in answer and sets new score of answer.
 void resetAndUpdateScore(answer_t *answer, int newScore) {
+  answer->score = newScore;
   answer->currTree = 0;
   for (int i = 0; i < answer->numTrees; i++) {
     destroyTree(answer->trees[i]);
@@ -40,7 +41,9 @@ unsigned int getScore(answer_t *answer) {
 void printAnswer(answer_t *answer) {
   printf("-- ANSWER --\nMin score: %u\nTrees:\n", getScore(answer));
   for (int i = 0; answer->trees[i] && i < answer->numTrees; i++) {
+    printf("\t");
     printTree(answer->trees[i]);
+    printf("\n");
   }
 }
 
