@@ -16,7 +16,7 @@ node_t *newNode(info_t *info) {
 // Create info of node.
 info_t *newInfo() {
   info_t *info = malloc(sizeof(info_t));
-  info->sequence = newSequence(NULL);
+  info->sequence = NULL;
   info->name = NULL;
   info->validSequence = 0;
   info->parsimonyScore = 0;
@@ -115,7 +115,7 @@ node_t *addBrother(node_t *node, char *name) {
 
   // Connects new ring to same info
   info_t *newNodeInfo = newInfo();
-  newNodeInfo->sequence = newSequence(NULL);
+  newNodeInfo->sequence = NULL;
   brotherPredecessor->info = newNodeInfo;
   brotherPredecessor->next->info = newNodeInfo;
   oldOut->out->next->info = newNodeInfo;
@@ -135,8 +135,6 @@ info_t *copyNodeInfo(node_t *node) {
 
   info_t *newNodeInfo = newInfo();
   memcpy(newNodeInfo, node->info, sizeof(info_t));
-  // memcpy(newNodeInfo->name, node->info->name, LABEL_SIZE);
-  newNodeInfo->sequence = copySequence(node->info->sequence);
 
   return newNodeInfo;
 }
@@ -202,8 +200,6 @@ void destroyInfo(info_t *info) {
   if (!info)
     return;
 
-  destroySequence(info->sequence);
-  info->sequence = NULL;
   free(info);
 }
 

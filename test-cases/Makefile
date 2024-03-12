@@ -12,5 +12,8 @@ test-parsimony: test-parsimony.c ../sequence-alignment/sequence-alignment.o ../t
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
+profile: CFLAGS += -pg
+profile: all
+
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLES)

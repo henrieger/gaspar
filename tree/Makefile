@@ -10,5 +10,8 @@ tree-traversal.o: tree-traversal.c tree-traversal.h
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
+profile: CFLAGS += -pg
+profile: all
+
 clean:
 	rm -f $(OBJECTS)

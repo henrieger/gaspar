@@ -49,6 +49,7 @@ void printAnswer(answer_t *answer) {
 
 // Destroy the answer
 void destroyAnswer(answer_t *answer) {
+  resetAndUpdateScore(answer, 0);
   free(answer->trees);
   free(answer);
 }

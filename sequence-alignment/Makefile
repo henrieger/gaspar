@@ -9,5 +9,8 @@ sequence-alignment.o: sequence-alignment.c sequence-alignment.h
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
+profile: CFLAGS += -pg
+profile: all
+
 clean:
 	rm -f $(OBJECTS)

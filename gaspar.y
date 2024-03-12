@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
 
   answer_t *answer = branchAndBoundSearch(alignment, fitch_parsimony);
   printAnswer(answer);
+  destroyAnswer(answer);
 
   if (alignment)
     destroyAlignment(alignment);

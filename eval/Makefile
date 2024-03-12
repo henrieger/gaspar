@@ -9,5 +9,8 @@ parsimony.o: parsimony.c parsimony.h
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
+profile: CFLAGS += -pg
+profile: all
+
 clean:
 	rm -f $(OBJECTS)

@@ -37,6 +37,10 @@ debug: CFLAGS += -g -DDEBUG
 debug: TARGETS += debug
 debug: all
 
+profile: CFLAGS += -pg
+profile: TARGETS += profile
+profile: all
+
 clean: TARGETS += clean
 clean: $(TESTS) $(SUBDIRS)
 	rm -f $(OBJECTS) lex.yy.c gaspar.tab.* gaspar.output $(EXECUTABLE)
