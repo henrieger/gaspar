@@ -6,8 +6,8 @@
 #include <stdlib.h>
 
 // Calculate parsimony of subtree, keeping track of origin of call.
-int fitch_parsimony_recursive(tree_t *tree, node_t *from) {
-  // Leaf result is always valid and equal to 0 (no change with a single node)
+int fitch_parsimony_recursive(tree_t *tree) {
+  // Leaf result is always valid and equal to 0 (no change within a single node)
   if (!tree || isLeaf(tree))
     return 0;
 
@@ -15,21 +15,10 @@ int fitch_parsimony_recursive(tree_t *tree, node_t *from) {
   int score = 0;
   uint8_t validScore = 1;
 
-  // If function wasn't called from outside (i.e. call of unrooted tree), also
-  // calculate parsimony of out
-  if (tree->out != from) {
-    score += fitch_parsimony_recursive(tree->out, tree);
-    if (!tree->out->info->validSequence)
-      validScore = 0;
-
-    // Acknowledge validity of new result in child
-    tree->out->info->validSequence = 1;
-  }
-
   // For each child, get its individual parsimony score and check if it was
   // recently rescored
   for (node_t *n = tree->next; n != tree; n = n->next) {
-    score += fitch_parsimony_recursive(n->out, n);
+    score += fitch_parsimony_recursive(n->out);
     if (!n->out->info->validSequence)
       validScore = 0;
 
@@ -44,12 +33,6 @@ int fitch_parsimony_recursive(tree_t *tree, node_t *from) {
     for (int i = 0; i < getSequenceSize(); i++) {
       charset_t unionCharset = CHARSET_EMPTY;
       charset_t intersectionCharset = CHARSET_FULL;
-
-      if (tree->out != from) {
-        tree->out->info->validSequence = 1;
-        unionCharset |= tree->out->info->sequence->charsets[i];
-        intersectionCharset &= tree->out->info->sequence->charsets[i];
-      }
 
       for (node_t *n = tree->next; n != tree; n = n->next) {
         // Calculate union and intersection of states
@@ -76,5 +59,15 @@ int fitch_parsimony_recursive(tree_t *tree, node_t *from) {
 
 // Calculate Wagner parsimony of a tree using Fitch's algorithm (Fitch, 1971).
 int fitch_parsimony(tree_t *tree) {
-  return fitch_parsimony_recursive(tree, NULL);
+  if (!tree->out)
+    return fitch_parsimony_recursive(tree);
+
+  sequence_t *root = tree->info->sequence;
+  sequence_t *out = tree->out->info->sequence;
+
+  int score = fitch_parsimony_recursive(tree) + fitch_parsimony_recursive(tree->out);
+  for (int i = 0; i < getSequenceSize(); i++)
+    score += !(root->charsets[i] & out->charsets[i]) * getCharacterWeight(i);
+
+  return score;
 }
