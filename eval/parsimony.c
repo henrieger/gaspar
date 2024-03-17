@@ -1,7 +1,9 @@
 #include "parsimony.h"
 
+#include <avx2/avx2.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <tree/tree.h>
 
 // Calculate parsimony of subtree, keeping track of origin of call.
@@ -34,30 +36,47 @@ int fitch_parsimony_recursive(tree_t *tree) {
   tree->info->validSequence = 0;
 
   // Create auxiliary sequences for the calculations of the new sequence states
-  for (int i = 0; i < getSequenceSize(); i++) {
-    unionSequence->charsets[i] = CHARSET_EMPTY;
-    intersectionSequence->charsets[i] = CHARSET_FULL;
+  for (int i = 0; i < getPaddedSequenceSize(); i += 32) {
+    avx_t avx_union = _mm256_setzero_si256();
+    avx_t avx_intersection = _mm256_set1_epi8(-1);
+
+    avx_store(unionSequence->charsets, avx_union, i);
+    avx_store(intersectionSequence->charsets, avx_intersection, i);
   }
 
   // Calculate union and intersection for each site in sequence
   for (node_t *n = tree->next; n != tree; n = n->next) {
-    for (int i = 0; i < getPaddedSequenceSize(); i++) {
+    for (int i = 0; i < getPaddedSequenceSize(); i += 32) {
+      avx_t avx_intersection = avx_load(intersectionSequence->charsets, i);
+      avx_t avx_union = avx_load(unionSequence->charsets, i);
+      avx_t avx_sequence = avx_load(n->out->info->sequence->charsets, i);
+
       // Calculate union and intersection of states
-      unionSequence->charsets[i] |= n->out->info->sequence->charsets[i];
-      intersectionSequence->charsets[i] &= n->out->info->sequence->charsets[i];
+      avx_union = avx_or(avx_sequence, avx_union);
+      avx_intersection = avx_and(avx_sequence, avx_intersection);
+
+      avx_store(unionSequence->charsets, avx_union, i);
+      avx_store(intersectionSequence->charsets, avx_intersection, i);
     }
   }
 
-  for (int i = 0; i < getPaddedSequenceSize(); i++) {
-    // Increment the score by the weight for each empty intersection
-    score += !(intersectionSequence->charsets[i]) * getCharacterWeight(i);
+  for (int i = 0; i < getPaddedSequenceSize(); i += 32) {
+    avx_t avx_intersection = avx_load(intersectionSequence->charsets, i);
+    avx_t avx_union = avx_load(unionSequence->charsets, i);
+
+    // Compute a bitmask for sequence operations
+    avx_t mask = avx_setMask(avx_intersection);
 
     // Define new sequence with intersections and unions
-    mask->charsets[i] = ~(!(intersectionSequence->charsets[i]) - 1);
-    tree->info->sequence->charsets[i] =
-        intersectionSequence->charsets[i] |
-        (unionSequence->charsets[i] & mask->charsets[i]);
+    avx_t unionMask = avx_and(avx_union, mask);
+    avx_t sequence = avx_or(unionMask, avx_intersection);
+
+    avx_store(tree->info->sequence->charsets, sequence, i);
   }
+
+  // Increment the score by the weight for each empty intersection
+  for (int i = 0; i < getSequenceSize(); i++)
+    score += !(intersectionSequence->charsets[i]) * getCharacterWeight(i);
 
   tree->info->parsimonyScore = score;
   return tree->info->parsimonyScore;

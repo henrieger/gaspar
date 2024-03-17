@@ -4,7 +4,7 @@ LDLIBS =
 OBJECTS = *.o
 
 all: parsimony.o
-parsimony.o: parsimony.c parsimony.h
+parsimony.o: parsimony.c parsimony.h ../avx2/avx2.h
 
 debug: CFLAGS += -g -DDEBUG
 debug: all
