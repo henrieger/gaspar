@@ -1,9 +1,8 @@
 #include "parsimony.h"
 
 #include <sequence-alignment/sequence-alignment.h>
-#include <tree/tree.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include <tree/tree.h>
 
 // Calculate parsimony of subtree, keeping track of origin of call.
 int fitch_parsimony_recursive(tree_t *tree) {
@@ -11,7 +10,7 @@ int fitch_parsimony_recursive(tree_t *tree) {
   if (!tree || isLeaf(tree))
     return 0;
 
-  // Iterate through all nodes and check if any result is invalid
+  // Iterate through all children and check if any result is invalid
   int score = 0;
   uint8_t validScore = 1;
 
@@ -19,6 +18,7 @@ int fitch_parsimony_recursive(tree_t *tree) {
   // recently rescored
   for (node_t *n = tree->next; n != tree; n = n->next) {
     score += fitch_parsimony_recursive(n->out);
+
     if (!n->out->info->validSequence)
       validScore = 0;
 
@@ -26,34 +26,40 @@ int fitch_parsimony_recursive(tree_t *tree) {
     n->out->info->validSequence = 1;
   }
 
-  // If result of some child is invalid, invalidate self and recalculate score
-  if (!validScore) {
-    tree->info->validSequence = 0;
+  // If no results are invalid, return the currently calculated score
+  if (validScore)
+    return tree->info->parsimonyScore;
 
-    for (int i = 0; i < getSequenceSize(); i++) {
-      charset_t unionCharset = CHARSET_EMPTY;
-      charset_t intersectionCharset = CHARSET_FULL;
+  // If some child is invalid, invalidate self and proceed
+  tree->info->validSequence = 0;
 
-      for (node_t *n = tree->next; n != tree; n = n->next) {
-        // Calculate union and intersection of states
-        unionCharset |= n->out->info->sequence->charsets[i];
-        intersectionCharset &= n->out->info->sequence->charsets[i];
-      }
-
-      // If there is a non-empty intersection, set that character as it.
-      // Else, set it as the union and increment the score of the node by the
-      // character weight
-      if (intersectionCharset) {
-        tree->info->sequence->charsets[i] = intersectionCharset;
-      } else {
-        tree->info->sequence->charsets[i] = unionCharset;
-        score += getCharacterWeight(i);
-      }
-    }
-
-    tree->info->parsimonyScore = score;
+  // Create auxiliary sequences for the calculations of the new sequence states
+  for (int i = 0; i < getSequenceSize(); i++) {
+    unionSequence->charsets[i] = CHARSET_EMPTY;
+    intersectionSequence->charsets[i] = CHARSET_FULL;
   }
 
+  // Calculate union and intersection for each site in sequence
+  for (node_t *n = tree->next; n != tree; n = n->next) {
+    for (int i = 0; i < getPaddedSequenceSize(); i++) {
+      // Calculate union and intersection of states
+      unionSequence->charsets[i] |= n->out->info->sequence->charsets[i];
+      intersectionSequence->charsets[i] &= n->out->info->sequence->charsets[i];
+    }
+  }
+
+  for (int i = 0; i < getPaddedSequenceSize(); i++) {
+    // Increment the score by the weight for each empty intersection
+    score += !(intersectionSequence->charsets[i]) * getCharacterWeight(i);
+
+    // Define new sequence with intersections and unions
+    mask->charsets[i] = ~(!(intersectionSequence->charsets[i]) - 1);
+    tree->info->sequence->charsets[i] =
+        intersectionSequence->charsets[i] |
+        (unionSequence->charsets[i] & mask->charsets[i]);
+  }
+
+  tree->info->parsimonyScore = score;
   return tree->info->parsimonyScore;
 }
 
@@ -65,7 +71,8 @@ int fitch_parsimony(tree_t *tree) {
   sequence_t *root = tree->info->sequence;
   sequence_t *out = tree->out->info->sequence;
 
-  int score = fitch_parsimony_recursive(tree) + fitch_parsimony_recursive(tree->out);
+  int score =
+      fitch_parsimony_recursive(tree) + fitch_parsimony_recursive(tree->out);
   for (int i = 0; i < getSequenceSize(); i++)
     score += !(root->charsets[i] & out->charsets[i]) * getCharacterWeight(i);
 

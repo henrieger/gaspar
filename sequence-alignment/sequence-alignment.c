@@ -6,16 +6,7 @@
 
 int sequenceSize;  // Global amount of characters in a sequence
 int alignmentSize; // Global amount of taxa in the alignment
-float *weights;      // Array of weights of characters
-
-// Get the global amount of characters in a sequence
-inline int getSequenceSize() { return sequenceSize; }
-
-// Get the global amount of taxa in the alignment
-inline int getAlignmentSize() { return alignmentSize; }
-
-// Get weight of character c
-inline float getCharacterWeight(int i) { return weights[i]; }
+float *weights;    // Array of weights of characters
 
 // Set the value of the global amount of characters in a sequence
 inline void setSequenceSize(int size) { sequenceSize = size; }
@@ -28,7 +19,8 @@ inline void setCharacterWeight(int i, float w) { weights[i] = w; }
 
 // Allocate space for a sequence
 sequence_t *newSequence(char *label) {
-  charset_t *charsets = malloc(getSequenceSize() * sizeof(charset_t));
+  charset_t *charsets = (charset_t *)aligned_alloc(32, getPaddedSequenceSize() *
+                                                           sizeof(charset_t));
   sequence_t *sequence = malloc(sizeof(sequence_t));
   sequence->label = label;
   sequence->charsets = charsets;
@@ -38,13 +30,16 @@ sequence_t *newSequence(char *label) {
 
 // Allocate space for an aligment
 alignment_t newAlignment() {
-  alignment_t alignment = malloc(getAlignmentSize() * sizeof(sequence_t));   
+  alignment_t alignment = malloc(getAlignmentSize() * sizeof(sequence_t));
   alignment->label = malloc(getAlignmentSize() * LABEL_SIZE);
-  alignment->charsets = malloc(getAlignmentSize() * getSequenceSize() * sizeof(charset_t));
+  alignment->charsets = (charset_t *)aligned_alloc(
+      32, getAlignmentSize() * getPaddedSequenceSize() * sizeof(charset_t));
+
   for (int i = 1; i < getAlignmentSize(); i++) {
-    alignment[i].label = alignment->label+(i*LABEL_SIZE);
-    alignment[i].charsets = alignment->charsets+(i*getSequenceSize());
+    alignment[i].label = alignment->label + (i * LABEL_SIZE);
+    alignment[i].charsets = alignment->charsets + (i * getPaddedSequenceSize());
   }
+
   return alignment;
 }
 
@@ -52,15 +47,18 @@ alignment_t newAlignment() {
 sequence_t *copySequence(sequence_t *src) {
   sequence_t *copy = newSequence(NULL);
   copy->label = malloc(LABEL_SIZE);
-  memcpy(copy->charsets, src->charsets, getSequenceSize() * sizeof(charset_t));
+  memcpy(copy->charsets, src->charsets,
+         getPaddedSequenceSize() * sizeof(charset_t));
   return copy;
 }
 
 // Allocate space for character weights and assign all as 1
 void createCharacterWeights() {
-  weights = malloc(getSequenceSize() * sizeof(float));
+  weights = malloc(getPaddedSequenceSize() * sizeof(float));
   for (int i = 0; i < getSequenceSize(); i++)
     weights[i] = 1;
+  for (int i = getSequenceSize(); i < getPaddedSequenceSize(); i++)
+    weights[i] = 0;
 }
 
 // Print a single character
@@ -69,18 +67,19 @@ void printCharacter(charset_t character) {
     printf("-");
     return;
   }
-  
+
   if (character == 0b11111111) {
     printf("?");
     return;
   }
 
-  int multipleCharacters = character & (character - 1); // Check if not power of 2 (aka multistate)
+  int multipleCharacters =
+      character & (character - 1); // Check if not power of 2 (aka multistate)
 
   if (multipleCharacters)
     printf("[");
-  
-  for (int i = 0; i < 8*sizeof(charset_t); i++) {
+
+  for (int i = 0; i < 8 * sizeof(charset_t); i++) {
     int mask = 1 << i;
     if (mask & character)
       printf("%d", i);
@@ -100,9 +99,10 @@ void printSequence(sequence_t *sequence) {
 
 // Print information about an alignment
 void printAlignment(alignment_t alignment) {
-  printf("Taxa: %d\nCharacters: %d\n\n", getAlignmentSize(), getSequenceSize());
+  printf("Taxa: %d\nCharacters: %d\nPadded characters: %d\n\n",
+         getAlignmentSize(), getSequenceSize(), getPaddedSequenceSize());
   for (int i = 0; i < getAlignmentSize(); i++)
-    printSequence(alignment+i);
+    printSequence(alignment + i);
 }
 
 // Print character weights

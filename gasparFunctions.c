@@ -1,3 +1,4 @@
+#include "eval/parsimony.h"
 #include "gaspar.h"
 #include "sequence-alignment/sequence-alignment.h"
 
@@ -8,6 +9,8 @@ char token[TOKEN_SIZE];
 alignment_t alignment;
 int taxon = 0;
 int character = 0;
+
+sequence_t *unionSequence, *intersectionSequence, *mask;
 
 // Prints errors and exits
 void yyerror(const char *s) {
@@ -63,11 +66,28 @@ void addCharset() {
 // Check if number of parsed taxa corresponds with assigned taxa
 void checkNumberOfTaxa() {
   if (taxon != getAlignmentSize())
-    printError("Wrong number of taxa in file: expected %d but alignment has %d\n", getAlignmentSize(), taxon);
+    printError(
+        "Wrong number of taxa in file: expected %d but alignment has %d\n",
+        getAlignmentSize(), taxon);
 }
 
-// Check if number of parsed characters in taxon corresponds with assigned amount
+// Check if number of parsed characters in taxon corresponds with assigned
+// amount
 void checkNumberOfCharacters() {
   if (character != getSequenceSize())
-    printError("Wrong number of characters in taxon %d: expected %d but sequence has %d\n", taxon, getSequenceSize(), character);
+    printError("Wrong number of characters in taxon %d: expected %d but "
+               "sequence has %d\n",
+               taxon, getSequenceSize(), character);
+}
+
+void createAuxSequences() {
+  unionSequence = newSequence(NULL);
+  intersectionSequence = newSequence(NULL);
+  mask = newSequence(NULL);
+}
+
+void destroyAuxSequences() {
+  destroySequence(unionSequence);
+  destroySequence(intersectionSequence);
+  destroySequence(mask);
 }

@@ -40,4 +40,6 @@ void checkNumberOfTaxa();
 // Check if number of parsed characters in taxon corresponds with assigned amount
 void checkNumberOfCharacters();
 
+void createAuxSequences();
+void destroyAuxSequences();
 #endif // !__GASPAR_H__

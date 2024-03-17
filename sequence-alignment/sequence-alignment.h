@@ -20,13 +20,14 @@ extern int alignmentSize; // Global amount of taxa in the alignment
 extern float *weights;    // Array of weights of characters
 
 // Get the global amount of characters in a sequence
-int getSequenceSize();
+#define getSequenceSize() (sequenceSize)
+#define getPaddedSequenceSize() ((sequenceSize+31)&~31)
 
 // Get the global amount of taxa in the alignment
-int getAlignmentSize();
+#define getAlignmentSize() (alignmentSize)
 
 // Get weight of character c
-float getCharacterWeight(int i);
+#define getCharacterWeight(index) (weights[index])
 
 // Set the value of the global amount of characters in a sequence
 void setSequenceSize(int size);

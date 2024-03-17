@@ -105,9 +105,13 @@ int main(int argc, char **argv) {
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
 
+  createAuxSequences();
+
   answer_t *answer = branchAndBoundSearch(alignment, fitch_parsimony);
   printAnswer(answer);
+  
   destroyAnswer(answer);
+  destroyAuxSequences();
 
   if (alignment)
     destroyAlignment(alignment);
