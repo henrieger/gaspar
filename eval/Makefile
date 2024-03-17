@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -I..
+CFLAGS = -g -Wall -I.. -O3 -mavx2
 LDLIBS = 
 OBJECTS = *.o
 

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -I..
+CFLAGS = -g -Wall -I.. -O3
 LDLIBS = 
 OBJECTS = tree.o tree-traversal.o
 
