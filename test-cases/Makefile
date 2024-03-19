@@ -1,11 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -I..
 OBJECTS = *.o
-EXECUTABLES = test-trees test-sequence-alignment test-parsimony
+EXECUTABLES = test-trees test-sequence-alignment test-parsimony test-operators
 
 all: $(EXECUTABLES)
 
 test-trees: test-trees.c ../tree/tree.o ../tree/tree-traversal.o ../sequence-alignment/sequence-alignment.o
+test-operators: test-operators.c ../tree/tree.o ../sequence-alignment/sequence-alignment.o ../operators/*.o
 test-sequence-alignment: test-sequence-alignment.c ../sequence-alignment/sequence-alignment.o
 test-parsimony: test-parsimony.c ../sequence-alignment/sequence-alignment.o ../tree/tree.o ../eval/parsimony.o
 
