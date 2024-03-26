@@ -32,6 +32,17 @@ void resetAndUpdateScore(answer_t *answer, int newScore) {
   }
 }
 
+void updateAnswer(answer_t *answer, tree_t *tree, int score) {
+  if (score > getScore(answer))
+    return;
+#ifdef DEBUG
+  printf("New score : %d - Curr score: %d\n", score, getScore(answer));
+#endif
+  if (score < getScore(answer))
+    resetAndUpdateScore(answer, score);
+  insertAnswer(answer, tree);
+}
+
 // Returns score of answer
 unsigned int getScore(answer_t *answer) {
   return answer->score;

@@ -4,4 +4,4 @@ gaspar.tab.*
 gaspar.output
 lex.yy.c
 .clangd
-gmon.out
+gmon.*

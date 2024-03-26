@@ -13,11 +13,8 @@ typedef struct answer {
 // Initialize answer structure
 answer_t *initializeAnswer(int numTrees);
 
-// Insert a new tree in the answer if there is available space.
-void insertAnswer(answer_t *answer, tree_t *tree);
-
-// Delete all trees in answer and sets new score of answer.
-void resetAndUpdateScore(answer_t *answer, int newScore);
+// Update the answer based on tree and score provided
+void updateAnswer(answer_t *answer, tree_t *tree, int score);
 
 // Returns score of answer
 unsigned int getScore(answer_t *answer);

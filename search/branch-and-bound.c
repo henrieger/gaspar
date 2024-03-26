@@ -63,13 +63,7 @@ void branchAndBoundRecursive(node_t *node, tree_t *root, alignment_t alignment,
 
   // If already in last taxon, update answer
   if (sequenceIndex == getAlignmentSize()) {
-    if (score < getScore(answer)) {
-#ifdef DEBUG
-      printf("New score : %d - Curr score: %d\n", score, getScore(answer));
-#endif
-      resetAndUpdateScore(answer, score);
-    }
-    insertAnswer(answer, root);
+    updateAnswer(answer, root, score);
     return;
   }
 
