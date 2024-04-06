@@ -25,11 +25,14 @@ node_t *newNode(info_t *info);
 // Create info of node.
 info_t *newInfo();
 
+// Create a new node and its predecessor. Returns pointer to predecessor.
+node_t *nodeWithPredecessor(char *name);
+
 // Create the smallest possible unrooted tree with three leaves.
 tree_t *smallUnrootedTree(char *a, char *b, char *c);
 
 // Return TRUE if node is leaf, FALSE otherwise.
-uint8_t isLeaf(node_t *node);
+uint8_t isLeaf(const node_t *node);
 
 // Adds a child to current node.
 void addChild(node_t *node, char *name);
@@ -38,7 +41,7 @@ void addChild(node_t *node, char *name);
 node_t *addBrother(node_t *node, char *name);
 
 // Returns a copy of the tree.
-tree_t *copyTree(tree_t *tree);
+tree_t *copyTree(const tree_t *tree);
 
 // Prunes a node from tree and returns the new tree as rooted.
 tree_t *prune(node_t *node);

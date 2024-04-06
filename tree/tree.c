@@ -69,7 +69,7 @@ tree_t *smallUnrootedTree(char *a, char *b, char *c) {
 }
 
 // Return TRUE if node is leaf, FALSE otherwise.
-inline uint8_t isLeaf(node_t *node) { return node->next == NULL; }
+inline uint8_t isLeaf(const node_t *node) { return node->next == NULL; }
 
 // Adds a child to current node.
 void addChild(node_t *node, char *name) {
@@ -129,7 +129,7 @@ node_t *addBrother(node_t *node, char *name) {
 }
 
 // Copy a node info
-info_t *copyNodeInfo(node_t *node) {
+info_t *copyNodeInfo(const node_t *node) {
   if (!node || !node->info)
     return NULL;
 
@@ -139,36 +139,48 @@ info_t *copyNodeInfo(node_t *node) {
   return newNodeInfo;
 }
 
-// Copy a node recursevely, keeping track of origin of call.
-tree_t *copyRecursive(tree_t *tree, node_t *from) {
+// Copy a node recursively, keeping track of origin of call.
+tree_t *copyRecursive(const tree_t *tree, const tree_t *root) {
   if (!tree)
     return NULL;
 
-  tree_t *newTree = newNode(NULL);
-  newTree->info = copyNodeInfo(tree);
+  tree_t *newTree = newNode(copyNodeInfo(tree));
 
-  if (tree->out && from != tree->out) {
-    newTree->out = copyRecursive(tree->out, tree);
+  // If on root of recursion, also copy the out node
+  if (tree->out && tree == root) {
+    newTree->out = copyRecursive(tree->out, root);
     newTree->out->out = newTree;
   }
 
+  // If node is leaf, no need to iterate through next nodes
+  if(isLeaf(tree)) {
+    return newTree;
+  }
+
+  // Iterate and copy recursively all neighbors
   node_t *nodeIter = newTree;
-  for (node_t *n = tree->next; n && n != tree; n = n->next) {
+  for (node_t *n = tree->next; n != tree; n = n->next) {
+    // Create the next node in the ring
     node_t *newNodeInRing = newNode(newTree->info);
-    node_t *newNodeOut = copyRecursive(n->out, n);
+    nodeIter->next = newNodeInRing;
+
+    // Recursively copy tree in the out node
+    node_t *newNodeOut = copyRecursive(n->out, root);
     newNodeInRing->out = newNodeOut;
     newNodeOut->out = newNodeInRing;
-    nodeIter->next = newNodeInRing;
+
+    // Progress the loop
     nodeIter = newNodeInRing;
   }
-  if (nodeIter != newTree)
-    nodeIter->next = newTree;
+
+  // Close the ring created in the loop
+  nodeIter->next = newTree;
 
   return newTree;
 }
 
 // Returns a copy of the tree.
-tree_t *copyTree(tree_t *tree) { return copyRecursive(tree, NULL); }
+tree_t *copyTree(const tree_t *tree) { return copyRecursive(tree, tree); }
 
 // Prunes a node from tree and returns the new tree as unrooted.
 tree_t *prune(node_t *node) {
