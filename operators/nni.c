@@ -16,7 +16,8 @@ void join(node_t *n, node_t *p) {
 }
 
 // Create a Nearest Neighbor Interchange operation in the out edge connected to
-// node Select the new joint by integer indexes
+// node. Select the new joint by integer index (2 possible). Assumes unrooted
+// binary tree. Leaves not accepted as input.
 void nni(node_t *n, int joint) {
   tree_t *subtree1 = n;
   tree_t *subtree2 = n->out;
@@ -46,4 +47,7 @@ void nni(node_t *n, int joint) {
     join(u, t->out->next->next);
     join(s, v->out->next->next);
   }
+
+  subtree1->info->validSequence = 0;
+  subtree2->info->validSequence = 0;
 }
