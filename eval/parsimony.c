@@ -13,22 +13,22 @@ int fitch_parsimony_recursive(tree_t *tree) {
 
   // Iterate through all nodes and check if any result is invalid
   int score = 0;
-  uint8_t validScore = 1;
+  // uint8_t validScore = 1;
 
   // For each child, get its individual parsimony score and check if it was
   // recently rescored
   for (node_t *n = tree->next; n != tree; n = n->next) {
     score += fitch_parsimony_recursive(n->out);
-    if (!n->out->info->validSequence)
-      validScore = 0;
+    // if (!n->out->info->validSequence)
+      // validScore = 0;
 
     // Acknowledge validity of new result in child
-    n->out->info->validSequence = 1;
+    // n->out->info->validSequence = 1;
   }
 
   // If result of some child is invalid, invalidate self and recalculate score
-  if (!validScore) {
-    tree->info->validSequence = 0;
+  // if (!validScore) {
+    // tree->info->validSequence = 0;
 
     for (int i = 0; i < getSequenceSize(); i++) {
       charset_t unionCharset = CHARSET_EMPTY;
@@ -52,7 +52,7 @@ int fitch_parsimony_recursive(tree_t *tree) {
     }
 
     tree->info->parsimonyScore = score;
-  }
+  // }
 
   return tree->info->parsimonyScore;
 }
