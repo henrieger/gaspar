@@ -3,7 +3,6 @@
 #include "tree.h"
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdlib.h>
-#include <time.h>
 
 // Linked list auxiliary struct
 typedef struct list {
@@ -82,13 +81,10 @@ tree_t *randomUnrootedBinaryTree(alignment_t alignment,
     appendToList(&nodeList, node);
   }
 
-  // Seed for RNG
-  srand(time(NULL));
-
   while (numSpecies > 3) {
     // Set common info struct for all new generated nodes
     info_t *commonInfo = newInfo();
-    commonInfo->sequence = auxAlignment + auxAlignmentIndex;
+    commonInfo->sequence = &(auxAlignment[auxAlignmentIndex]);
     auxAlignmentIndex++;
 
     // Sample first random node
@@ -131,11 +127,48 @@ tree_t *randomUnrootedBinaryTree(alignment_t alignment,
 
   // Set common info struct for all new generated nodes
   info_t *commonInfo = newInfo();
-  commonInfo->sequence = auxAlignment + auxAlignmentIndex;
+  commonInfo->sequence = &(auxAlignment[auxAlignmentIndex]);
 
   node1->info = commonInfo;
   node2->info = commonInfo;
   node3->info = commonInfo;
 
   return node1;
+}
+
+// Search recursively for random node
+node_t *randomNodeRecursive(node_t *node, int *count, int chosen) {
+  if (isLeaf(node))
+    return NULL;
+
+  if (*count == chosen)
+    return node;
+
+  (*count)++;
+
+  for (node_t *n = node->next; n != node; n = n->next) {
+    node_t *answer = randomNodeRecursive(n->out, count, chosen);
+    if (answer)
+      return answer;
+  }
+
+  return NULL;
+}
+
+// Return a random node on the tree. Assumes binary tree
+node_t *randomNode(tree_t *tree, int numLeaves) {
+  // Choose random node index
+  int chosen = rand() % (numLeaves - 2);
+
+  // Search in main subtree
+  int count = 0;
+  node_t *answer = randomNodeRecursive(tree, &count, chosen);
+  if (answer)
+    return answer;
+
+  // Search in other subtree
+  if (tree->out)
+    return randomNodeRecursive(tree->out, &count, chosen);
+
+  return NULL;
 }

@@ -1,6 +1,9 @@
 #include "nni.h"
 
+#include <sequence-alignment/sequence-alignment.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <tree/random.h>
 #include <tree/tree.h>
 
 // Set out pointers of and from n as NULL
@@ -32,12 +35,12 @@ void nni(node_t *n, int joint) {
   tree_t *u = subtree2->next->out;
   tree_t *v = subtree2->next->next->out;
 
-  // Separate T from main tree
+  // Separate S from main tree
   separate(s);
 
   // Based on value of joint (0 or 1) select a new joint
   if (joint == 0) {
-    // Put V as brother to T and U as brother to S
+    // Put V as brother to T and S as brother to U
     separate(v);
     join(v, t->out->next->next);
     join(s, u->out->next);
@@ -47,7 +50,16 @@ void nni(node_t *n, int joint) {
     join(u, t->out->next->next);
     join(s, v->out->next->next);
   }
+}
 
-  subtree1->info->validSequence = 0;
-  subtree2->info->validSequence = 0;
+// Do a random NNI operation on the tree
+void randomNNI(tree_t *tree) {
+  printf("Applying random NNI to: ");
+  printTree(tree);
+  printf("\n");
+
+  node_t *node = randomNode(tree, getAlignmentSize());
+  int joint = rand() % 2;
+
+  nni(node, joint);
 }

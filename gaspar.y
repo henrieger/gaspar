@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "sequence-alignment/sequence-alignment.h"
 #include "answer/answer.h"
 #include "search/branch-and-bound.h"
+#include "search/genetic-algorithm.h"
+#include "operators/nni.h"
 #include "eval/parsimony.h"
 
 %}
@@ -71,6 +74,9 @@ commands:
 %%
 
 int main(int argc, char **argv) {
+  // Seed for RNG
+  srand(time(NULL));
+
   FILE *fp;
   extern FILE *yyin;
 
@@ -105,7 +111,8 @@ int main(int argc, char **argv) {
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
 
-  answer_t *answer = branchAndBoundSearch(alignment, fitch_parsimony);
+  // answer_t *answer = branchAndBoundSearch(alignment, fitch_parsimony);
+  answer_t *answer = geneticAlgorithmSearch(alignment, 8, 100, randomNNI, fitch_parsimony);
   printAnswer(answer);
   destroyAnswer(answer);
 

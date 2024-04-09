@@ -8,4 +8,7 @@
 // binary tree. Leaves not accepted as input.
 void nni(node_t *n, int joint);
 
+// Do a random NNI operation on the tree
+void randomNNI(tree_t *tree);
+
 #endif // !__NNI_H__
