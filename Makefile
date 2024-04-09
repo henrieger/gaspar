@@ -1,5 +1,5 @@
 CC = gcc
-LDLIBS = -ll -ly -lc
+LDLIBS = -ll -ly -lc -lm
 OBJECTS = *.o */*.o
 EXECUTABLE = gaspar
 SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/
@@ -33,6 +33,9 @@ $(TESTS):
 	$(MAKE) -C $@ $(TARGETS)
 
 # -- AUXILIARY RULES --
+optimize: TARGETS += optimize
+optimize: all
+
 debug: CFLAGS += -g -DDEBUG
 debug: TARGETS += debug
 debug: all

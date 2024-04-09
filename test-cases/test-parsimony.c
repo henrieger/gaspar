@@ -11,6 +11,7 @@ int main(int argc, char **argv) {
   createCharacterWeights();
   
   alignment_t alignment = newAlignment();
+  alignment_t auxAlignment = newAlignment();
 
   strncpy(alignment[0].label, "Alpha", LABEL_SIZE);
   alignment[0].charsets[0] = 0b00000010;
@@ -53,6 +54,8 @@ int main(int argc, char **argv) {
   alignment[4].charsets[5] = 0b00000001;
 
   tree_t *tree = smallUnrootedTree("Alpha", "Beta", "Gamma");
+  tree->info->sequence = &(auxAlignment[0]);
+  
   node_t *alpha = searchNodeByName(tree, "Alpha");
   node_t *beta  = searchNodeByName(tree, "Beta");
   node_t *gamma = searchNodeByName(tree, "Gamma");
@@ -62,9 +65,11 @@ int main(int argc, char **argv) {
   else
     addBrother(alpha, "Delta");
   node_t *delta = searchNodeByName(tree, "Delta");
-  
+  delta->out->info->sequence = &(auxAlignment[1]);
+
   addBrother(beta, "Epsilon");
   node_t *epsilon = searchNodeByName(tree, "Epsilon");
+  epsilon->out->info->sequence = &(auxAlignment[2]);
 
   alpha->info->sequence   = copySequence(alignment+0);
   beta->info->sequence    = copySequence(alignment+1);
