@@ -3,17 +3,20 @@
 
 #include <stdint.h>
 
-#define charset_t uint8_t
-#define CHARSET_EMPTY 0b00000000
-#define CHARSET_FULL  0b11111111
 #define LABEL_SIZE 512
+#define CHAR_STATES 8
+
+#define allowed_t unsigned long
 
 typedef struct sequence {
-  char *label;
-  charset_t *charsets;
+  allowed_t *allowed[CHAR_STATES];
 } sequence_t;
 
-#define alignment_t sequence_t *
+typedef struct alignment {
+  unsigned int taxa;
+  sequence_t *sequences;
+  const char **labels;
+} alignment_t;
 
 extern int sequenceSize;  // Global amount of characters in a sequence
 extern int alignmentSize; // Global amount of taxa in the alignment
@@ -37,14 +40,27 @@ void setAlignmentSize(int size);
 // Set weight of character c as w
 void setCharacterWeight(int i, float w);
 
+// Size of an allowed states array
+unsigned long allowedArraySize();
+
+// Allocate space for a new array of allowed states
+allowed_t *newAllowedStates();
+
 // Allocate space for a sequence
-sequence_t *newSequence(char *label);
+sequence_t *newSequence();
+
+// Allocate space for a sequence array
+sequence_t *newSequenceArray(unsigned int taxa);
+
+// Allocate space for an aligment
+alignment_t *newAlignment(unsigned int taxa, const char **labels);
 
 // Return a pointer to a complete copy of the sequence
 sequence_t *copySequence(sequence_t *src);
 
-// Allocate space for an aligment
-alignment_t newAlignment();
+// Return a pointer to a complete copy of the alignment, pointing to the same
+// labels
+alignment_t *copyAlignment(alignment_t *src);
 
 // Allocate space for character weights and assign all as 1
 void createCharacterWeights();
@@ -53,13 +69,13 @@ void createCharacterWeights();
 void printSequence(sequence_t *sequence);
 
 // Print information about an alignment
-void printAlignment(alignment_t alignment);
+void printAlignment(alignment_t *alignment);
 
 // Print character weights
 void printCharacterWeights();
 
 // Destroy alignment
-void destroyAlignment(alignment_t alignment);
+void destroyAlignment(alignment_t *alignment);
 
 // Destroy sequence
 void destroySequence(sequence_t *sequence);
