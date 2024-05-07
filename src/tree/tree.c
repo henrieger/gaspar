@@ -116,9 +116,11 @@ void printTree(tree_t *tree) {
   printf("Size: %d\nLeaves: %d\nRoot: %d\nNodes array at %p\nInternal nodes "
          "array at %p\nNodes:\n",
          tree->size, tree->leaves, tree->root, tree->nodes, tree->internal);
-  for (int i = 0; i < tree->size; i++)
-    printf("\t%d (%s): [%d %d %d]\n", i, tree->nodes[i].label,
+  for (int i = 0; i < tree->size; i++) {
+    printf("\t%d (%s): [%d %d %d]\t", i, tree->nodes[i].label,
            tree->nodes[i].edge1, tree->nodes[i].edge2, tree->nodes[i].edge3);
+    printSequence(tree->nodes[i].sequence);
+  }
 }
 
 // Print a node in Newick format, keeping track of origin of call.

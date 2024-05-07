@@ -114,6 +114,7 @@ int main(int argc, char **argv) {
 #endif
 
   tree_t *tree = randomTree(alignment);
+  printf("Tree score: %d\n", fitchParsimony(tree));
   printTree(tree);
   printNewick(tree);
   printf(";\n");

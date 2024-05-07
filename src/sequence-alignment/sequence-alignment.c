@@ -15,7 +15,11 @@ inline int getSequenceSize() { return sequenceSize; }
 inline int getAlignmentSize() { return alignmentSize; }
 
 // Get weight of character c
-inline float getCharacterWeight(int i) { return weights[i]; }
+float getCharacterWeight(int i) {
+  if (i >= getSequenceSize() || i < 0)
+    return 0;
+  return weights[i];
+}
 
 // Set the value of the global amount of characters in a sequence
 inline void setSequenceSize(int size) { sequenceSize = size; }
