@@ -1,17 +1,18 @@
 #ifndef __GASPAR_H__
 #define __GASPAR_H__
 
-#include <stdio.h>
 #include "sequence-alignment/sequence-alignment.h"
+#include <stdio.h>
 
 #define TOKEN_SIZE LABEL_SIZE
 #define ERROR_SIZE 256
 
 extern char token[TOKEN_SIZE];
 extern int lineNumber;
-extern alignment_t alignment;
+extern alignment_t *alignment;
 extern int taxon;
 extern int character;
+extern char **labels;
 
 // Lexical analyser
 int yylex();
@@ -31,13 +32,14 @@ void addNumbersToSequence();
 // Adds a missing data to current sequence
 void addMissingData();
 
-// Adds a charset to current sequence
-void addCharset();
+// Adds a multistate char to current sequence
+void addMultistateChar();
 
 // Check if number of parsed taxa corresponds with assigned taxa
 void checkNumberOfTaxa();
 
-// Check if number of parsed characters in taxon corresponds with assigned amount
+// Check if number of parsed characters in taxon corresponds with assigned
+// amount
 void checkNumberOfCharacters();
 
 #endif // !__GASPAR_H__

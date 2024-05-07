@@ -6,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include "sequence-alignment/sequence-alignment.h"
+#include "tree/random.h"
 #include "answer/answer.h"
 #include "search/branch-and-bound.h"
 #include "search/hill-climbing.h"
@@ -49,7 +50,7 @@ alignment:
 
 sequence:
   IDENT
-  { strncpy(alignment[taxon].label, token, TOKEN_SIZE); character = 0; }
+  { strncpy(alignment->labels[taxon], token, TOKEN_SIZE); character = 0; }
   sequence_chars
   { taxon++; }
 ;
@@ -65,7 +66,7 @@ char_seq:
 ;
 
 charset:
-  OPEN_BRACKET NUMBER { addCharset(); } CLOSE_BRACKET
+  OPEN_BRACKET NUMBER { addMultistateChar(); } CLOSE_BRACKET
   | MISSING_DATA { addMissingData(); }
 ;
 
@@ -112,15 +113,25 @@ int main(int argc, char **argv) {
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
 
+  tree_t *tree = randomTree(alignment);
+  printTree(tree);
+  printNewick(tree);
+  printf(";\n");
+  destroyTree(tree);
   // answer_t *answer = branchAndBoundSearch(alignment, fitch_parsimony);
   // answer_t *answer = hillClimbingSearch(alignment, 3, nni, fitch_parsimony);
-  answer_t *answer = geneticAlgorithmSearch(alignment, 8, 100, randomNNI, fitch_parsimony);
-  printAnswer(answer);
-  destroyAnswer(answer);
+  // answer_t *answer = geneticAlgorithmSearch(alignment, 8, 100, randomNNI, fitch_parsimony);
+  // printAnswer(answer);
+  // destroyAnswer(answer);
 
   if (alignment)
     destroyAlignment(alignment);
 
   if (weights)
     destroyCharacterWeights();
+
+  if (labels) {
+    free(labels[0]);
+    free(labels);
+  }
 }
