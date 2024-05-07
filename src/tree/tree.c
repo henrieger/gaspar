@@ -6,363 +6,215 @@
 #include <string.h>
 
 // Create a new node.
-node_t *newNode(info_t *info) {
-  node_t *n = calloc(1, sizeof(node_t));
-  if (info)
-    n->info = info;
+node_t *newNode(sequence_t *sequence, const char *label) {
+  node_t *n = malloc(sizeof(node_t));
+  n->sequence = sequence;
+  n->label = label;
+  n->edge1 = n->edge2 = n->edge3 = -1;
   return n;
 }
 
-// Create info of node.
-info_t *newInfo() {
-  info_t *info = malloc(sizeof(info_t));
-  info->sequence = NULL;
-  info->name = NULL;
-  info->validSequence = 0;
-  info->parsimonyScore = 0;
-  return info;
+// Create a new tree.
+tree_t *newTree(unsigned int leaves) {
+  tree_t *t = malloc(sizeof(tree_t));
+  t->leaves = leaves;
+  t->size = 2 * leaves - 2;
+
+  t->nodes = malloc(t->size * sizeof(node_t));
+  for (int i = 0; i < t->size; i++) {
+    t->nodes[i].edge1 = t->nodes[i].edge2 = t->nodes[i].edge3 = -1;
+    t->nodes[i].label = NULL;
+    t->nodes[i].sequence = NULL;
+  }
+
+  t->internal = t->nodes + leaves;
+
+  return t;
 }
 
-// Returns the size of the ring formed by an "internal node"
-int ringSize(node_t *node) {
-  if (!node)
+// Create a new tree from data in alignment.
+tree_t *newTreeFromAlignment(alignment_t *alignment) {
+  // Create new tree and set leaf data as the alignment data
+  tree_t *t = newTree(alignment->taxa);
+  for (int i = 0; i < alignment->taxa; i++) {
+    t->nodes[i].sequence = &(alignment->sequences[i]);
+    t->nodes[i].label = alignment->labels[i];
+  }
+
+  // Allocate internal sequences
+  sequence_t *auxSequences = newSequenceArray(alignment->taxa - 2);
+  for (int i = 0; i < alignment->taxa - 2; i++) {
+    t->internal[i].sequence = &(auxSequences[i]);
+  }
+
+  // Set root arbitrarily to last leaf
+  t->root = alignment->taxa - 1;
+
+  return t;
+}
+
+// Returns the degree of the node
+int nodeDegree(tree_t *tree, int node) {
+  if (node < 0)
     return 0;
 
-  if (!node->next)
-    return 1; // leaf node
+  int sum = 0;
 
-  int size = 1;
-  for (node_t *n = node->next; n != node; n = n->next)
-    size++;
+  if (tree->nodes[node].edge1 >= 0)
+    sum++;
+  if (tree->nodes[node].edge2 >= 0)
+    sum++;
+  if (tree->nodes[node].edge3 >= 0)
+    sum++;
 
-  return size;
-}
-
-// Create a new node and its predecessor. Returns pointer to predecessor.
-node_t *nodeWithPredecessor(char *name) {
-  node_t *tip = newNode(newInfo());
-  node_t *ancestor = newNode(NULL);
-
-  tip->info->name = name;
-  tip->out = ancestor;
-  ancestor->out = tip;
-
-  return ancestor;
-}
-
-// Create the smallest possible unrooted tree with three leaves.
-tree_t *smallUnrootedTree(char *a, char *b, char *c) {
-  node_t *ancestorA = nodeWithPredecessor(a);
-  node_t *ancestorB = nodeWithPredecessor(b);
-  node_t *ancestorC = nodeWithPredecessor(c);
-
-  ancestorA->next = ancestorB;
-  ancestorB->next = ancestorC;
-  ancestorC->next = ancestorA;
-
-  info_t *ancestorInfo = newInfo();
-  ancestorA->info = ancestorInfo;
-  ancestorB->info = ancestorInfo;
-  ancestorC->info = ancestorInfo;
-
-  return ancestorA;
+  return sum;
 }
 
 // Return TRUE if node is leaf, FALSE otherwise.
-inline uint8_t isLeaf(const node_t *node) { return node->next == NULL; }
+uint8_t isLeaf(tree_t *tree, int node) { return nodeDegree(tree, node) == 1; }
 
-// Adds a child to current node.
-void addChild(node_t *node, char *name) {
-  node_t *oldNext = node->next;
-  node->next = nodeWithPredecessor(name);
-  node->next->info = node->info;
-  node->next->next = oldNext;
+// Change old edge in node to a new edge, independent of which edge it is
+void changeEdge(tree_t *tree, int node, int oldEdge, int newEdge) {
+  node_t *nodeStruct = &(tree->nodes[node]);
+  if (nodeStruct->edge1 == oldEdge)
+    nodeStruct->edge1 = newEdge;
+  else if (nodeStruct->edge2 == oldEdge)
+    nodeStruct->edge2 = newEdge;
+  else if (nodeStruct->edge3 == oldEdge)
+    nodeStruct->edge3 = newEdge;
 }
 
-// Create a brother to node with one empty end
-node_t *addAnonymousBrother(node_t *node) {
-  // Create a new ring
-  info_t *ringInfo = newInfo();
-  node_t *ringStart = newNode(ringInfo);
-  ringStart->next = newNode(ringInfo);
-  ringStart->next->next = newNode(ringInfo);
-  ringStart->next->next->next = ringStart;
-
-  // Connect ends of ring to edge
-  node_t *oldOut = node->out;
-  ringStart->out = node;
-  node->out = ringStart;
-  oldOut->out = ringStart->next;
-  ringStart->next->out = oldOut;
-
-  // Return reference to remaining end of the node
-  return ringStart->next->next;
+// Search a node by its label.
+int searchNodeByLabel(tree_t *tree, const char *label) {
+  for (int i = 0; i < tree->size; i++)
+    if (!strncmp(tree->nodes[i].label, label, LABEL_SIZE))
+      return i;
+  return -1;
 }
 
-// Adds a brother to current node, splitting its branch. Returns a pointer to
-// new brother.
-node_t *addBrother(node_t *node, char *name) {
-  // Creates two disconnected new nodes between current node and its neighbor
-  node_t *oldOut = node->out;
-  node->out = newNode(NULL);
-  oldOut->out = newNode(NULL);
+// Create the smallest possible tree (3 OTUs + 1 root HTU) from an alignment
+tree_t *smallestTree(alignment_t *alignment) {
+  // Create new tree from alignment with root as the first HTU
+  tree_t *t = newTreeFromAlignment(alignment);
+  t->root = alignment->taxa;
 
-  // Creates brother with predecessor and closes new ring
-  node_t *brotherPredecessor = nodeWithPredecessor(name);
-  node->out->next = brotherPredecessor;
-  brotherPredecessor->next = oldOut->out;
-  oldOut->out->next = node->out;
+  // Set parent of three OTUs as the root
+  t->nodes[0].edge1 = t->root;
+  t->nodes[1].edge1 = t->root;
+  t->nodes[2].edge1 = t->root;
 
-  // Connects new ring to same info
-  info_t *newNodeInfo = newInfo();
-  newNodeInfo->sequence = NULL;
-  brotherPredecessor->info = newNodeInfo;
-  brotherPredecessor->next->info = newNodeInfo;
-  oldOut->out->next->info = newNodeInfo;
+  // Set the children of the root as the OTUs
+  t->nodes[t->root].edge1 = 0;
+  t->nodes[t->root].edge2 = 1;
+  t->nodes[t->root].edge3 = 2;
 
-  // Assigns remaining out connections of ring
-  node->out->out = node;
-  oldOut->out->out = oldOut;
-
-  // Return pointer to brother
-  return brotherPredecessor->out;
+  return t;
 }
 
-// Copy a node info
-info_t *copyNodeInfo(const node_t *node) {
-  if (!node || !node->info)
-    return NULL;
-
-  info_t *newNodeInfo = newInfo();
-  memcpy(newNodeInfo, node->info, sizeof(info_t));
-
-  return newNodeInfo;
+// Print tree internal structure.
+void printTree(tree_t *tree) {
+  printf("Size: %d\nLeaves: %d\nRoot: %d\nNodes array at %p\nInternal nodes "
+         "array at %p\nNodes:\n",
+         tree->size, tree->leaves, tree->root, tree->nodes, tree->internal);
+  for (int i = 0; i < tree->size; i++)
+    printf("\t%d (%s): [%d %d %d]\n", i, tree->nodes[i].label,
+           tree->nodes[i].edge1, tree->nodes[i].edge2, tree->nodes[i].edge3);
 }
 
-// Copy a node recursively, keeping track of origin of call.
-tree_t *copyRecursive(const tree_t *tree, const tree_t *root) {
-  if (!tree)
-    return NULL;
+// Print a node in Newick format, keeping track of origin of call.
+void printNewickNode(tree_t *tree, int node, int from) {
+  if (!tree || node < 0)
+    return;
 
-  tree_t *newTree = newNode(copyNodeInfo(tree));
+  node_t *nodeStruct = &(tree->nodes[node]);
 
-  // If on root of recursion, also copy the out node
-  if (tree->out && tree == root) {
-    newTree->out = copyRecursive(tree->out, root);
-    newTree->out->out = newTree;
+  if (nodeStruct->label)
+    printf("%s", nodeStruct->label);
+
+  if (isLeaf(tree, node))
+    return;
+
+  printf("(");
+  if (from == nodeStruct->edge1) {
+    printNewickNode(tree, nodeStruct->edge2, node);
+    printf(",");
+    printNewickNode(tree, nodeStruct->edge3, node);
+  } else if (from == nodeStruct->edge2) {
+    printNewickNode(tree, nodeStruct->edge1, node);
+    printf(",");
+    printNewickNode(tree, nodeStruct->edge3, node);
+  } else if (from == nodeStruct->edge3) {
+    printNewickNode(tree, nodeStruct->edge1, node);
+    printf(",");
+    printNewickNode(tree, nodeStruct->edge2, node);
   }
+  printf(")");
+}
 
-  // If node is leaf, no need to iterate through next nodes
-  if(isLeaf(tree)) {
-    return newTree;
-  }
+// Print tree in Newick format as rooted and without final ";".
+void printNewick(tree_t *tree) {
+  if (!tree || tree->root < 0)
+    return;
 
-  // Iterate and copy recursively all neighbors
-  node_t *nodeIter = newTree;
-  for (node_t *n = tree->next; n != tree; n = n->next) {
-    // Create the next node in the ring
-    node_t *newNodeInRing = newNode(newTree->info);
-    nodeIter->next = newNodeInRing;
+  node_t *rootStruct = &(tree->nodes[tree->root]);
 
-    // Recursively copy tree in the out node
-    node_t *newNodeOut = copyRecursive(n->out, root);
-    newNodeInRing->out = newNodeOut;
-    newNodeOut->out = newNodeInRing;
+  if (rootStruct->label)
+    printf("%s", rootStruct->label);
 
-    // Progress the loop
-    nodeIter = newNodeInRing;
-  }
+  if (isLeaf(tree, tree->root))
+    return;
 
-  // Close the ring created in the loop
-  nodeIter->next = newTree;
-
-  return newTree;
+  printf("(");
+  printNewickNode(tree, tree->root, rootStruct->edge1);
+  printf(",");
+  printNewickNode(tree, rootStruct->edge1, tree->root);
+  printf(")");
 }
 
 // Returns a copy of the tree.
-tree_t *copyTree(const tree_t *tree) { return copyRecursive(tree, tree); }
+tree_t *copyTree(const tree_t *tree) {
+  tree_t *copy = newTree(tree->leaves);
+  copy->root = tree->root;
 
-// Prunes a node from tree and returns the new tree as unrooted.
-tree_t *prune(node_t *node) {
-  node_t *newTree = node->out;
-  newTree->out = NULL;
-  node->out = NULL;
-  return unrootTree(newTree);
-}
-
-// Graft a subtree into a tree. Assumes subtree as rooted.
-void graft(tree_t *tree, tree_t *subtree) {
-  if (!tree || !subtree)
-    return;
-
-  if (!tree->out) {
-    // Add subtree to old root
-    tree->out = subtree;
-    subtree->out = tree;
-  } else {
-    // Create a new node and graft as brother of tree
-    node_t *newNode = addAnonymousBrother(tree);
-    newNode->out = subtree;
-    subtree->out = newNode;
+  sequence_t *copySequenceArray = newSequenceArray(tree->leaves - 2);
+  for (int i = 0; i < tree->leaves - 2; i++) {
+    for (int j = 0; j < CHAR_STATES; j++) {
+      for (int k = 0; k < allowedArraySize(); k++)
+        copySequenceArray[i].allowed[j][k] =
+            tree->internal[i].sequence->allowed[j][k];
+    }
   }
-}
 
-// Free space of node info.
-void destroyInfo(info_t *info) {
-  if (!info)
-    return;
+  for (int i = 0; i < tree->leaves; i++)
+    copy->nodes[i].sequence = tree->nodes[i].sequence;
+  for (int i = 0; i < tree->leaves - 2; i++)
+    copy->internal[i].sequence = &(copySequenceArray[i]);
 
-  free(info);
+  for (int i = 0; i < tree->size; i++) {
+    copy->nodes[i].edge1 = tree->nodes[i].edge1;
+    copy->nodes[i].edge2 = tree->nodes[i].edge2;
+    copy->nodes[i].edge3 = tree->nodes[i].edge3;
+    copy->nodes[i].label = tree->nodes[i].label;
+  }
+
+  return copy;
 }
 
 // Free space of node.
 inline void destroyNode(node_t *node) { free(node); }
 
-// Delete subtrees recursevely, keeping track of origin of call.
-void destroyRecursive(node_t *node) {
-  if (!node)
-    return;
-
-#ifdef DEBUG
-  printf("Removing node %s\n", node->info->name);
-#endif
-
-  if (!isLeaf(node)) {
-    node_t *next = node->next;
-    while (next != node) {
-#ifdef DEBUG
-      printf("Removing node in loop %s\n", next->info->name);
-#endif
-      destroyRecursive(next->out);
-      node_t *oldNext = next;
-      next = next->next;
-      destroyNode(oldNext);
-    }
-  }
-
-  destroyInfo(node->info);
-  destroyNode(node);
-}
-
-// Delete tree recursevely.
+// Delete tree.
 void destroyTree(tree_t *tree) {
   if (!tree)
     return;
-#ifdef DEBUG
-  printf("Removing tree at %p ", tree);
-  printTree(tree);
-  printf("\n");
-#endif
-  if (tree->out)
-    destroyRecursive(tree->out);
-  destroyRecursive(tree);
-#ifdef DEBUG
-  printf("Tree at %p removed successfully\n", tree);
-#endif
-}
 
-// Print a node, keeping track of origin of call.
-void printNode(node_t *node) {
-  if (node->info->name)
-    printf("%s", node->info->name);
-
-  if (!isLeaf(node)) {
-    printf("(");
-    node_t *next = node->next;
-    while (next != node) {
-      printNode(next->out);
-      next = next->next;
-      if (next != node)
-        printf(",");
+  for (int i = 0; i < tree->leaves - 2; i++) {
+    for (int j = 0; j < CHAR_STATES; j++) {
+      free(tree->internal[i].sequence->allowed[j]);
     }
-    printf(")");
-  }
-}
-
-// Print tree in Newick format as rooted.
-void printTree(tree_t *tree) {
-  if (tree->out) {
-    printf("(");
-    printNode(tree->out);
-    printf(",");
-    printNode(tree);
-    printf(")");
-  } else {
-    printNode(tree);
-    // printf(";");
-  }
-}
-
-// Search node by its name, keeping track of origin of call.
-node_t *searchNodeByNameRecursive(tree_t *tree, const char *name,
-                                  node_t *from) {
-  if (!tree)
-    return NULL;
-
-  if (tree->info->name && !strcmp(tree->info->name, name))
-    return tree;
-
-  node_t *answer = NULL;
-
-  if (from != tree->out)
-    answer = searchNodeByNameRecursive(tree->out, name, tree);
-
-  for (node_t *n = tree->next; !answer && n && n != tree; n = n->next)
-    answer = searchNodeByNameRecursive(n->out, name, n);
-
-  return answer;
-}
-
-// Search a node by its name.
-tree_t *searchNodeByName(tree_t *tree, const char *name) {
-  return searchNodeByNameRecursive(tree, name, NULL);
-}
-
-// Root tree based on reference node. Returns new root.
-tree_t *rootTree(node_t *node) {
-  info_t *rootInfo = newInfo();
-
-  node_t *root = newNode(rootInfo);
-  node_t *oldOut = node->out;
-
-  root->next = newNode(rootInfo);
-  root->next->out = oldOut;
-  oldOut->out = root->next;
-
-  root->next->next = newNode(rootInfo);
-  root->next->next->out = node;
-  node->out = root->next->next;
-  root->next->next->next = root;
-
-  return root;
-}
-
-// Unroot tree. Assumes passed node is the root. Returns a pointer to new
-// reference point on tree.
-tree_t *unrootTree(node_t *root) {
-  // Check if tree is already unrooted
-  if (root->out)
-    return root;
-
-  // If node is a politomy, just remove the extra node
-  if (ringSize(root) > 3) {
-    node_t *newReferencePoint = root->next;
-    node_t *ringEnd = newReferencePoint;
-    while (ringEnd->next != root)
-      ringEnd = ringEnd->next;
-    ringEnd->next = newReferencePoint;
-    destroyNode(root);
-    return newReferencePoint;
   }
 
-  // Remove root and the corresponding branches
-  node_t *left = root->next->out;
-  node_t *right = root->next->next->out;
-  destroyInfo(root->info);
-  destroyNode(left->out);
-  destroyNode(right->out);
-  destroyNode(root);
-  left->out = right;
-  right->out = left;
-  return left;
+  free(tree->internal[0].sequence);
+  free(tree->nodes);
+  free(tree);
 }

@@ -7,11 +7,11 @@
 // Linked list auxiliary struct
 typedef struct list {
   struct list *next;
-  node_t *node;
+  int node;
 } list_t;
 
 // Create a new list node
-list_t *newListNode(node_t *node) {
+list_t *newListNode(int node) {
   list_t *l = malloc(sizeof(list_t));
   l->node = node;
   l->next = NULL;
@@ -19,7 +19,7 @@ list_t *newListNode(node_t *node) {
 }
 
 // Append the tree node to linked list
-void appendToList(list_t **list, node_t *node) {
+void appendToList(list_t **list, int node) {
   list_t *newMember = newListNode(node);
   if (!list || !*list) {
     *list = newMember;
@@ -35,12 +35,12 @@ void appendToList(list_t **list, node_t *node) {
 }
 
 // Remove the node from linked list at index i and return tree node
-node_t *removeNodeAtIndex(list_t **list, int i) {
+int removeNodeAtIndex(list_t **list, int i) {
   if (!list || !*list)
-    return NULL;
+    return -1;
 
   list_t *tmp = *list;
-  node_t *removedNode = NULL;
+  int removedNode;
 
   // If item is the first on the list, remove it already
   if (i == 0) {
@@ -56,7 +56,7 @@ node_t *removeNodeAtIndex(list_t **list, int i) {
   }
 
   if (!tmp || !(tmp->next))
-    return NULL;
+    return -1;
 
   // Remove required node and fix pointers
   list_t *next = tmp->next->next;
@@ -67,108 +67,46 @@ node_t *removeNodeAtIndex(list_t **list, int i) {
   return removedNode;
 }
 
-// Generate a random unrooted binary tree from alignment
-tree_t *randomUnrootedBinaryTree(alignment_t alignment,
-                                 alignment_t auxAlignment) {
-  int numSpecies = getAlignmentSize();
-  int auxAlignmentIndex = 0;
+// Generate a random unrooted binary tree from alignment.
+tree_t *randomTree(alignment_t *alignment) {
+  tree_t *tree = newTreeFromAlignment(alignment);
 
-  // Populate node list with all taxa and predecessor internal nodes
+  // Populate node list with all taxa
   list_t *nodeList = NULL;
-  for (int i = 0; i < numSpecies; i++) {
-    node_t *node = nodeWithPredecessor(alignment[i].label);
-    node->out->info->sequence = alignment + i;
-    appendToList(&nodeList, node);
+  for (int i = 0; i < tree->leaves; i++) {
+    appendToList(&nodeList, i);
   }
 
-  while (numSpecies > 3) {
-    // Set common info struct for all new generated nodes
-    info_t *commonInfo = newInfo();
-    commonInfo->sequence = &(auxAlignment[auxAlignmentIndex]);
-    auxAlignmentIndex++;
-
+  // Do until there are only 3 nodes left on list
+  for (int i = 0; i < tree->leaves - 2; i++) {
     // Sample first random node
-    int index1 = rand() % numSpecies;
-    node_t *node1 = removeNodeAtIndex(&nodeList, index1);
-    node1->info = commonInfo;
-
-    // Decrement species amount for sampling without replacement
-    numSpecies--;
+    int index1 = rand() % (tree->leaves - i);
+    int node1 = removeNodeAtIndex(&nodeList, index1);
 
     // Sample second random node
-    // This sampling will remove and introduce a new node, so no need to
-    // decrement counter
-    int index2 = rand() % numSpecies;
-    node_t *node2 = removeNodeAtIndex(&nodeList, index2);
-    node2->info = commonInfo;
+    int index2 = rand() % (tree->leaves - i - 1);
+    int node2 = removeNodeAtIndex(&nodeList, index2);
 
     // Create the new internal node
-    node_t *newInternalNode = newNode(commonInfo);
-    newInternalNode->out = newNode(NULL);
-    newInternalNode->out->out = newInternalNode;
-
-    // Set relations on new internal node
-    newInternalNode->next = node1;
-    node1->next = node2;
-    node2->next = newInternalNode;
+    tree->nodes[node1].edge1 = alignment->taxa + i;
+    tree->nodes[node2].edge1 = alignment->taxa + i;
+    tree->internal[i].edge2 = node1;
+    tree->internal[i].edge3 = node2;
 
     // Append new internal node to list
-    appendToList(&nodeList, newInternalNode->out);
+    appendToList(&nodeList, alignment->taxa + i);
   }
 
-  // Create the last internal ring
-  node_t *node1 = removeNodeAtIndex(&nodeList, 0);
-  node_t *node2 = removeNodeAtIndex(&nodeList, 0);
-  node_t *node3 = removeNodeAtIndex(&nodeList, 0);
+  // Create the last internal node
+  int node1 = removeNodeAtIndex(&nodeList, 1);
+  int node2 = removeNodeAtIndex(&nodeList, 0);
+  tree->nodes[node1].edge1 = node2;
+  tree->nodes[node2].edge1 = node1;
 
-  node1->next = node2;
-  node2->next = node3;
-  node3->next = node1;
+  tree->root = tree->size - 1;
 
-  // Set common info struct for all new generated nodes
-  info_t *commonInfo = newInfo();
-  commonInfo->sequence = &(auxAlignment[auxAlignmentIndex]);
-
-  node1->info = commonInfo;
-  node2->info = commonInfo;
-  node3->info = commonInfo;
-
-  return node1;
+  return tree;
 }
 
-// Search recursively for random node
-node_t *randomNodeRecursive(node_t *node, int *count, int chosen) {
-  if (isLeaf(node))
-    return NULL;
-
-  if (*count == chosen)
-    return node;
-
-  (*count)++;
-
-  for (node_t *n = node->next; n != node; n = n->next) {
-    node_t *answer = randomNodeRecursive(n->out, count, chosen);
-    if (answer)
-      return answer;
-  }
-
-  return NULL;
-}
-
-// Return a random node on the tree. Assumes binary tree
-node_t *randomNode(tree_t *tree, int numLeaves) {
-  // Choose random node index
-  int chosen = rand() % (numLeaves - 2);
-
-  // Search in main subtree
-  int count = 0;
-  node_t *answer = randomNodeRecursive(tree, &count, chosen);
-  if (answer)
-    return answer;
-
-  // Search in other subtree
-  if (tree->out)
-    return randomNodeRecursive(tree->out, &count, chosen);
-
-  return NULL;
-}
+// Return a random node on the tree.
+inline int randomNode(int numLeaves) { return rand() % numLeaves; }

@@ -1,74 +1,57 @@
 #ifndef __TREE_H__
 #define __TREE_H__
 
-#include <stdint.h>
 #include <sequence-alignment/sequence-alignment.h>
-
-typedef struct info {
-  char *name;
-  sequence_t *sequence;
-  int parsimonyScore;
-  uint8_t validSequence;
-} info_t;
+#include <stdint.h>
 
 typedef struct node {
-  struct node *out;
-  struct node *next;
-  info_t *info;
+  int edge1, edge2, edge3;
+  sequence_t *sequence;
+  const char *label;
 } node_t;
 
-#define tree_t node_t
+typedef struct tree {
+  unsigned int size, leaves, root;
+  node_t *nodes, *internal;
+} tree_t;
 
 // Create a new node.
-node_t *newNode(info_t *info);
+node_t *newNode(sequence_t *sequence, const char *label);
 
-// Create info of node.
-info_t *newInfo();
+// Create a new tree.
+tree_t *newTree(unsigned int leaves);
 
-// Create a new node and its predecessor. Returns pointer to predecessor.
-node_t *nodeWithPredecessor(char *name);
+// Create a new tree from data in alignment.
+tree_t *newTreeFromAlignment(alignment_t *alignment);
 
-// Create the smallest possible unrooted tree with three leaves.
-tree_t *smallUnrootedTree(char *a, char *b, char *c);
+// Returns the degree of the node
+int nodeDegree(tree_t *tree, int node);
 
 // Return TRUE if node is leaf, FALSE otherwise.
-uint8_t isLeaf(const node_t *node);
+uint8_t isLeaf(tree_t *tree, int node);
 
-// Adds a child to current node.
-void addChild(node_t *node, char *name);
+// Change old edge in node to a new edge, independent of which edge it is
+void changeEdge(tree_t *tree, int node, int oldEdge, int newEdge);
 
-// Adds a brother to current node, splitting its branch. Returns a pointer to new brother.
-node_t *addBrother(node_t *node, char *name);
+// Search a node by its label.
+int searchNodeByLabel(tree_t *tree, const char *label);
+
+// Create the smallest possible tree (3 OTUs + 1 root HTU) from an alignment
+tree_t *smallestTree(alignment_t *alignment);
+
+// Print tree internal structure.
+void printTree(tree_t *tree);
+
+// Print tree in Newick format as rooted and without final ";".
+void printNewick(tree_t *tree);
 
 // Returns a copy of the tree.
 tree_t *copyTree(const tree_t *tree);
 
-// Prunes a node from tree and returns the new tree as rooted.
-tree_t *prune(node_t *node);
-
-// Graft a subtree into a tree. Assumes subtree as rooted.
-void graft(tree_t *tree, tree_t *subtree);
-
 // Free space of node.
 void destroyNode(node_t *node);
 
-// Free space of node info.
-void destroyInfo(info_t *info);
-
-// Delete tree recursevely.
+// Delete tree.
 void destroyTree(tree_t *tree);
-
-// Print tree in Newick format as rooted.
-void printTree(tree_t *tree);
-
-// Search a node by its name.
-node_t *searchNodeByName(tree_t *tree, const char *name);
-
-// Root tree based on reference node. Returns new root.
-tree_t *rootTree(node_t *node);
-
-// Unroot tree. Assumes passed node is the root. Returns a pointer to new
-// reference point on tree.
-tree_t *unrootTree(node_t *root);
 
 #endif // !__TREE_H__
