@@ -6,12 +6,8 @@
 #include <string.h>
 #include <time.h>
 #include "sequence-alignment/sequence-alignment.h"
-#include "tree/random.h"
 #include "answer/answer.h"
 #include "search/branch-and-bound.h"
-#include "search/hill-climbing.h"
-#include "search/genetic-algorithm.h"
-#include "operators/nni.h"
 #include "eval/parsimony.h"
 
 %}
@@ -105,6 +101,7 @@ int main(int argc, char **argv) {
 
 #ifdef DEBUG
   printf("Alignment size: %d\nSequence size: %d\n", getAlignmentSize(), getSequenceSize());
+  printf("Allowed states size: %ld\n", allowedArraySize());
 # endif
 
   printAlignment(alignment);
@@ -113,17 +110,11 @@ int main(int argc, char **argv) {
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
 
-  tree_t *tree = randomTree(alignment);
-  printf("Tree score: %d\n", fitchParsimony(tree));
-  printTree(tree);
-  printNewick(tree);
-  printf(";\n");
-  destroyTree(tree);
-  // answer_t *answer = branchAndBoundSearch(alignment, fitch_parsimony);
+  answer_t *answer = branchAndBoundSearch(alignment, fitchParsimony);
   // answer_t *answer = hillClimbingSearch(alignment, 3, nni, fitch_parsimony);
   // answer_t *answer = geneticAlgorithmSearch(alignment, 8, 100, randomNNI, fitch_parsimony);
-  // printAnswer(answer);
-  // destroyAnswer(answer);
+  printAnswer(answer);
+  destroyAnswer(answer);
 
   if (alignment)
     destroyAlignment(alignment);

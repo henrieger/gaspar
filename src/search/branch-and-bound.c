@@ -7,105 +7,78 @@
 #include <string.h>
 #include <tree/tree.h>
 
-alignment_t auxAlignment; // "Alignment" of internal nodes for saving intermediary sequences
-
 int numTreesTest = 30; // TODO: define global number of trees in answer;
 
-// Recursive branch and bound search, keeping track of origin (root) of tree
-void branchAndBoundRecursive(node_t *node, tree_t *root, alignment_t alignment,
-                             int eval_fn(tree_t *), int sequenceIndex,
+// Recursive branch and bound search, keeping track of origin of call.
+void branchAndBoundRecursive(tree_t *tree, int node, alignment_t *alignment,
+                             int evalFn(tree_t *), int taxon, int from,
                              answer_t *answer);
 
-// Subroutine to recursevely add and remove nodes to each branch
-void subroutineBNB(node_t *node, tree_t *root, alignment_t alignment,
-                   int eval_fn(tree_t *), int sequenceIndex, answer_t *answer) {
-  // Insert in this branch
-  node_t *new = addBrother(node, alignment[sequenceIndex].label);
-  new->info->sequence = alignment + sequenceIndex;
-  new->out->info->sequence = auxAlignment + sequenceIndex - 2; 
-  // Repeat recursion
-  branchAndBoundRecursive(root, root, alignment, eval_fn, sequenceIndex + 1,
-                          answer);
+// Performs a DFS in the edge of n1 and n2, then proceed with the search in the
+// same level
+void addNodeAndProceed(tree_t *tree, int n1, int n2, alignment_t *alignment,
+                       int evalFn(tree_t *), int taxon, answer_t *answer) {
+  // Determine internal node to be used in operation
+  int baseNode = tree->leaves + taxon - 2;
 
-// Delete new node
-#ifdef DEBUG
-  printf("Removing node %s from bnb\n", new->info->name);
-#endif
-  node_t *old = prune(new);
-  destroyTree(new);
-  old->info->validSequence = 0;
+  // Change pointers in the edge to new internal node
+  changeEdge(tree, n1, n2, baseNode);
+  changeEdge(tree, n2, n1, baseNode);
 
-  // Order children to also insert
-  branchAndBoundRecursive(node->out, root, alignment, eval_fn, sequenceIndex,
-                          answer);
+  // Associate edges of internal node
+  tree->nodes[baseNode].edge1 = n1;
+  tree->nodes[baseNode].edge2 = n2;
+  tree->nodes[baseNode].edge3 = taxon;
+
+  // Associate "root" of new taxon
+  tree->nodes[taxon].edge1 = baseNode;
+
+  // Search next taxon with new node in place
+  branchAndBoundRecursive(tree, n1, alignment, evalFn, taxon + 1, n1, answer);
+
+  // Undo changes
+  changeEdge(tree, n1, baseNode, n2);
+  changeEdge(tree, n2, baseNode, n1);
+
+  // Search current taxon in next node of edge
+  branchAndBoundRecursive(tree, n2, alignment, evalFn, taxon, n1, answer);
 }
 
-// Recursive branch and bound search, keeping track of origin (root) of tree
-void branchAndBoundRecursive(node_t *node, tree_t *root, alignment_t alignment,
-                             int eval_fn(tree_t *), int sequenceIndex,
+void branchAndBoundRecursive(tree_t *tree, int node, alignment_t *alignment,
+                             int evalFn(tree_t *), int taxon, int from,
                              answer_t *answer) {
-  // Evaluate tree and bound if already greater than current score
-  int score = eval_fn(root);
-
-#ifdef DEBUG
-  printf("Searching tree: ");
-  printTree(root);
-  printf(" - Score: %d\n", score);
-#endif
-
-  // Reference nodes cannot be leaves
-  if (!node || !root || isLeaf(node))
-    return;
-
-  // Bound if already greater than already calculated
+  int score = evalFn(tree);
   if (score > getScore(answer))
     return;
 
-  // If already in last taxon, update answer
-  if (sequenceIndex == getAlignmentSize()) {
-    updateAnswer(answer, root, score);
+  if (isLeaf(tree, node))
+    return;
+
+  if (taxon >= alignment->taxa) {
+    updateAnswer(answer, tree, score);
     return;
   }
 
-  // Insert a new node in every branch
-  for (node_t *n = node->next; n != node; n = n->next) {
-    subroutineBNB(n, root, alignment, eval_fn, sequenceIndex, answer);
-  }
+  int oldEdge1 = tree->nodes[node].edge1;
+  int oldEdge2 = tree->nodes[node].edge2;
+  int oldEdge3 = tree->nodes[node].edge3;
 
-  // If root repeat procedure for out
-  if (node == root) {
-    subroutineBNB(root, root, alignment, eval_fn, sequenceIndex, answer);
-  }
+  if (oldEdge1 >= 0 && oldEdge1 != from)
+    addNodeAndProceed(tree, node, oldEdge1, alignment, evalFn, taxon, answer);
+  if (oldEdge2 >= 0 && oldEdge2 != from)
+    addNodeAndProceed(tree, node, oldEdge2, alignment, evalFn, taxon, answer);
+  if (oldEdge3 >= 0 && oldEdge3 != from)
+    addNodeAndProceed(tree, node, oldEdge3, alignment, evalFn, taxon, answer);
 }
 
-// Performs a branch and bound search with given alignment and eval function
-answer_t *branchAndBoundSearch(alignment_t alignment, int eval_fn(tree_t *)) {
+// Performs a branch and bound search with given alignment and eval function.
+answer_t *branchAndBoundSearch(alignment_t *alignment, int evalFn(tree_t *)) {
   if (getAlignmentSize() < 3)
     return NULL;
 
-  // Initialize alignment of internal nodes
-  auxAlignment = newAlignment();
-
-  // Initialize base recursion tree
-  tree_t *baseTree = smallUnrootedTree(alignment[0].label, alignment[1].label,
-                                       alignment[2].label);
-  node_t *node0 = searchNodeByName(baseTree, alignment[0].label);
-  node_t *node1 = searchNodeByName(baseTree, alignment[1].label);
-  node_t *node2 = searchNodeByName(baseTree, alignment[2].label);
-  node0->info->sequence = alignment + 0;
-  node1->info->sequence = alignment + 1;
-  node2->info->sequence = alignment + 2;
-  baseTree->info->sequence = auxAlignment + 0;
-
-  // Initialize recursion
+  tree_t *tree = smallestTree(alignment);
   answer_t *answer = initializeAnswer(numTreesTest);
-  branchAndBoundRecursive(baseTree, baseTree, alignment, eval_fn, 3, answer);
-
-  // Destroy the alignment of internal nodes
-  destroyAlignment(auxAlignment);
-
-  // Destroy base tree
-  destroyTree(baseTree);
+  branchAndBoundRecursive(tree, tree->root, alignment, evalFn, 3, -1, answer);
 
   return answer;
 }
