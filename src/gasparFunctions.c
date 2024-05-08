@@ -45,7 +45,7 @@ void addNumbersToSequence() {
                  CHAR_STATES - 1, charValue);
     alignment->sequences[taxon]
         .allowed[charValue][character / (8 * sizeof(allowed_t))] |=
-        1 << (character % (8 * sizeof(allowed_t)));
+        (unsigned long)1 << (character % (8 * sizeof(allowed_t)));
     character++;
   }
 }
@@ -55,7 +55,7 @@ void addMissingData() {
   for (int i = 0; i < CHAR_STATES; i++) {
     alignment->sequences[taxon]
         .allowed[i][character / (8 * sizeof(allowed_t))] |=
-        1 << (character % (8 * sizeof(allowed_t)));
+        (unsigned long)1 << (character % (8 * sizeof(allowed_t)));
   }
   character++;
 }
@@ -69,7 +69,7 @@ void addMultistateChar() {
                  CHAR_STATES - 1, charValue);
     alignment->sequences[taxon]
         .allowed[charValue][character / (8 * sizeof(allowed_t))] |=
-        1 << (character % (8 * sizeof(allowed_t)));
+        (unsigned long)1 << (character % (8 * sizeof(allowed_t)));
   }
   character++;
 }

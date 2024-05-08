@@ -15,7 +15,7 @@ typedef struct sequence {
 typedef struct alignment {
   unsigned int taxa;
   sequence_t *sequences;
-  const char **labels;
+  char **labels;
 } alignment_t;
 
 extern int sequenceSize;  // Global amount of characters in a sequence
@@ -53,7 +53,7 @@ sequence_t *newSequence();
 sequence_t *newSequenceArray(unsigned int taxa);
 
 // Allocate space for an aligment
-alignment_t *newAlignment(unsigned int taxa, const char **labels);
+alignment_t *newAlignment(unsigned int taxa, char **labels);
 
 // Return a pointer to a complete copy of the sequence
 sequence_t *copySequence(sequence_t *src);

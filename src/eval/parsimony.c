@@ -8,9 +8,10 @@
 int scoreFromInters(allowed_t *r) {
   int score = 0;
   for (int i = 0; i < allowedArraySize(); i++) {
-    for (int j = 0; j < sizeof(allowed_t); j++) {
-      score +=
-          ((r[i] >> j) & 1) ? 0 : getCharacterWeight(i * sizeof(allowed_t) + j);
+    for (int j = 0; j < 8 * sizeof(allowed_t); j++) {
+      score += (r[i] & ((allowed_t)1 << j))
+                   ? 0
+                   : getCharacterWeight(i * 8 * sizeof(allowed_t) + j);
     }
   }
   free(r);
@@ -32,6 +33,7 @@ int localParsimony(tree_t *tree, int n1, int n2, int node) {
                                 nodeStruct2->sequence->allowed[i][j];
     }
   }
+
   allowed_t *r = newAllowedStates();
   for (int i = 0; i < CHAR_STATES; i++) {
     for (int j = 0; j < allowedArraySize(); j++) {

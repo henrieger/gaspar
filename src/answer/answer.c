@@ -1,7 +1,7 @@
 #include "answer.h"
-#include <tree/tree.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <tree/tree.h>
 
 // Initialize answer structure
 answer_t *initializeAnswer(int numTrees) {
@@ -44,17 +44,20 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score) {
 }
 
 // Returns score of answer
-unsigned int getScore(answer_t *answer) {
-  return answer->score;
-}
+unsigned int getScore(answer_t *answer) { return answer->score; }
 
 // Print information of answer
 void printAnswer(answer_t *answer) {
   printf("-- ANSWER --\nMin score: %u\nTrees:\n", getScore(answer));
   for (int i = 0; answer->trees[i] && i < answer->numTrees; i++) {
     printf("\t");
+
+#ifdef DEBUG
     printTree(answer->trees[i]);
-    printf("\n");
+#endif /* ifdef DEBUG */
+
+    printNewick(answer->trees[i]);
+    printf(";\n");
   }
 }
 

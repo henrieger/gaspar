@@ -32,7 +32,8 @@ inline void setCharacterWeight(int i, float w) { weights[i] = w; }
 
 // Size of an allowed states array
 inline unsigned long allowedArraySize() {
-  return (getSequenceSize() + sizeof(allowed_t *) - 1) / (sizeof(allowed_t *));
+  return (getSequenceSize() + (sizeof(allowed_t *) * CHAR_STATES) - 1) /
+         (CHAR_STATES * sizeof(allowed_t *));
 }
 
 // Allocate space for a new array of allowed states
@@ -60,7 +61,7 @@ sequence_t *newSequenceArray(unsigned int taxa) {
 }
 
 // Allocate space for an aligment
-alignment_t *newAlignment(unsigned int taxa, const char **labels) {
+alignment_t *newAlignment(unsigned int taxa, char **labels) {
   alignment_t *a = malloc(sizeof(alignment_t));
   a->taxa = taxa;
   a->sequences = newSequenceArray(taxa);
@@ -135,7 +136,10 @@ void printCharacters(sequence_t *sequence, int position) {
 
 // Print information about a sequence
 void printSequence(sequence_t *sequence) {
+#ifdef DEBUG
   printf("(%p)\t", sequence);
+#endif /*ifdef DEBUG */
+
   for (int i = 0; i < allowedArraySize(); i++)
     printCharacters(sequence, i);
   printf(";\n");
@@ -144,6 +148,8 @@ void printSequence(sequence_t *sequence) {
 // Print information about an alignment
 void printAlignment(alignment_t *alignment) {
   printf("Taxa: %d\nCharacters: %d\n\n", getAlignmentSize(), getSequenceSize());
+
+#ifdef DEBUG
   printf("Alignment address: %p\n", alignment);
   printf("Sequences address: %p\n", alignment->sequences);
   for (int i = 0; i < getAlignmentSize(); i++) {
@@ -154,11 +160,14 @@ void printAlignment(alignment_t *alignment) {
              alignment->sequences[i].allowed[j]);
     }
   }
+#endif /* ifdef DEBUG */
+
   for (int i = 0; i < getAlignmentSize(); i++) {
     printf("%s:\t", alignment->labels[i]);
     printSequence(&(alignment->sequences[i]));
   }
 
+#ifdef DEBUG
   printf("\nSequences in memory:\n");
   for (int i = 0; i < getAlignmentSize(); i++) {
     printf("%s:\t", alignment->labels[i]);
@@ -167,6 +176,7 @@ void printAlignment(alignment_t *alignment) {
         printf("%d:0x%016lx\t", j, alignment->sequences[i].allowed[j][k]);
     printf("\n");
   }
+#endif /* ifdef DEBUG */
 }
 
 // Print character weights
