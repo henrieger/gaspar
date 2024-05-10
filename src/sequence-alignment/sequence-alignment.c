@@ -100,11 +100,18 @@ void createCharacterWeights() {
 }
 
 #define stateInPosition(j)                                                     \
-  ((sequence->allowed[j][position] >> i) & ((allowed_t)1))
+  ((sequence->allowed[j][i / 64] >> (i % 64)) & ((allowed_t)1))
 
 // Print a single character
-void printCharacters(sequence_t *sequence, int position) {
-  for (int i = 0; i < 64; i++) {
+void printCharacters(sequence_t *sequence, int position) {}
+
+// Print information about a sequence
+void printSequence(sequence_t *sequence) {
+#ifdef DEBUG
+  printf("(%p)\t", sequence);
+#endif /*ifdef DEBUG */
+
+  for (int i = 0; i < getSequenceSize(); i++) {
     int possibleStates = 0;
 
     for (int j = 0; j < CHAR_STATES; j++)
@@ -132,16 +139,6 @@ void printCharacters(sequence_t *sequence, int position) {
     if (possibleStates > 1)
       printf("]");
   }
-}
-
-// Print information about a sequence
-void printSequence(sequence_t *sequence) {
-#ifdef DEBUG
-  printf("(%p)\t", sequence);
-#endif /*ifdef DEBUG */
-
-  for (int i = 0; i < allowedArraySize(); i++)
-    printCharacters(sequence, i);
   printf(";\n");
 }
 
