@@ -6,60 +6,45 @@
 #include <tree/random.h>
 #include <tree/tree.h>
 
-// Set out pointers of and from n as NULL
-void separate(node_t *n) {
-  n->out->out = NULL;
-  n->out = NULL;
+// Find the node in n1 to be swapped
+int findN1Swapper(tree_t *tree, int n1, int n2) {
+  if (tree->nodes[n1].edge3 == n2)
+    return tree->nodes[n1].edge2;
+  return tree->nodes[n1].edge3;
 }
 
-// Join two unrooted subtrees
-void join(node_t *n, node_t *p) {
-  p->out = n;
-  n->out = p;
+// Find the node in n2 to be swapped
+int findN2Swapper(tree_t *tree, int n1, int n2, int joint) {
+  if (joint == 1 && tree->nodes[n2].edge1 != n1)
+    return tree->nodes[n2].edge1;
+  if (tree->nodes[n2].edge3 != n1)
+    return tree->nodes[n2].edge3;
+  return tree->nodes[n2].edge2;
 }
 
 // Create a Nearest Neighbor Interchange operation in the out edge connected to
 // node. Select the new joint by integer index (2 possible). Assumes unrooted
 // binary tree. Leaves not accepted as input.
-void nni(node_t *n, int joint) {
-  tree_t *subtree1 = n;
-  tree_t *subtree2 = n->out;
+void nni(tree_t *tree, int n1, int n2, int joint) {
+  int n1Swapper = findN1Swapper(tree, n1, n2);
+  int n2Swapper = findN2Swapper(tree, n1, n2, joint);
 
-  // Can't operate directly on leaves
-  if (isLeaf(subtree1) || isLeaf(subtree2))
-    return;
-
-  // Assume a tree (S1(S,T),S2(U,V))
-  tree_t *s = subtree1->next->out;
-  tree_t *t = subtree1->next->next->out;
-  tree_t *u = subtree2->next->out;
-  tree_t *v = subtree2->next->next->out;
-
-  // Separate S from main tree
-  separate(s);
-
-  // Based on value of joint (0 or 1) select a new joint
-  if (joint == 0) {
-    // Put V as brother to T and S as brother to U
-    separate(v);
-    join(v, t->out->next->next);
-    join(s, u->out->next);
-  } else if (joint == 1) {
-    // Put U as brother to T and S as brother to V
-    separate(u);
-    join(u, t->out->next->next);
-    join(s, v->out->next->next);
-  }
+  changeEdge(tree, n1, n1Swapper, n2Swapper);
+  changeEdge(tree, n2, n2Swapper, n1Swapper);
+  changeEdge(tree, n1Swapper, n1, n2);
+  changeEdge(tree, n2Swapper, n2, n1);
 }
 
 // Do a random NNI operation on the tree
 void randomNNI(tree_t *tree) {
-  printf("Applying random NNI to: ");
-  printTree(tree);
-  printf("\n");
+  // Select the index of a random internal node
+  int n1 = randomInternalNode(tree->leaves);
 
-  node_t *node = randomNode(tree, getAlignmentSize());
+  // Select the edge in which the NNI will occur
+  int n2 = randomInternalEdge(tree, n1);
+
+  // Select the joint for the NNi
   int joint = rand() % 2;
 
-  nni(node, joint);
+  nni(tree, n1, n2, joint);
 }

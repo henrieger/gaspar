@@ -1,10 +1,11 @@
 CC = gcc
 CFLAGS = -Wall -I..
 LDLIBS = 
-OBJECTS = nni.o
+OBJECTS = nni.o spr.o
 
 all: $(OBJECTS)
 nni.o: nni.c nni.h
+spr.o: spr.c spr.h
 
 optimize: CFLAGS += -O3
 optimize: all
