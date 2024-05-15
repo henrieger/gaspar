@@ -6,7 +6,7 @@
 // Create a Nearest Neighbor Interchange operation in the out edge connected to
 // node. Select the new joint by integer index (2 possible). Assumes unrooted
 // binary tree. Leaves not accepted as input.
-void nni(tree_t *tree, int n1, int n2, int joint);
+void nni(node_t *n, int joint);
 
 // Do a random NNI operation on the tree
 void randomNNI(tree_t *tree);
