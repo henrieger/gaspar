@@ -8,6 +8,9 @@
 #include <tree/random.h>
 #include <tree/tree.h>
 
+// TODO: create proper answer size
+#define ANSWER_SIZE 30
+
 double fitnessFunction(int individualScore, int bestScore) {
   return exp(bestScore - individualScore);
 }
@@ -18,28 +21,27 @@ double sampleProb() { return (double)rand() / (double)(RAND_MAX); }
 tree_t *sampleRandomTree(tree_t **population, double *probabilities,
                          int populationSize) {
   double sample = sampleProb();
-  int pos;
-  for (pos = 0; pos < populationSize; pos++) {
-    if (probabilities[pos] >= sample)
-      break;
+  for (int pos = 0; pos < populationSize; pos++) {
+    if (sample < probabilities[pos])
+      return population[pos];
   }
-  return population[pos];
+  return population[populationSize - 1];
 }
 
 // Run a single generation from the genetic algorithm search
-void geneticAlgorithmGeneration(tree_t **population, tree_t **newPopulation,
+void geneticAlgorithmGeneration(int evalFn(tree_t *), void op(tree_t *),
+                                tree_t **population, tree_t **newPopulation,
                                 unsigned int *scores, double *probabilities,
-                                int populationSize,
-                                void mutationOperator(node_t *),
-                                int eval_fn(tree_t *)) {
-  // Clear previous population
-  for (int i = 0; i < populationSize; i++)
-    destroyTree(newPopulation[i]);
+                                int populationSize) {
+  // Evaluate all individuals
+  for (int i = 0; i < populationSize; i++) {
+    scores[i] = evalFn(population[i]);
+  }
 
   // Find the best individual
   int bestPosition = 0;
-  unsigned int bestScore = (unsigned int)-1;
-  for (int i = 0; i < populationSize; i++) {
+  int bestScore = scores[0];
+  for (int i = 1; i < populationSize; i++) {
     if (scores[i] < bestScore) {
       bestScore = scores[i];
       bestPosition = i;
@@ -49,6 +51,8 @@ void geneticAlgorithmGeneration(tree_t **population, tree_t **newPopulation,
 #ifdef DEBUG
   printf("Best tree: ");
   printTree(population[bestPosition]);
+  printNewick(population[bestPosition]);
+  printf(";\n");
   printf("\tScore: %d\n", bestScore);
 #endif /* ifdef DEBUG */
 
@@ -57,7 +61,6 @@ void geneticAlgorithmGeneration(tree_t **population, tree_t **newPopulation,
   for (int i = 1; i < populationSize; i++)
     probabilities[i] =
         probabilities[i - 1] + fitnessFunction(scores[i], bestScore);
-
   for (int i = 0; i < populationSize; i++)
     probabilities[i] /= probabilities[populationSize - 1];
 
@@ -66,50 +69,46 @@ void geneticAlgorithmGeneration(tree_t **population, tree_t **newPopulation,
 
   // Select other individuals and apply mutations
   for (int i = 1; i < populationSize; i++) {
-    tree_t *randomTree =
-        sampleRandomTree(population, probabilities, populationSize);
-    newPopulation[i] = copyTree(randomTree);
-    mutationOperator(newPopulation[i]);
+    tree_t *t = sampleRandomTree(population, probabilities, populationSize);
+    newPopulation[i] = copyTree(t);
+    op(newPopulation[i]);
   }
-
-  // Evaluate all new individuals
-  for (int i = 0; i < populationSize; i++) {
-    scores[i] = eval_fn(newPopulation[i]);
-  }
-
-  // Swap populations
-  tree_t **aux = population;
-  population = newPopulation;
-  newPopulation = aux;
 }
 
-answer_t *geneticAlgorithmSearch(alignment_t alignment, int populationSize,
-                                 int generations,
-                                 void mutationOperator(node_t *),
-                                 int eval_fn(tree_t *)) {
-  answer_t *answer = initializeAnswer(30);
+// Perform a search using a genetic algorithm.
+answer_t *geneticAlgorithmSearch(alignment_t *alignment, int evalFn(tree_t *),
+                                 void op(tree_t *), int populationSize,
+                                 int generations) {
+  answer_t *answer = initializeAnswer(ANSWER_SIZE);
   tree_t **population = malloc(populationSize * sizeof(tree_t *));
-  tree_t **newPopulation = calloc(populationSize, sizeof(tree_t *));
-  alignment_t auxAlignment = newAlignment();
+  tree_t **newPopulation = malloc(populationSize * sizeof(tree_t *));
   unsigned int *scores = malloc(populationSize * sizeof(unsigned int));
   double *probabilities = malloc(populationSize * sizeof(double));
 
   // Generate initial population from single random tree
-  tree_t *randomTree = randomUnrootedBinaryTree(alignment, auxAlignment);
-  int randomTreeScore = eval_fn(randomTree);
   for (int i = 0; i < populationSize; i++) {
-    population[i] = copyTree(randomTree);
-    scores[i] = randomTreeScore;
+    population[i] = randomTree(alignment);
   }
-  destroyTree(randomTree);
 
   for (int i = 0; i < generations; i++) {
 #ifdef DEBUG
     printf("=== Generation %d ===\n", i + 1);
 #endif /* ifdef DEBUG */
-    geneticAlgorithmGeneration(population, newPopulation, scores, probabilities,
-                               populationSize, mutationOperator, eval_fn);
+    geneticAlgorithmGeneration(evalFn, op, population, newPopulation, scores,
+                               probabilities, populationSize);
+    // Swap populations
+    tree_t **aux = population;
+    population = newPopulation;
+    newPopulation = aux;
+
+    // Clear previous population
+    for (int j = 0; j < populationSize; j++)
+      destroyTree(newPopulation[j]);
   }
+
+  // Calculate scores one last time
+  for (int i = 0; i < populationSize; i++)
+    scores[i] = evalFn(population[i]);
 
   // Put all relevant trees in answer
   for (int i = 0; i < populationSize; i++)
@@ -117,10 +116,8 @@ answer_t *geneticAlgorithmSearch(alignment_t alignment, int populationSize,
 
   // Clear all data structures
   for (int i = 0; i < populationSize; i++) {
-    destroyTree(newPopulation[i]);
     destroyTree(population[i]);
   }
-  destroyAlignment(auxAlignment);
   free(population);
   free(newPopulation);
   free(scores);

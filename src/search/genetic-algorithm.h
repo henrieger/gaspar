@@ -5,9 +5,9 @@
 #include <sequence-alignment/sequence-alignment.h>
 #include <tree/tree.h>
 
-answer_t *geneticAlgorithmSearch(alignment_t alignment, int populationSize,
-                                 int generations,
-                                 void mutationOperator(node_t *),
-                                 int eval_fn(tree_t *));
+// Perform a search using a genetic algorithm.
+answer_t *geneticAlgorithmSearch(alignment_t *alignment, int evalFn(tree_t *),
+                                 void op(tree_t *), int populationSize,
+                                 int generations);
 
 #endif // !__GENETIC_ALGORITHM_H__
