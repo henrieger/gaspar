@@ -79,5 +79,6 @@ answer_t *branchAndBoundSearch(alignment_t *alignment, config_t *config) {
   answer_t *answer = initializeAnswer(config->answer_size);
   branchAndBoundRecursive(tree, tree->root, alignment, config, 3, -1, answer);
 
+  destroyTree(tree);
   return answer;
 }
