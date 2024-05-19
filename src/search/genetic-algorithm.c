@@ -51,7 +51,7 @@ void geneticAlgorithmGeneration(int evalFn(tree_t *), void op(tree_t *),
 #ifdef DEBUG
   printf("Best tree: ");
   printTree(population[bestPosition]);
-  printNewick(population[bestPosition]);
+  printNewick(population[bestPosition], NULL);
   printf(";\n");
   printf("\tScore: %d\n", bestScore);
 #endif /* ifdef DEBUG */

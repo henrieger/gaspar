@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <tree/tree.h>
 
-// Initialize answer structure
+// Initialize answer structure.
 answer_t *initializeAnswer(int numTrees) {
   answer_t *answer = malloc(sizeof(answer_t));
   answer->numTrees = numTrees;
@@ -11,6 +11,11 @@ answer_t *initializeAnswer(int numTrees) {
   answer->currTree = 0;
   answer->score = -1;
   return answer;
+}
+
+// Return number of trees currently in the answer.
+inline int getNumberOfTrees(answer_t *answer) {
+  return answer->currTree;
 }
 
 // Insert a new tree in the answer if there is available space.
@@ -47,17 +52,21 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score) {
 unsigned int getScore(answer_t *answer) { return answer->score; }
 
 // Print information of answer
-void printAnswer(answer_t *answer) {
-  printf("-- ANSWER --\nMin score: %u\nTrees:\n", getScore(answer));
+void printAnswer(answer_t *answer, FILE *fp) {
+  FILE *finalFile = fp;
+  if (!fp)
+    finalFile = stdout;
+
+  fprintf(finalFile, "-- ANSWER --\nMin score: %u\nTrees:\n", getScore(answer));
   for (int i = 0; answer->trees[i] && i < answer->numTrees; i++) {
-    printf("\t");
+    fprintf(finalFile, "\t");
 
 #ifdef DEBUG
     printTree(answer->trees[i]);
 #endif /* ifdef DEBUG */
 
-    printNewick(answer->trees[i]);
-    printf(";\n");
+    printNewick(answer->trees[i], finalFile);
+    fprintf(finalFile, ";\n");
   }
 }
 

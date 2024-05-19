@@ -8,7 +8,13 @@
 #include "sequence-alignment/sequence-alignment.h"
 #include "answer/answer.h"
 #include "search/branch-and-bound.h"
+#include "search/genetic-algorithm.h"
 #include "eval/parsimony.h"
+#include "tree/tree.h"
+#include "tree/random.h"
+#include "operators/nni.h"
+#include "operators/spr.h"
+#include "support/bootstrap.h"
 
 %}
 
@@ -110,11 +116,7 @@ int main(int argc, char **argv) {
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
 
-  answer_t *answer = branchAndBoundSearch(alignment, fitchParsimony);
-  // answer_t *answer = hillClimbingSearch(alignment, 3, nni, fitch_parsimony);
-  // answer_t *answer = geneticAlgorithmSearch(alignment, 8, 100, randomNNI, fitch_parsimony);
-  printAnswer(answer);
-  destroyAnswer(answer);
+  bootstrap(branchAndBoundSearch, alignment, fitchParsimony, 50);
 
   if (alignment)
     destroyAlignment(alignment);

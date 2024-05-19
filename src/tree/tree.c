@@ -124,53 +124,57 @@ void printTree(tree_t *tree) {
 }
 
 // Print a node in Newick format, keeping track of origin of call.
-void printNewickNode(tree_t *tree, int node, int from) {
+void printNewickNode(tree_t *tree, int node, int from, FILE *fp) {
   if (!tree || node < 0)
     return;
 
   node_t *nodeStruct = &(tree->nodes[node]);
 
   if (nodeStruct->label)
-    printf("%s", nodeStruct->label);
+    fprintf(fp, "%s", nodeStruct->label);
 
   if (isLeaf(tree, node))
     return;
 
-  printf("(");
+  fprintf(fp, "(");
   if (from == nodeStruct->edge1) {
-    printNewickNode(tree, nodeStruct->edge2, node);
-    printf(",");
-    printNewickNode(tree, nodeStruct->edge3, node);
+    printNewickNode(tree, nodeStruct->edge2, node, fp);
+    fprintf(fp, ",");
+    printNewickNode(tree, nodeStruct->edge3, node, fp);
   } else if (from == nodeStruct->edge2) {
-    printNewickNode(tree, nodeStruct->edge1, node);
-    printf(",");
-    printNewickNode(tree, nodeStruct->edge3, node);
+    printNewickNode(tree, nodeStruct->edge1, node, fp);
+    fprintf(fp, ",");
+    printNewickNode(tree, nodeStruct->edge3, node, fp);
   } else if (from == nodeStruct->edge3) {
-    printNewickNode(tree, nodeStruct->edge1, node);
-    printf(",");
-    printNewickNode(tree, nodeStruct->edge2, node);
+    printNewickNode(tree, nodeStruct->edge1, node, fp);
+    fprintf(fp, ",");
+    printNewickNode(tree, nodeStruct->edge2, node, fp);
   }
-  printf(")");
+  fprintf(fp, ")");
 }
 
 // Print tree in Newick format as rooted and without final ";".
-void printNewick(tree_t *tree) {
+void printNewick(tree_t *tree, FILE *fp) {
+  FILE *finalFile = fp;
+  if (!fp)
+    finalFile = stdout;
+
   if (!tree || tree->root < 0)
     return;
 
   node_t *rootStruct = &(tree->nodes[tree->root]);
 
   if (rootStruct->label)
-    printf("%s", rootStruct->label);
+    fprintf(finalFile, "%s", rootStruct->label);
 
   if (isLeaf(tree, tree->root))
     return;
 
-  printf("(");
-  printNewickNode(tree, tree->root, rootStruct->edge1);
-  printf(",");
-  printNewickNode(tree, rootStruct->edge1, tree->root);
-  printf(")");
+  fprintf(finalFile, "(");
+  printNewickNode(tree, tree->root, rootStruct->edge1, finalFile);
+  fprintf(finalFile, ",");
+  printNewickNode(tree, rootStruct->edge1, tree->root, finalFile);
+  fprintf(finalFile, ")");
 }
 
 // Returns a copy of the tree.

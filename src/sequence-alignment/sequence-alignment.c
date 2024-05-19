@@ -30,6 +30,9 @@ inline void setAlignmentSize(int size) { alignmentSize = size; }
 // Set weight of character c as w
 inline void setCharacterWeight(int i, float w) { weights[i] = w; }
 
+// Increment weight of character c by one
+inline void incrementCharacterWeight(int i) { weights[i]++; }
+
 // Size of an allowed states array
 inline unsigned long allowedArraySize() {
   return (getSequenceSize() + (sizeof(allowed_t *) * CHAR_STATES) - 1) /

@@ -40,6 +40,9 @@ void setAlignmentSize(int size);
 // Set weight of character c as w
 void setCharacterWeight(int i, float w);
 
+// Increment weight of character c by one
+void incrementCharacterWeight(int i);
+
 // Size of an allowed states array
 unsigned long allowedArraySize();
 

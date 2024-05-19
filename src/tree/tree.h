@@ -3,6 +3,7 @@
 
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
+#include <stdio.h>
 
 typedef struct node {
   int edge1, edge2, edge3;
@@ -43,7 +44,7 @@ tree_t *smallestTree(alignment_t *alignment);
 void printTree(tree_t *tree);
 
 // Print tree in Newick format as rooted and without final ";".
-void printNewick(tree_t *tree);
+void printNewick(tree_t *tree, FILE *fp);
 
 // Returns a copy of the tree.
 tree_t *copyTree(const tree_t *tree);
