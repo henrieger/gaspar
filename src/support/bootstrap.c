@@ -24,22 +24,21 @@ void printReplicate(answer_t *answer, double treeWeight, FILE *fp) {
 }
 
 // Perform bootstrap analysis by the giving method and number of replicates.
-void bootstrap(answer_t *method(alignment_t *, int evalFn(tree_t *)),
-               alignment_t *alignment, int evalFn(tree_t *), int replicates) {
+void bootstrap(alignment_t *alignment, config_t *config) {
   FILE *fp = fopen("intree", "w");
   
-  answer_t *answer = method(alignment, evalFn);
+  answer_t *answer = config->searchMethod(alignment, config);
   double treeWeight = (double)1 / (getNumberOfTrees(answer));
   printReplicate(answer, treeWeight, fp);
   printf("\nOriginal Analysis:\n\n");
   printAnswer(answer, NULL);
-  printf("\nGenerating %d bootstrap replicates...\n", replicates);
+  printf("\nGenerating %d bootstrap replicates...\n", config->bs_replicates);
 
-  for (int i = 0; i < replicates; i++) {
+  for (int i = 0; i < config->bs_replicates; i++) {
     printf("- Replicate %d\n", i+1);
     destroyAnswer(answer);
     bootstrapCharWeights(weights);
-    answer = method(alignment, evalFn);
+    answer = config->searchMethod(alignment, config);
     treeWeight = (double)1 / (getNumberOfTrees(answer));
     printReplicate(answer, treeWeight, fp);
   }

@@ -1,5 +1,6 @@
 %{
 
+#include "config.h"
 #include "gaspar.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,6 +106,10 @@ int main(int argc, char **argv) {
   if (argc != 1)
     fclose(fp);
 
+  config_t config;
+  setConfigsToDefault(&config);
+  // config.searchMethod = branchAndBoundSearch;
+
 #ifdef DEBUG
   printf("Alignment size: %d\nSequence size: %d\n", getAlignmentSize(), getSequenceSize());
   printf("Allowed states size: %ld\n", allowedArraySize());
@@ -116,7 +121,7 @@ int main(int argc, char **argv) {
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
 
-  bootstrap(branchAndBoundSearch, alignment, fitchParsimony, 50);
+  bootstrap(alignment, &config);
 
   if (alignment)
     destroyAlignment(alignment);

@@ -1,5 +1,6 @@
 #include "parsimony.h"
 
+#include <config.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,7 +90,7 @@ int fitchParsimonyRecursive(tree_t *tree, int node, int from) {
 }
 
 // Calculate Wagner parsimony of a tree using Fitch's algorithm (Fitch, 1971).
-int fitchParsimony(tree_t *tree) {
+int fitchParsimony(tree_t *tree, config_t *config) {
   if (!tree)
     return 0;
 

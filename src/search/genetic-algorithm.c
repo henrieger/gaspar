@@ -1,15 +1,13 @@
 #include "genetic-algorithm.h"
 
 #include <answer/answer.h>
+#include <config.h>
 #include <math.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tree/random.h>
 #include <tree/tree.h>
-
-// TODO: create proper answer size
-#define ANSWER_SIZE 30
 
 double fitnessFunction(int individualScore, int bestScore) {
   return exp(bestScore - individualScore);
@@ -29,19 +27,18 @@ tree_t *sampleRandomTree(tree_t **population, double *probabilities,
 }
 
 // Run a single generation from the genetic algorithm search
-void geneticAlgorithmGeneration(int evalFn(tree_t *), void op(tree_t *),
-                                tree_t **population, tree_t **newPopulation,
-                                unsigned int *scores, double *probabilities,
-                                int populationSize) {
+void geneticAlgorithmGeneration(config_t *config, tree_t **population,
+                                tree_t **newPopulation, unsigned int *scores,
+                                double *probabilities) {
   // Evaluate all individuals
-  for (int i = 0; i < populationSize; i++) {
-    scores[i] = evalFn(population[i]);
+  for (int i = 0; i < config->ga_populationSize; i++) {
+    scores[i] = config->evalFn(population[i], config);
   }
 
   // Find the best individual
   int bestPosition = 0;
   int bestScore = scores[0];
-  for (int i = 1; i < populationSize; i++) {
+  for (int i = 1; i < config->ga_populationSize; i++) {
     if (scores[i] < bestScore) {
       bestScore = scores[i];
       bestPosition = i;
@@ -58,64 +55,64 @@ void geneticAlgorithmGeneration(int evalFn(tree_t *), void op(tree_t *),
 
   // Calculate sum of prefixes of probabilities for all individuals
   probabilities[0] = fitnessFunction(scores[0], bestScore);
-  for (int i = 1; i < populationSize; i++)
+  for (int i = 1; i < config->ga_populationSize; i++)
     probabilities[i] =
         probabilities[i - 1] + fitnessFunction(scores[i], bestScore);
-  for (int i = 0; i < populationSize; i++)
-    probabilities[i] /= probabilities[populationSize - 1];
+  for (int i = 0; i < config->ga_populationSize; i++)
+    probabilities[i] /= probabilities[config->ga_populationSize - 1];
 
   // Preserve best individual
   newPopulation[0] = copyTree(population[bestPosition]);
 
   // Select other individuals and apply mutations
-  for (int i = 1; i < populationSize; i++) {
-    tree_t *t = sampleRandomTree(population, probabilities, populationSize);
+  for (int i = 1; i < config->ga_populationSize; i++) {
+    tree_t *t =
+        sampleRandomTree(population, probabilities, config->ga_populationSize);
     newPopulation[i] = copyTree(t);
-    op(newPopulation[i]);
+    config->ga_mutationOperator(newPopulation[i]);
   }
 }
 
 // Perform a search using a genetic algorithm.
-answer_t *geneticAlgorithmSearch(alignment_t *alignment, int evalFn(tree_t *),
-                                 void op(tree_t *), int populationSize,
-                                 int generations) {
-  answer_t *answer = initializeAnswer(ANSWER_SIZE);
-  tree_t **population = malloc(populationSize * sizeof(tree_t *));
-  tree_t **newPopulation = malloc(populationSize * sizeof(tree_t *));
-  unsigned int *scores = malloc(populationSize * sizeof(unsigned int));
-  double *probabilities = malloc(populationSize * sizeof(double));
+answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
+  answer_t *answer = initializeAnswer(config->answer_size);
+  tree_t **population = malloc(config->ga_populationSize * sizeof(tree_t *));
+  tree_t **newPopulation = malloc(config->ga_populationSize * sizeof(tree_t *));
+  unsigned int *scores =
+      malloc(config->ga_populationSize * sizeof(unsigned int));
+  double *probabilities = malloc(config->ga_populationSize * sizeof(double));
 
   // Generate initial population from single random tree
-  for (int i = 0; i < populationSize; i++) {
+  for (int i = 0; i < config->ga_populationSize; i++) {
     population[i] = randomTree(alignment);
   }
 
-  for (int i = 0; i < generations; i++) {
+  for (int i = 0; i < config->ga_generations; i++) {
 #ifdef DEBUG
     printf("=== Generation %d ===\n", i + 1);
 #endif /* ifdef DEBUG */
-    geneticAlgorithmGeneration(evalFn, op, population, newPopulation, scores,
-                               probabilities, populationSize);
+    geneticAlgorithmGeneration(config, population, newPopulation, scores,
+                               probabilities);
     // Swap populations
     tree_t **aux = population;
     population = newPopulation;
     newPopulation = aux;
 
     // Clear previous population
-    for (int j = 0; j < populationSize; j++)
+    for (int j = 0; j < config->ga_populationSize; j++)
       destroyTree(newPopulation[j]);
   }
 
   // Calculate scores one last time
-  for (int i = 0; i < populationSize; i++)
-    scores[i] = evalFn(population[i]);
+  for (int i = 0; i < config->ga_populationSize; i++)
+    scores[i] = config->evalFn(population[i], config);
 
   // Put all relevant trees in answer
-  for (int i = 0; i < populationSize; i++)
+  for (int i = 0; i < config->ga_populationSize; i++)
     updateAnswer(answer, population[i], scores[i]);
 
   // Clear all data structures
-  for (int i = 0; i < populationSize; i++) {
+  for (int i = 0; i < config->ga_populationSize; i++) {
     destroyTree(population[i]);
   }
   free(population);

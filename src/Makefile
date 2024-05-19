@@ -2,12 +2,12 @@ CC = gcc
 LDLIBS = -ll -ly -lc -lm
 OBJECTS = *.o */*.o
 EXECUTABLE = gaspar
-SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/
+SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/ support/
 TESTS = test-cases/
 CFLAGS = -Wall -I${CURDIR}
 TARGETS = 
 
-all: $(SUBDIRS) gaspar
+all: $(SUBDIRS) gaspar config.o
 .PHONY: all $(SUBDIRS) $(TESTS)
 
 # -- MAIN FILES --
@@ -22,6 +22,8 @@ gaspar.tab.c: gaspar.y gaspar.h
 
 gaspar.o: gasparFunctions.c gaspar.h
 	${CC} ${CFLAGS} -c gasparFunctions.c -o gaspar.o
+
+config.o: config.c config.h
 
 # -- SUBDIRS --
 $(SUBDIRS):

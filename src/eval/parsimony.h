@@ -1,9 +1,10 @@
 #ifndef __PARSIMONY_H__
 #define __PARSIMONY_H__
 
-#include "../tree/tree.h"
+#include <tree/tree.h>
+#include <config.h>
 
 // Calculate Wagner parsimony of a tree using Fitch's algorithm (Fitch, 1971).
-int fitchParsimony(tree_t *tree);
+int fitchParsimony(tree_t *tree, config_t *config);
 
 #endif // !__PARSIMONY_H__
