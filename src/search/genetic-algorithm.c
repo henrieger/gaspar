@@ -69,7 +69,7 @@ void geneticAlgorithmGeneration(config_t *config, tree_t **population,
     tree_t *t =
         sampleRandomTree(population, probabilities, config->ga_populationSize);
     newPopulation[i] = copyTree(t);
-    config->ga_mutationOperator(newPopulation[i]);
+    config->ga_mutationOperator(newPopulation[i], config);
   }
 }
 
