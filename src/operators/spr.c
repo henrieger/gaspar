@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <tree/random.h>
 #include <tree/tree.h>
+#include <config.h>
 
 // Determine node to the "left" of subtree
 int findLeft(tree_t *tree, int pruneNode, int pruneEdge) {
@@ -51,7 +52,7 @@ void subtreeRegraft(tree_t *tree, int pruneRoot, int graftNode1,
 }
 
 // Performs a random SPR operation on the tree.
-void randomSPR(tree_t *tree) {
+void randomSPR(tree_t *tree, config_t *config) {
   // Select a random internal node to be the cut point
   int pruneRoot = randomInternalNode(tree->leaves);
 
@@ -67,7 +68,7 @@ void randomSPR(tree_t *tree) {
 
   // Select a random edge to graft
   int graftNode1, graftNode2;
-  randomSubtree(tree, remainingTree, &graftNode1, &graftNode2, 0.5);
+  randomSubtree(tree, remainingTree, &graftNode1, &graftNode2, config->spr_probability);
 
 #ifdef DEBUG
   printf("Regrafting at (%d %d)\n", graftNode1, graftNode2);

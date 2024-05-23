@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <tree/random.h>
 #include <tree/tree.h>
+#include <config.h>
 
 // Find the node in n1 to be swapped
 int findN1Swapper(tree_t *tree, int n1, int n2) {
@@ -36,7 +37,7 @@ void nni(tree_t *tree, int n1, int n2, int joint) {
 }
 
 // Do a random NNI operation on the tree
-void randomNNI(tree_t *tree) {
+void randomNNI(tree_t *tree, config_t *config) {
   // Select the index of a random internal node
   int n1 = randomInternalNode(tree->leaves);
 

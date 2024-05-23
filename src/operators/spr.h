@@ -1,6 +1,7 @@
 #ifndef __SPR_H__
 
 #include <tree/tree.h>
+#include <config.h>
 
 // Performs the pruning step of SPR, separating a subtree rooted in pruneRoot.
 // Returns a "root" to the leftover tree.
@@ -12,6 +13,6 @@ void subtreeRegraft(tree_t *tree, int pruneRoot, int graftNode1,
                     int graftNode2);
 
 // Performs a random SPR operation on the tree.
-void randomSPR(tree_t *tree);
+void randomSPR(tree_t *tree, config_t *config);
 
 #endif // !__SPR_H__

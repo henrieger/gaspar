@@ -23,7 +23,7 @@ typedef struct config {
   unsigned int hc_replicates;
 
   // Genetic Algorithm params
-  void (*ga_mutationOperator)(tree_t *tree);
+  void (*ga_mutationOperator)(tree_t *tree, struct config *config);
   void (*ga_recombinationOperator)(tree_t *tree1, tree_t *tree2);
   unsigned int ga_populationSize;
   unsigned int ga_generations;
