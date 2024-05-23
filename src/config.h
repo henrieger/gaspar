@@ -5,6 +5,11 @@
 #include "sequence-alignment/sequence-alignment.h"
 #include "tree/tree.h"
 
+enum hcOps {
+  SPR,
+  NNI
+};
+
 typedef struct config {
   // General params
   answer_t *(*searchMethod)(alignment_t *alignment, struct config *config);
@@ -14,7 +19,7 @@ typedef struct config {
   int answer_size;
 
   // Hill climbing params
-  void (*hc_operator)(tree_t *tree);
+  enum hcOps hc_operator;
   unsigned int hc_replicates;
 
   // Genetic Algorithm params

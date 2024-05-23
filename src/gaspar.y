@@ -9,6 +9,7 @@
 #include "sequence-alignment/sequence-alignment.h"
 #include "answer/answer.h"
 #include "search/branch-and-bound.h"
+#include "search/hill-climbing.h"
 #include "search/genetic-algorithm.h"
 #include "eval/parsimony.h"
 #include "tree/tree.h"
@@ -108,7 +109,8 @@ int main(int argc, char **argv) {
 
   config_t config;
   setConfigsToDefault(&config);
-  // config.searchMethod = branchAndBoundSearch;
+  config.searchMethod = hillClimbingSearch;
+  config.hc_operator = SPR;
 
 #ifdef DEBUG
   printf("Alignment size: %d\nSequence size: %d\n", getAlignmentSize(), getSequenceSize());
