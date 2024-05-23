@@ -11,6 +11,12 @@ optimize:
 debug:
 	$(MAKE) debug -C src/
 
+thesis:
+	$(MAKE) -C thesis/
+
+thesis-purge:
+	$(MAKE) purge -C thesis/
+
 profile:
 	$(MAKE) profile -C src/
 
