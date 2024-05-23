@@ -1,5 +1,6 @@
 all:
 	$(MAKE) -C src/
+	cp src/gaspar gaspar
 
 test:
 	$(MAKE) test -C src/
