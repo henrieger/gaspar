@@ -209,6 +209,7 @@ answer_t *hillClimbingSearch(alignment_t *alignment, config_t *config) {
 #endif /* ifdef DEBUG */
     tree_t *tree = hillClimbingReplicate(alignment, config);
     updateAnswer(answer, tree, config->evalFn(tree, config));
+    destroyTree(tree);
   }
 
   return answer;
