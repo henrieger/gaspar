@@ -6,15 +6,26 @@
 #include <stdlib.h>
 #include <tree/tree.h>
 
+sequence_t *unionSeq;
+sequence_t *interSeq;
+
+void initializeGlobalAuxSequences() {
+  unionSeq = newSequence();
+  interSeq = newSequence();
+}
+
 int scoreFromInters(allowed_t *r) {
   int score = 0;
+  int bitIndex = 0;
+
   for (int i = 0; i < allowedArraySize(); i++) {
-    for (int j = 0; j < 8 * sizeof(allowed_t); j++) {
-      score += (r[i] & ((allowed_t)1 << j))
-                   ? 0
-                   : getCharacterWeight(i * 8 * sizeof(allowed_t) + j);
+    allowed_t r_i = r[i];
+    for (int j = 0; (j < 8 * sizeof(allowed_t)) && bitIndex < getSequenceSize();
+         j++, bitIndex++) {
+      score += (r_i & ((allowed_t)1 << j)) ? 0 : getCharacterWeight(bitIndex);
     }
   }
+
   free(r);
   return score;
 }
@@ -22,9 +33,6 @@ int scoreFromInters(allowed_t *r) {
 int localParsimony(tree_t *tree, int n1, int n2, int node) {
   node_t *nodeStruct1 = &(tree->nodes[n1]);
   node_t *nodeStruct2 = &(tree->nodes[n2]);
-
-  sequence_t *unionSeq = newSequence();
-  sequence_t *interSeq = newSequence();
 
   for (int i = 0; i < CHAR_STATES; i++) {
     for (int j = 0; j < allowedArraySize(); j++) {
@@ -51,9 +59,6 @@ int localParsimony(tree_t *tree, int n1, int n2, int node) {
       }
     }
   }
-
-  destroySequence(interSeq);
-  destroySequence(unionSeq);
 
   return scoreFromInters(r);
 }
@@ -100,4 +105,9 @@ int fitchParsimony(tree_t *tree, config_t *config) {
   return fitchParsimonyRecursive(tree, root1, root2) +
          fitchParsimonyRecursive(tree, root2, root1) +
          localParsimony(tree, root1, root2, -1);
+}
+
+void destroyGlobalAuxSequences() {
+  destroySequence(unionSeq);
+  destroySequence(interSeq);
 }

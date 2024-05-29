@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-int sequenceSize;  // Global amount of characters in a sequence
-int alignmentSize; // Global amount of taxa in the alignment
-float *weights;    // Array of weights of characters
+int sequenceSize;        // Global amount of characters in a sequence
+int alignmentSize;       // Global amount of taxa in the alignment
+float *weights;          // Array of weights of characters
+int allowedArraySizeVar; // Global size of allowed states array
 
 // Get the global amount of characters in a sequence
 inline int getSequenceSize() { return sequenceSize; }
@@ -21,8 +22,16 @@ float getCharacterWeight(int i) {
   return weights[i];
 }
 
+inline void setAllowedArraySize(int seqSize) {
+  allowedArraySizeVar = (seqSize + (sizeof(allowed_t *) * CHAR_STATES) - 1) /
+                        (CHAR_STATES * sizeof(allowed_t *));
+}
+
 // Set the value of the global amount of characters in a sequence
-inline void setSequenceSize(int size) { sequenceSize = size; }
+inline void setSequenceSize(int size) {
+  sequenceSize = size;
+  setAllowedArraySize(size);
+}
 
 // Set the value of the global amount of taxa in the alignment
 inline void setAlignmentSize(int size) { alignmentSize = size; }
@@ -35,8 +44,7 @@ inline void incrementCharacterWeight(int i) { weights[i]++; }
 
 // Size of an allowed states array
 inline unsigned long allowedArraySize() {
-  return (getSequenceSize() + (sizeof(allowed_t *) * CHAR_STATES) - 1) /
-         (CHAR_STATES * sizeof(allowed_t *));
+  return allowedArraySizeVar;
 }
 
 // Allocate space for a new array of allowed states
