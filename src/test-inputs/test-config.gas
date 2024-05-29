@@ -1,0 +1,41 @@
+text/x-gaspar
+
+taxa: 5
+characters: 6
+
+Alpha     100110
+Beta      001000
+Gamma     110000
+Delta     110111
+Epsilon   001110
+
+analyses:
+
+branchAndBoundTest {
+  searchMethod branchAndBound
+  bsParams 0
+}
+
+hillClimbingSpr {
+  searchMethod hillClimbing
+  hcParams spr 50% 8
+  bsParams 5
+}
+
+hillClimbingNni {
+  searchMethod hillClimbing
+  hcParams nni 50% 8
+  bsParams 5
+}
+
+gaSpr {
+  searchMethod geneticAlgorithm
+  gaParams spr 8 100
+  bsParams 5
+}
+
+gaNni {
+  searchMethod geneticAlgorithm
+  gaParams nni 8 200
+  bsParams 5
+}

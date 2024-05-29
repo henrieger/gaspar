@@ -1,11 +1,14 @@
 #include "config.h"
 
+#include <string.h>
 #include "search/genetic-algorithm.h"
 #include "eval/parsimony.h"
 #include "operators/spr.h"
+#include "sequence-alignment/sequence-alignment.h"
 
 // Set all configurations to a pre-estabilished default 
 void setConfigsToDefault(config_t *config) {
+  config->name[0] = (char)0;
   config->searchMethod = geneticAlgorithmSearch;
   config->evalFn = fitchParsimony;
   config->answer_size = 100;
@@ -17,4 +20,8 @@ void setConfigsToDefault(config_t *config) {
   config->ga_generations = 10000;
   config->spr_probability = 0.5;
   config->bs_replicates = 99;
+}
+
+void setName(config_t *config, char *name) {
+  memcpy(config->name, name, LABEL_SIZE);
 }

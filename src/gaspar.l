@@ -47,6 +47,21 @@ mimetype "text/x-gaspar"
   return COLON;
 }
 
+\{ {
+  assignToken("openBrace");
+  return OPEN_BRACE;
+}
+
+\} {
+  assignToken("closeBrace");
+  return CLOSE_BRACE;
+}
+
+\% {
+  assignToken("percent");
+  return PERCENT;
+}
+
 taxa {
   assignToken("taxa");
   return TAXA_TOKEN;
@@ -55,6 +70,81 @@ taxa {
 characters {
   assignToken("characters");
   return CHAR_TOKEN;
+}
+
+analyses {
+  assignToken("analyses");
+  return ANALYSES;
+}
+
+searchMethod {
+  assignToken("searchMethod");
+  return SEARCH_METHOD;
+}
+
+branchAndBound {
+  assignToken("branchAndBound");
+  return BRANCH_AND_BOUND;
+}
+
+hillClimbing {
+  assignToken("hillClimbing");
+  return HILL_CLIMBING;
+}
+
+geneticAlgorithm {
+  assignToken("geneticAlgorithm");
+  return GENETIC_ALGORITHM;
+}
+
+evaluation {
+  assignToken("evaluation");
+  return EVALUATION;
+}
+
+ewmp {
+  assignToken("ewmp");
+  return EWMP;
+}
+
+maxTrees {
+  assignToken("maxTrees");
+  return MAX_TREES;
+}
+
+spr {
+  assignToken("spr");
+  return TOKEN_SPR;
+}
+
+nni {
+  assignToken("nni");
+  return TOKEN_NNI;
+}
+
+tbr {
+  assignToken("tbr");
+  return TOKEN_TBR;
+}
+
+pdg {
+  assignToken("pdg");
+  return TOKEN_PDG;
+}
+
+hcParams {
+  assignToken("hcParams");
+  return HC_PARAMS;
+}
+
+gaParams {
+  assignToken("gaParams");
+  return GA_PARAMS;
+}
+
+bsParams {
+  assignToken("bsParams");
+  return BS_PARAMS;
 }
 
 {number} {

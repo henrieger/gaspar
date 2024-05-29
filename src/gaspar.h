@@ -2,6 +2,7 @@
 #define __GASPAR_H__
 
 #include "sequence-alignment/sequence-alignment.h"
+#include "config.h"
 #include <stdio.h>
 
 #define TOKEN_SIZE LABEL_SIZE
@@ -10,6 +11,7 @@
 extern char token[TOKEN_SIZE];
 extern int lineNumber;
 extern alignment_t *alignment;
+extern config_t config;
 extern int taxon;
 extern int character;
 extern char **labels;
@@ -19,6 +21,9 @@ int yylex();
 
 // Prints errors and exits
 void yyerror(const char *s);
+
+// Declaration of function to free lex memory
+extern int yylex_destroy();
 
 // Sofisticated error print function
 void printError(const char *format, ...);

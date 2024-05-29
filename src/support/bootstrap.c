@@ -4,6 +4,7 @@
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Generate a new set of random weights by bootstrapping.
 void bootstrapCharWeights(float *weights) {
@@ -25,8 +26,19 @@ void printReplicate(answer_t *answer, double treeWeight, FILE *fp) {
 
 // Perform bootstrap analysis by the giving method and number of replicates.
 void bootstrap(alignment_t *alignment, config_t *config) {
-  FILE *fp = fopen("intree", "w");
-  
+  resetCharacterWeights();
+
+  char filename[LABEL_SIZE];
+
+  if (strlen(config->name) == 0)
+    strcpy(filename, "intree");
+  else {
+    strncpy(filename, config->name, LABEL_SIZE);
+    strcat(filename, ".intree");
+  }
+
+  FILE *fp = fopen(filename, "w");
+
   answer_t *answer = config->searchMethod(alignment, config);
   double treeWeight = (double)1 / (getNumberOfTrees(answer));
   printReplicate(answer, treeWeight, fp);
@@ -35,7 +47,7 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   printf("\nGenerating %d bootstrap replicates...\n", config->bs_replicates);
 
   for (int i = 0; i < config->bs_replicates; i++) {
-    printf("- Replicate %d\n", i+1);
+    printf("- Replicate %d\n", i + 1);
     destroyAnswer(answer);
     bootstrapCharWeights(weights);
     answer = config->searchMethod(alignment, config);
@@ -43,7 +55,7 @@ void bootstrap(alignment_t *alignment, config_t *config) {
     printReplicate(answer, treeWeight, fp);
   }
 
-  printf("Done. Check file 'intree' for complete analysis.\n");
+  printf("Done. Check file '%s' for complete analysis.\n", filename);
   destroyAnswer(answer);
   fclose(fp);
 }

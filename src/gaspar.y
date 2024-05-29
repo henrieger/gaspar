@@ -22,16 +22,23 @@
 
 //TOKENS
 %token MIMETYPE
-%token OPEN_BRACKET CLOSE_BRACKET COLON
+%token OPEN_BRACKET CLOSE_BRACKET OPEN_BRACE CLOSE_BRACE COLON
 %token NUMBER IDENT MISSING_DATA
+%token ANALYSES
 %token TAXA_TOKEN CHAR_TOKEN
+%token SEARCH_METHOD BRANCH_AND_BOUND HILL_CLIMBING GENETIC_ALGORITHM
+%token TOKEN_NNI TOKEN_SPR TOKEN_TBR TOKEN_PDG
+%token EVALUATION EWMP
+%token HC_PARAMS GA_PARAMS BS_PARAMS
+%token MAX_TREES PERCENT
 
 %%
 
 file:
   MIMETYPE alignment_sizes { initializeAlignment(); }
-  alignment { checkNumberOfTaxa(); }
-  commands
+  alignment { checkNumberOfTaxa(); printAlignment(alignment); }
+  { setConfigsToDefault(&config); }
+  opt_analyses
 ;
 
 alignment_sizes:
@@ -74,7 +81,88 @@ charset:
   | MISSING_DATA { addMissingData(); }
 ;
 
-commands:
+opt_analyses:
+  ANALYSES COLON analyses | { bootstrap(alignment, &config); } ;
+
+analyses:
+  analyses analysis
+  | analysis
+;
+
+analysis:
+  IDENT { setName(&config, token); printf("\n===== %s =====\n", token); } OPEN_BRACE 
+  options
+  CLOSE_BRACE { bootstrap(alignment, &config); setConfigsToDefault(&config); }
+;
+
+options:
+  options option
+  | option
+;
+
+option:
+  searchMethod
+  | evaluation
+  | hcParams
+  | gaParams
+  | bsParams
+  | maxTrees
+;
+
+searchMethod:
+  SEARCH_METHOD method
+;
+
+method:
+  BRANCH_AND_BOUND { config.searchMethod = branchAndBoundSearch; }
+  | HILL_CLIMBING { config.searchMethod = hillClimbingSearch; }
+  | GENETIC_ALGORITHM { config.searchMethod = geneticAlgorithmSearch; }
+;
+
+evaluation:
+  EVALUATION EWMP { config.evalFn = fitchParsimony; }
+;
+
+hcParams:
+  HC_PARAMS hcOperator hcProbability hcReplicates
+;
+
+hcOperator:
+  TOKEN_SPR { config.hc_operator = SPR; }
+  | TOKEN_NNI { config.hc_operator = NNI; }
+;
+
+hcProbability:
+  NUMBER PERCENT { config.spr_probability = atof(token) / 100; }
+;
+
+hcReplicates:
+  NUMBER { config.hc_replicates = atoi(token); }
+;
+
+gaParams:
+  GA_PARAMS gaMutationOperator gaPopulationSize gaGenerations
+;
+
+gaMutationOperator:
+  TOKEN_SPR { config.ga_mutationOperator = randomSPR; }
+  | TOKEN_NNI { config.ga_mutationOperator = randomNNI; }
+;
+
+gaPopulationSize:
+  NUMBER { config.ga_populationSize = atoi(token); }
+;
+
+gaGenerations:
+  NUMBER { config.ga_generations = atoi(token); }
+;
+
+bsParams:
+  BS_PARAMS NUMBER { config.bs_replicates = atoi(token); }
+;
+
+maxTrees:
+  MAX_TREES NUMBER { config.answer_size = atoi(token); }
 ;
 
 %%
@@ -107,23 +195,15 @@ int main(int argc, char **argv) {
   if (argc != 1)
     fclose(fp);
 
-  config_t config;
-  setConfigsToDefault(&config);
-  config.searchMethod = hillClimbingSearch;
-  config.hc_operator = SPR;
-
 #ifdef DEBUG
   printf("Alignment size: %d\nSequence size: %d\n", getAlignmentSize(), getSequenceSize());
   printf("Allowed states size: %ld\n", allowedArraySize());
 # endif
 
-  printAlignment(alignment);
 
 #ifdef DEBUG
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
-
-  bootstrap(alignment, &config);
 
   if (alignment)
     destroyAlignment(alignment);
@@ -135,4 +215,6 @@ int main(int argc, char **argv) {
     free(labels[0]);
     free(labels);
   }
+
+  yylex_destroy();
 }

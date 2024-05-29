@@ -12,6 +12,7 @@ enum hcOps {
 
 typedef struct config {
   // General params
+  char name[LABEL_SIZE];
   answer_t *(*searchMethod)(alignment_t *alignment, struct config *config);
   int (*evalFn)(tree_t *, struct config *config);
 
@@ -37,5 +38,8 @@ typedef struct config {
 
 // Set all configurations to a pre-estabilished default
 void setConfigsToDefault(config_t *config);
+
+// Set the name of the analysis
+void setName(config_t *config, char *name);
 
 #endif // !__CONFIG_H__

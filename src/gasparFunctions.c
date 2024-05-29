@@ -1,5 +1,6 @@
 #include "gaspar.h"
 #include "sequence-alignment/sequence-alignment.h"
+#include "config.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@ alignment_t *alignment;
 int taxon = 0;
 int character = 0;
 char **labels;
+config_t config;
 
 // Prints errors and exits
 void yyerror(const char *s) {

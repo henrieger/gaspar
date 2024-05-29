@@ -8,3 +8,4 @@ gmon.*
 intree
 outtree
 outfile
+*.intree
