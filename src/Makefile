@@ -7,11 +7,11 @@ TESTS = test-cases/
 CFLAGS = -Wall -I${CURDIR}
 TARGETS = 
 
-all: $(SUBDIRS) gaspar config.o
+all: $(SUBDIRS) gaspar
 .PHONY: all $(SUBDIRS) $(TESTS)
 
 # -- MAIN FILES --
-gaspar: lex.yy.c gaspar.tab.c gaspar.o gaspar.h $(SUBDIRS)
+gaspar: lex.yy.c gaspar.tab.c gaspar.o config.o gaspar.h $(SUBDIRS)
 	${CC} ${CFLAGS} lex.yy.c gaspar.tab.c $(OBJECTS) -o gaspar ${LDLIBS}
 
 lex.yy.c: gaspar.l gaspar.h
@@ -42,7 +42,7 @@ debug: CFLAGS += -g -DDEBUG
 debug: TARGETS += debug
 debug: all
 
-profile: CFLAGS += -pg
+profile: CFLAGS += -pg -O2
 profile: TARGETS += profile
 profile: all
 
