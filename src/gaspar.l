@@ -165,7 +165,7 @@ bsParams {
 %%
 
 void assignToken(const char *typeForPrint) {
-  strncpy(token, yytext, TOKEN_SIZE);
+  strncpy(token, yytext, TOKEN_SIZE-1);
 #ifdef DEBUG
   printf("%s\t\t# %s\n", typeForPrint, token);
 #endif

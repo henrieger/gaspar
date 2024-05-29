@@ -119,7 +119,7 @@ inline int randomInternalNode(int numLeaves) {
 // Return a random non-null edge of node
 int randomEdge(tree_t *tree, int node) {
   int edge = rand() % 3;
-  int result;
+  int result = tree->nodes[node].edge3;
 
   // Only need to check for at most 2 extra edges as at least one will point to
   // an internal node
@@ -128,7 +128,7 @@ int randomEdge(tree_t *tree, int node) {
       result = tree->nodes[node].edge1;
     else if (edge == 1)
       result = tree->nodes[node].edge2;
-    else if (edge == 2)
+    else
       result = tree->nodes[node].edge3;
 
     // If the node is invalid, try the next edge
@@ -144,7 +144,7 @@ int randomEdge(tree_t *tree, int node) {
 // Return a random internal edge of node
 int randomInternalEdge(tree_t *tree, int node) {
   int edge = rand() % 3;
-  int result;
+  int result = tree->nodes[node].edge3;
 
   // Only need to check for at most 2 extra edges as at least one will point to
   // an internal node
@@ -153,7 +153,7 @@ int randomInternalEdge(tree_t *tree, int node) {
       result = tree->nodes[node].edge1;
     else if (edge == 1)
       result = tree->nodes[node].edge2;
-    else if (edge == 2)
+    else
       result = tree->nodes[node].edge3;
 
     // If the node is invalid, try the next edge
