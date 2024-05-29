@@ -22,6 +22,7 @@ void setConfigsToDefault(config_t *config) {
   config->bs_replicates = 99;
 }
 
+// Set the name of the analisys
 void setName(config_t *config, char *name) {
   memcpy(config->name, name, LABEL_SIZE);
 }
