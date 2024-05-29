@@ -82,7 +82,7 @@ answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
       malloc(config->ga_populationSize * sizeof(unsigned int));
   double *probabilities = malloc(config->ga_populationSize * sizeof(double));
 
-  // Generate initial population from single random tree
+  // Generate initial population from random trees
   for (int i = 0; i < config->ga_populationSize; i++) {
     population[i] = randomTree(alignment);
   }
