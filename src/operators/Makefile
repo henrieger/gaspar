@@ -13,7 +13,7 @@ optimize: all
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
-profile: CFLAGS += -pg -O2
+profile: CFLAGS += -pg -O0
 profile: all
 
 clean:

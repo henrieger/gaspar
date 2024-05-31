@@ -42,7 +42,7 @@ debug: CFLAGS += -g -DDEBUG
 debug: TARGETS += debug
 debug: all
 
-profile: CFLAGS += -pg -O2
+profile: CFLAGS += -pg -O0
 profile: TARGETS += profile
 profile: all
 
