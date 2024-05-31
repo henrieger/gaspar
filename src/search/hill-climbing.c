@@ -11,11 +11,13 @@
 
 void evaluateNNI(tree_t *tree, config_t *config, int n1, int n2, int joint,
                  int *bestN1, int *bestN2, int *bestJoint, int *bestScore) {
-#ifdef DEBUG
-  printf("NNI between %d and %d (joint %d)\n", n1, n2, joint);
-#endif /* ifdef DEBUG */
   nni(tree, n1, n2, joint);
   int score = config->evalFn(tree, config);
+
+#ifdef DEBUG
+  printf("NNI between %d and %d (joint %d) - Score %d\n", n1, n2, joint, score);
+#endif /* ifdef DEBUG */
+  
   if (score < *bestScore) {
     *bestScore = score;
     *bestN1 = n1;
@@ -25,31 +27,57 @@ void evaluateNNI(tree_t *tree, config_t *config, int n1, int n2, int joint,
   nni(tree, n1, n2, joint);
 }
 
+int wasEvaluated(int *evaluated, int size, int leaf) {
+  for (int i = 0; i < size; i++) {
+    if (evaluated[i] == leaf)
+      return 1;
+  }
+  return 0;
+}
+
 void nniCicle(tree_t *tree, int score, config_t *config) {
   int bestScore = score;
   int bestN1 = -1;
   int bestN2 = -1;
   int bestJoint = -1;
 
+  int *evaluated = malloc((tree->leaves - 2) * sizeof(int));
+
   do {
     score = bestScore;
+    bestN1 = -1;
 
 #ifdef DEBUG
-    printf("Best score: %d\n", bestScore);
+    printf("Best score: %d\n", score);
 #endif /* ifdef DEBUG */
 
+    for (int i = 0; i < tree->leaves; i++)
+      evaluated[i] = -1;
+
     for (int i = 0; i < tree->leaves - 2; i++) {
-      for (int j = 0; j < 2; j++) {
-        if (tree->internal[i].edge1 >= tree->leaves)
-          evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge1,
-                      j, &bestN1, &bestN2, &bestJoint, &bestScore);
-        if (tree->internal[i].edge2 >= tree->leaves)
-          evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge2,
-                      j, &bestN1, &bestN2, &bestJoint, &bestScore);
-        if (tree->internal[i].edge3 >= tree->leaves)
-          evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge3,
-                      j, &bestN1, &bestN2, &bestJoint, &bestScore);
+      if (tree->internal[i].edge1 >= tree->leaves &&
+          !wasEvaluated(evaluated, tree->leaves - 2, tree->internal[i].edge1)) {
+        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge1, 0,
+                    &bestN1, &bestN2, &bestJoint, &bestScore);
+        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge1, 1,
+                    &bestN1, &bestN2, &bestJoint, &bestScore);
       }
+      if (tree->internal[i].edge2 >= tree->leaves &&
+          !wasEvaluated(evaluated, tree->leaves - 2, tree->internal[i].edge2)) {
+        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge2, 0,
+                    &bestN1, &bestN2, &bestJoint, &bestScore);
+        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge2, 1,
+                    &bestN1, &bestN2, &bestJoint, &bestScore);
+      }
+      if (tree->internal[i].edge3 >= tree->leaves &&
+          !wasEvaluated(evaluated, tree->leaves - 2, tree->internal[i].edge3)) {
+        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge3, 0,
+                    &bestN1, &bestN2, &bestJoint, &bestScore);
+        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edge3, 1,
+                    &bestN1, &bestN2, &bestJoint, &bestScore);
+      }
+
+      evaluated[i] = tree->leaves + i;
     }
 
     if (bestN1 >= 0)
