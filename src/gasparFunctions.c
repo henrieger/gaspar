@@ -1,6 +1,6 @@
+#include "config.h"
 #include "gaspar.h"
 #include "sequence-alignment/sequence-alignment.h"
-#include "config.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -45,9 +45,14 @@ void addNumbersToSequence() {
     if (charValue < 0 || charValue >= CHAR_STATES)
       printError("Char values must be between 0-%d. Found %d\n",
                  CHAR_STATES - 1, charValue);
+
+    int allowedTIndex = character / (8 * sizeof(allowed_t));
+    int positionInAllowedT = (character / (8 * sizeof(long long))) % 4;
+    int shiftAmount = character % (8 * sizeof(long long));
+
     alignment->sequences[taxon]
-        .allowed[charValue][character / (8 * sizeof(allowed_t))] |=
-        (unsigned long)1 << (character % (8 * sizeof(allowed_t)));
+        .allowed[charValue][allowedTIndex][positionInAllowedT] |=
+        1LL << shiftAmount;
     character++;
   }
 }
@@ -55,9 +60,12 @@ void addNumbersToSequence() {
 // Adds a missing data to current sequence
 void addMissingData() {
   for (int i = 0; i < CHAR_STATES; i++) {
-    alignment->sequences[taxon]
-        .allowed[i][character / (8 * sizeof(allowed_t))] |=
-        (unsigned long)1 << (character % (8 * sizeof(allowed_t)));
+    int allowedTIndex = character / (8 * sizeof(allowed_t));
+    int positionInAllowedT = (character / (8 * sizeof(long long))) % 4;
+    int shiftAmount = character % (8 * sizeof(long long));
+
+    alignment->sequences[taxon].allowed[i][allowedTIndex][positionInAllowedT] |=
+        1LL << shiftAmount;
   }
   character++;
 }
@@ -69,9 +77,14 @@ void addMultistateChar() {
     if (charValue < 0 || charValue >= CHAR_STATES)
       printError("Char values must be between 0-%d. Found %d\n",
                  CHAR_STATES - 1, charValue);
+
+    int allowedTIndex = character / (8 * sizeof(allowed_t));
+    int positionInAllowedT = (character / (8 * sizeof(long long))) % 4;
+    int shiftAmount = character % (8 * sizeof(long long));
+
     alignment->sequences[taxon]
-        .allowed[charValue][character / (8 * sizeof(allowed_t))] |=
-        (unsigned long)1 << (character % (8 * sizeof(allowed_t)));
+        .allowed[charValue][allowedTIndex][positionInAllowedT] |=
+        1LL << shiftAmount;
   }
   character++;
 }

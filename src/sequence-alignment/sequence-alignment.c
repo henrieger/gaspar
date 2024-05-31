@@ -1,5 +1,6 @@
 #include "sequence-alignment.h"
 
+#include <immintrin.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,8 @@ int alignmentSize;       // Global amount of taxa in the alignment
 float *weights;          // Array of weights of characters
 int allowedArraySizeVar; // Global size of allowed states array
 
+#define AVX2_ALIGN 32
+
 // Get the global amount of characters in a sequence
 inline int getSequenceSize() { return sequenceSize; }
 
@@ -16,15 +19,13 @@ inline int getSequenceSize() { return sequenceSize; }
 inline int getAlignmentSize() { return alignmentSize; }
 
 // Get weight of character c
-float getCharacterWeight(int i) {
-  if (i >= getSequenceSize() || i < 0)
-    return 0;
+inline float getCharacterWeight(int i) {
   return weights[i];
 }
 
-inline void setAllowedArraySize(int seqSize) {
-  allowedArraySizeVar = (seqSize + (sizeof(allowed_t *) * CHAR_STATES) - 1) /
-                        (CHAR_STATES * sizeof(allowed_t *));
+void setAllowedArraySize(int seqSize) {
+  allowedArraySizeVar = (seqSize + (sizeof(allowed_t) * CHAR_STATES) - 1) /
+                        (CHAR_STATES * sizeof(allowed_t));
 }
 
 // Set the value of the global amount of characters in a sequence
@@ -43,20 +44,28 @@ inline void setCharacterWeight(int i, float w) { weights[i] = w; }
 inline void incrementCharacterWeight(int i) { weights[i]++; }
 
 // Size of an allowed states array
-inline unsigned long allowedArraySize() {
-  return allowedArraySizeVar;
-}
+inline unsigned long allowedArraySize() { return allowedArraySizeVar; }
 
 // Allocate space for a new array of allowed states
 allowed_t *newAllowedStates() {
-  return calloc(allowedArraySize(), sizeof(allowed_t));
+  allowed_t *a =
+      aligned_alloc(AVX2_ALIGN, allowedArraySize() * sizeof(allowed_t));
+  for (int i = 0; i < allowedArraySize(); i++)
+    a[i] = _mm256_setzero_si256();
+  return a;
 }
 
 // Allocate space for a sequence
 sequence_t *newSequence() {
   sequence_t *s = malloc(sizeof(sequence_t));
-  for (int i = 0; i < CHAR_STATES; i++)
-    s->allowed[i] = newAllowedStates();
+
+  s->allowed[0] = aligned_alloc(AVX2_ALIGN, CHAR_STATES * allowedArraySize() *
+                                                sizeof(allowed_t));
+  for (int i = 0; i < CHAR_STATES * allowedArraySize(); i++)
+    s->allowed[0][i] = _mm256_setzero_si256();
+
+  for (int i = 1; i < CHAR_STATES; i++)
+    s->allowed[i] = s->allowed[0] + i * allowedArraySize();
 
   return s;
 }
@@ -64,9 +73,18 @@ sequence_t *newSequence() {
 // Allocate space for a sequence array
 sequence_t *newSequenceArray(unsigned int taxa) {
   sequence_t *sa = malloc(taxa * sizeof(sequence_t));
+  int allowedAbsoluteSize =
+      taxa * CHAR_STATES * allowedArraySize() * sizeof(allowed_t);
+
+  sa[0].allowed[0] = aligned_alloc(AVX2_ALIGN, allowedAbsoluteSize);
+  for (int i = 0; i < allowedAbsoluteSize / sizeof(allowed_t); i++) {
+    sa[0].allowed[0][i] = _mm256_setzero_si256();
+  }
+
   for (int i = 0; i < taxa; i++)
     for (int j = 0; j < CHAR_STATES; j++)
-      sa[i].allowed[j] = newAllowedStates();
+      sa[i].allowed[j] =
+          sa[0].allowed[0] + allowedArraySize() * (i * CHAR_STATES + j);
 
   return sa;
 }
@@ -110,9 +128,6 @@ void createCharacterWeights() {
     weights[i] = 1;
 }
 
-#define stateInPosition(j)                                                     \
-  ((sequence->allowed[j][i / 64] >> (i % 64)) & ((allowed_t)1))
-
 // Print a single character
 void printCharacters(sequence_t *sequence, int position) {}
 
@@ -122,33 +137,43 @@ void printSequence(sequence_t *sequence) {
   printf("(%p)\t", sequence);
 #endif /*ifdef DEBUG */
 
-  for (int i = 0; i < getSequenceSize(); i++) {
-    int possibleStates = 0;
+#define stateInPosition(charValue)                                             \
+  ((sequence->allowed[charValue][i][j] >> k) & 1L)
 
-    for (int j = 0; j < CHAR_STATES; j++)
-      possibleStates += stateInPosition(j);
+  int bitsCounted = 0;
 
-    // printf("Possible states: %d ", possibleStates);
+  for (int i = 0; i < allowedArraySize(); i++) {
+    for (int j = 0; j < 4; j++) {
+      for (int k = 0; k < 64 && bitsCounted < getSequenceSize();
+           k++, bitsCounted++) {
+        long possibleStates = 0;
 
-    if (possibleStates == CHAR_STATES) {
-      printf("?");
-      continue;
+        for (int charValue = 0; charValue < CHAR_STATES; charValue++)
+          possibleStates += stateInPosition(charValue);
+
+        // printf("Possible states: %ld ", possibleStates);
+
+        if (possibleStates == CHAR_STATES) {
+          printf("?");
+          continue;
+        }
+
+        if (possibleStates == 0) {
+          printf("-");
+          continue;
+        }
+
+        if (possibleStates > 1)
+          printf("[");
+
+        for (int charValue = 0; charValue < CHAR_STATES; charValue++)
+          if (stateInPosition(charValue))
+            printf("%d", charValue);
+
+        if (possibleStates > 1)
+          printf("]");
+      }
     }
-
-    if (possibleStates == 0) {
-      printf("-");
-      continue;
-    }
-
-    if (possibleStates > 1)
-      printf("[");
-
-    for (int j = 0; j < CHAR_STATES; j++)
-      if (stateInPosition(j))
-        printf("%d", j);
-
-    if (possibleStates > 1)
-      printf("]");
   }
   printf(";\n");
 }
@@ -181,7 +206,9 @@ void printAlignment(alignment_t *alignment) {
     printf("%s:\t", alignment->labels[i]);
     for (int j = 0; j < CHAR_STATES; j++)
       for (int k = 0; k < allowedArraySize(); k++)
-        printf("%d:0x%016lx\t", j, alignment->sequences[i].allowed[j][k]);
+        for (int l = 0; l < 4; l++)
+          printf("%d-%d-%d:0x%016llx\t", j, k, l,
+                 alignment->sequences[i].allowed[j][k][l]);
     printf("\n");
   }
 #endif /* ifdef DEBUG */
@@ -200,12 +227,7 @@ void destroyAlignment(alignment_t *alignment) {
   if (!alignment)
     return;
 
-  for (int i = 0; i < alignment->taxa; i++) {
-    for (int j = 0; j < CHAR_STATES; j++) {
-      free(alignment->sequences[i].allowed[j]);
-    }
-  }
-
+  free(alignment->sequences[0].allowed[0]);
   free(alignment->sequences);
   free(alignment);
 }
@@ -215,10 +237,7 @@ void destroySequence(sequence_t *sequence) {
   if (!sequence)
     return;
 
-  for (int i = 0; i < CHAR_STATES; i++) {
-    free(sequence->allowed[i]);
-  }
-
+  free(sequence->allowed[0]);
   free(sequence);
 }
 

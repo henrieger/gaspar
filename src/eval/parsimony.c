@@ -1,6 +1,7 @@
 #include "parsimony.h"
 
 #include <config.h>
+#include <immintrin.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,25 +9,31 @@
 
 sequence_t *unionSeq;
 sequence_t *interSeq;
+allowed_t *r;
 
 void initializeGlobalAuxSequences() {
   unionSeq = newSequence();
   interSeq = newSequence();
+  r = newAllowedStates();
 }
 
 int scoreFromInters(allowed_t *r) {
   int score = 0;
   int bitIndex = 0;
+  int shiftAmount = 8 * sizeof(unsigned long);
+  int seqSize = getSequenceSize();
+  int arraySize = allowedArraySize();
 
-  for (int i = 0; i < allowedArraySize(); i++) {
-    allowed_t r_i = r[i];
-    for (int j = 0; (j < 8 * sizeof(allowed_t)) && bitIndex < getSequenceSize();
-         j++, bitIndex++) {
-      score += (r_i & ((allowed_t)1 << j)) ? 0 : getCharacterWeight(bitIndex);
+  for (int i = 0; i < arraySize; i++) {
+    for (int j = 0; j < 4 && bitIndex < seqSize; j++) {
+      unsigned long r_ij = r[i][j];
+      for (int k = 0; k < shiftAmount && bitIndex < seqSize; k++, bitIndex++) {
+        if (!(r_ij & (1LL << k)))
+          score += getCharacterWeight(bitIndex);
+      }
     }
   }
 
-  free(r);
   return score;
 }
 
@@ -34,28 +41,35 @@ int localParsimony(tree_t *tree, int n1, int n2, int node) {
   node_t *nodeStruct1 = &(tree->nodes[n1]);
   node_t *nodeStruct2 = &(tree->nodes[n2]);
 
-  for (int i = 0; i < CHAR_STATES; i++) {
-    for (int j = 0; j < allowedArraySize(); j++) {
-      unionSeq->allowed[i][j] = nodeStruct1->sequence->allowed[i][j] |
-                                nodeStruct2->sequence->allowed[i][j];
-      interSeq->allowed[i][j] = nodeStruct1->sequence->allowed[i][j] &
-                                nodeStruct2->sequence->allowed[i][j];
-    }
-  }
+  int arraySize = allowedArraySize();
 
-  allowed_t *r = newAllowedStates();
+  for (int i = 0; i < arraySize; i++)
+    r[i] = _mm256_setzero_si256();
+
   for (int i = 0; i < CHAR_STATES; i++) {
-    for (int j = 0; j < allowedArraySize(); j++) {
-      r[j] |= interSeq->allowed[i][j];
+    for (int j = 0; j < arraySize; j++) {
+      // U = n1.sequence | n2.sequence
+      unionSeq->allowed[i][j] =
+          _mm256_or_si256(nodeStruct1->sequence->allowed[i][j],
+                          nodeStruct2->sequence->allowed[i][j]);
+
+      // I = n1.sequence & n2.sequence
+      interSeq->allowed[i][j] =
+          _mm256_and_si256(nodeStruct1->sequence->allowed[i][j],
+                           nodeStruct2->sequence->allowed[i][j]);
+      // R = U(I)
+      r[j] = _mm256_or_si256(r[j], interSeq->allowed[i][j]);
     }
   }
 
   if (node > 0) {
     for (int i = 0; i < CHAR_STATES; i++) {
-      for (int j = 0; j < allowedArraySize(); j++) {
-        tree->nodes[node].sequence->allowed[i][j] =
-            (interSeq->allowed[i][j] & r[j]) |
-            (unionSeq->allowed[i][j] & ~r[j]);
+      for (int j = 0; j < arraySize; j++) {
+        // n.sequence = (I & R) | (U & ~R)
+        tree->nodes[node].sequence->allowed[i][j] = _mm256_or_si256(
+            _mm256_and_si256(interSeq->allowed[i][j], r[j]),
+            _mm256_and_si256(unionSeq->allowed[i][j],
+                             _mm256_xor_si256(r[j], _mm256_set1_epi64x(-1LL))));
       }
     }
   }
@@ -110,4 +124,5 @@ int fitchParsimony(tree_t *tree, config_t *config) {
 void destroyGlobalAuxSequences() {
   destroySequence(unionSeq);
   destroySequence(interSeq);
+  free(r);
 }

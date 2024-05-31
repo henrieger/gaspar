@@ -2,11 +2,12 @@
 #define __SEQUENCE_ALIGNMENT_H__
 
 #include <stdint.h>
+#include <immintrin.h>
 
 #define LABEL_SIZE 512
 #define CHAR_STATES 8
 
-#define allowed_t unsigned long
+#define allowed_t __m256i
 
 typedef struct sequence {
   allowed_t *allowed[CHAR_STATES];

@@ -214,12 +214,7 @@ void destroyTree(tree_t *tree) {
   if (!tree)
     return;
 
-  for (int i = 0; i < tree->leaves - 2; i++) {
-    for (int j = 0; j < CHAR_STATES; j++) {
-      free(tree->internal[i].sequence->allowed[j]);
-    }
-  }
-
+  free(tree->internal[0].sequence->allowed[0]);
   free(tree->internal[0].sequence);
   free(tree->nodes);
   free(tree);
