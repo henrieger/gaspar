@@ -1,12 +1,12 @@
 CC = gcc
-CFLAGS = -Wall -I..
+CFLAGS = -Wall -I.. -mavx2
 LDLIBS = 
 OBJECTS = *.o
 
 all: parsimony.o
 parsimony.o: parsimony.c parsimony.h
 
-optimize: CFLAGS += -O3 -mavx2
+optimize: CFLAGS += -O3
 optimize: all
 
 debug: CFLAGS += -g -DDEBUG
