@@ -35,6 +35,7 @@ void initializeAlignment() {
   for (int i = 1; i < getAlignmentSize(); i++)
     labels[i] = *labels + (i * LABEL_SIZE);
   alignment = newAlignment(getAlignmentSize(), labels);
+  createCharacterWeightsByByte();
   createCharacterWeights();
 }
 

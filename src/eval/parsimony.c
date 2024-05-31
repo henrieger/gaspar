@@ -19,19 +19,12 @@ void initializeGlobalAuxSequences() {
 
 int scoreFromInters(allowed_t *r) {
   int score = 0;
-  int bitIndex = 0;
-  int shiftAmount = 8 * sizeof(unsigned long);
-  int seqSize = getSequenceSize();
-  int arraySize = allowedArraySize();
+  int seqSizeInBytes = (7 + getSequenceSize()) / 8;
 
-  for (int i = 0; i < arraySize; i++) {
-    for (int j = 0; j < 4 && bitIndex < seqSize; j++) {
-      unsigned long r_ij = r[i][j];
-      for (int k = 0; k < shiftAmount && bitIndex < seqSize; k++, bitIndex++) {
-        if (!(r_ij & (1LL << k)))
-          score += getCharacterWeight(bitIndex);
-      }
-    }
+  char *charR = (char *)r;
+
+  for (int i = 0; i < seqSizeInBytes; i++) {
+    score += getWeightsByByte(i, ~(charR[i]) & 0xff);
   }
 
   return score;

@@ -18,9 +18,10 @@ typedef struct alignment {
   char **labels;
 } alignment_t;
 
-extern int sequenceSize;  // Global amount of characters in a sequence
-extern int alignmentSize; // Global amount of taxa in the alignment
-extern int *weights;      // Array of weights of characters
+extern int sequenceSize;    // Global amount of characters in a sequence
+extern int alignmentSize;   // Global amount of taxa in the alignment
+extern int *weights;        // Array of weights of characters
+extern int **weightsByByte; // Array of weights of characters summed in bytes
 
 // Get the global amount of characters in a sequence
 int getSequenceSize();
@@ -67,6 +68,15 @@ alignment_t *copyAlignment(alignment_t *src);
 
 // Allocate space for character weights and assign all as 1
 void createCharacterWeights();
+
+// Allocate space for character weights summed for each byte
+void createCharacterWeightsByByte();
+
+// Aggregate character weights by byte
+void calculateWeightsByByte();
+
+// Return value of sum of weights given byte and mask value
+int getWeightsByByte(int i, int byteValue);
 
 // Print information about a sequence
 void printSequence(sequence_t *sequence);

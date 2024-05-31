@@ -8,6 +8,7 @@
 int sequenceSize;        // Global amount of characters in a sequence
 int alignmentSize;       // Global amount of taxa in the alignment
 int *weights;            // Array of weights of characters
+int **weightsByByte;     // Array of weights of characters summed in bytes
 int allowedArraySizeVar; // Global size of allowed states array
 
 #define AVX2_ALIGN 32
@@ -121,9 +122,35 @@ alignment_t *copyAlignment(alignment_t *src) {
 
 // Allocate space for character weights and assign all as 1
 void createCharacterWeights() {
-  weights = malloc(getSequenceSize() * sizeof(int));
-  for (int i = 0; i < getSequenceSize(); i++)
-    weights[i] = 1;
+  weights = malloc(256 * allowedArraySize() * sizeof(int));
+  resetCharacterWeights();
+}
+
+// Allocate space for character weights summed for each byte
+void createCharacterWeightsByByte() {
+  int bytesInSequence = (7 + getSequenceSize() / 8);
+
+  weightsByByte = malloc(bytesInSequence * sizeof(int *));
+  weightsByByte[0] = malloc(bytesInSequence * 256 * sizeof(int));
+  for (int i = 1; i < bytesInSequence; i++)
+    weightsByByte[i] = weightsByByte[0] + 256 * i;
+}
+
+// Aggregate character weights by byte
+void calculateWeightsByByte() {
+  int bytesInSequence = (7 + getSequenceSize()) / 8;
+  for (int i = 0; i < bytesInSequence; i++) {
+    for (int j = 0; j < 256; j++) {
+      weightsByByte[i][j] = 0;
+      for (int k = 0; k < 8; k++)
+        weightsByByte[i][j] += weights[i * 8 + k] * ((j >> k) & 1);
+    }
+  }
+}
+
+// Return value of sum of weights given byte and mask value
+inline int getWeightsByByte(int i, int byteValue) {
+  return weightsByByte[i][byteValue];
 }
 
 // Print a single character
@@ -218,6 +245,15 @@ void printCharacterWeights() {
   for (int i = 0; i < getSequenceSize(); i++)
     printf("%d ", weights[i]);
   printf("]\n");
+
+  printf("Weights by byte: [\n");
+  for (int i = 0; i < (7 + getSequenceSize()) / 8; i++) {
+    printf("\t%d: [ ", i);
+    for (int j = 0; j < 256; j++)
+      printf("%d ", weightsByByte[i][j]);
+    printf("]\n");
+  }
+  printf("]\n");
 }
 
 // Destroy alignment
@@ -240,14 +276,13 @@ void destroySequence(sequence_t *sequence) {
 }
 
 // Destroy array of weights
-void destroyCharacterWeights() {
-  free(weights);
-  weights = NULL;
-}
+void destroyCharacterWeights() { free(weights); }
 
 // Reset array of weights with new size
 void resetCharacterWeights() {
-  if (weights)
-    destroyCharacterWeights();
-  createCharacterWeights();
+  for (int i = 0; i < getSequenceSize(); i++)
+    weights[i] = 1;
+  for (int i = getSequenceSize(); i < 256 * allowedArraySize(); i++)
+    weights[i] = 0;
+  calculateWeightsByByte();
 }

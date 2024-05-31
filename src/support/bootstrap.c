@@ -14,6 +14,7 @@ void bootstrapCharWeights() {
     int randomPos = rand() % getSequenceSize();
     incrementCharacterWeight(randomPos);
   }
+  calculateWeightsByByte();
 }
 
 // Print the trees generated in the replicate with their respective weights.
