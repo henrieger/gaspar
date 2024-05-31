@@ -1,7 +1,6 @@
 #ifndef __SEQUENCE_ALIGNMENT_H__
 #define __SEQUENCE_ALIGNMENT_H__
 
-#include <stdint.h>
 #include <immintrin.h>
 
 #define LABEL_SIZE 512
@@ -21,7 +20,7 @@ typedef struct alignment {
 
 extern int sequenceSize;  // Global amount of characters in a sequence
 extern int alignmentSize; // Global amount of taxa in the alignment
-extern float *weights;    // Array of weights of characters
+extern int *weights;      // Array of weights of characters
 
 // Get the global amount of characters in a sequence
 int getSequenceSize();
@@ -30,7 +29,7 @@ int getSequenceSize();
 int getAlignmentSize();
 
 // Get weight of character c
-float getCharacterWeight(int i);
+int getCharacterWeight(int i);
 
 // Set the value of the global amount of characters in a sequence
 void setSequenceSize(int size);

@@ -7,7 +7,7 @@
 #include <string.h>
 
 // Generate a new set of random weights by bootstrapping.
-void bootstrapCharWeights(float *weights) {
+void bootstrapCharWeights() {
   for (int i = 0; i < getSequenceSize(); i++)
     setCharacterWeight(i, 0);
   for (int i = 0; i < getSequenceSize(); i++) {
@@ -53,7 +53,7 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   for (int i = 0; i < config->bs_replicates; i++) {
     printf("- Replicate %d\n", i + 1);
     destroyAnswer(answer);
-    bootstrapCharWeights(weights);
+    bootstrapCharWeights();
     answer = config->searchMethod(alignment, config);
     treeWeight = (double)1 / (getNumberOfTrees(answer));
     printReplicate(answer, treeWeight, fp);

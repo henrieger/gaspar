@@ -7,7 +7,7 @@
 
 int sequenceSize;        // Global amount of characters in a sequence
 int alignmentSize;       // Global amount of taxa in the alignment
-float *weights;          // Array of weights of characters
+int *weights;            // Array of weights of characters
 int allowedArraySizeVar; // Global size of allowed states array
 
 #define AVX2_ALIGN 32
@@ -19,9 +19,7 @@ inline int getSequenceSize() { return sequenceSize; }
 inline int getAlignmentSize() { return alignmentSize; }
 
 // Get weight of character c
-inline float getCharacterWeight(int i) {
-  return weights[i];
-}
+inline int getCharacterWeight(int i) { return weights[i]; }
 
 void setAllowedArraySize(int seqSize) {
   allowedArraySizeVar = (seqSize + (sizeof(allowed_t) * CHAR_STATES) - 1) /
@@ -123,7 +121,7 @@ alignment_t *copyAlignment(alignment_t *src) {
 
 // Allocate space for character weights and assign all as 1
 void createCharacterWeights() {
-  weights = malloc(getSequenceSize() * sizeof(float));
+  weights = malloc(getSequenceSize() * sizeof(int));
   for (int i = 0; i < getSequenceSize(); i++)
     weights[i] = 1;
 }
@@ -218,7 +216,7 @@ void printAlignment(alignment_t *alignment) {
 void printCharacterWeights() {
   printf("Weights: [ ");
   for (int i = 0; i < getSequenceSize(); i++)
-    printf("%.2f ", weights[i]);
+    printf("%d ", weights[i]);
   printf("]\n");
 }
 
