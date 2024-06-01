@@ -125,7 +125,7 @@ evaluation:
 ;
 
 hcParams:
-  HC_PARAMS hcOperator hcProbability hcReplicates
+  HC_PARAMS hcOperator hcReplicates
 ;
 
 hcOperator:
@@ -133,21 +133,21 @@ hcOperator:
   | TOKEN_NNI { config.hc_operator = NNI; }
 ;
 
-hcProbability:
-  NUMBER PERCENT { config.spr_probability = atof(token) / 100; }
-;
-
 hcReplicates:
   NUMBER { config.hc_replicates = atoi(token); }
 ;
 
 gaParams:
-  GA_PARAMS gaMutationOperator gaPopulationSize gaGenerations
+  GA_PARAMS gaMutationOperator gaProbability gaPopulationSize gaGenerations
 ;
 
 gaMutationOperator:
   TOKEN_SPR { config.ga_mutationOperator = randomSPR; }
   | TOKEN_NNI { config.ga_mutationOperator = randomNNI; }
+;
+
+gaProbability:
+  NUMBER PERCENT { config.spr_probability = atof(token) / 100; }
 ;
 
 gaPopulationSize:
