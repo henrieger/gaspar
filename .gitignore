@@ -5,7 +5,11 @@ gaspar.output
 lex.yy.c
 .clangd
 gmon.*
+dat
+*.dat
 intree
+*.intree
+infile
 outtree
 outfile
-*.intree
+*.outfile
