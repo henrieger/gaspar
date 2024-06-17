@@ -10,6 +10,7 @@
 sequence_t *unionSeq;
 sequence_t *interSeq;
 allowed_t *r;
+unsigned long parsimonyCalls;
 
 void initializeGlobalAuxSequences() {
   unionSeq = newSequence();
@@ -106,6 +107,8 @@ int fitchParsimony(tree_t *tree, config_t *config) {
   if (!tree)
     return 0;
 
+  parsimonyCalls++;
+
   int root1 = tree->root;
   int root2 = tree->nodes[tree->root].edge1;
 
@@ -118,4 +121,12 @@ void destroyGlobalAuxSequences() {
   destroySequence(unionSeq);
   destroySequence(interSeq);
   free(r);
+}
+
+inline void resetParsimonyCalls() {
+  parsimonyCalls = 0;
+}
+
+inline unsigned long getParsimonyCalls() {
+  return parsimonyCalls;
 }
