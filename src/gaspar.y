@@ -61,10 +61,14 @@ alignment:
 ;
 
 sequence:
-  IDENT
-  { strncpy(alignment->labels[taxon], token, TOKEN_SIZE); character = 0; }
+  label
   sequence_chars
   { taxon++; }
+;
+
+label:
+  IDENT { strncpy(alignment->labels[taxon], token, TOKEN_SIZE); character = 0; }
+  | NUMBER { strncpy(alignment->labels[taxon], token, TOKEN_SIZE); character = 0; }
 ;
 
 sequence_chars:

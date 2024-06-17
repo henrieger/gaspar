@@ -13,7 +13,7 @@ int lineNumber = 1;
 
 line_feed [\n]
 blank [\t ]+
-ident [a-zA-Z_\']+
+ident [a-zA-Z_\'][a-zA-Z0-9_\']*
 number [0-9]+
 missing_data [?\-]
 mimetype "text/x-gaspar"
