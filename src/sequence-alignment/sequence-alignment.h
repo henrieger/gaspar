@@ -3,7 +3,7 @@
 
 #include <immintrin.h>
 
-#define LABEL_SIZE 512
+#define LABEL_SIZE 1025
 #define CHAR_STATES 8
 
 #define allowed_t __m256i
