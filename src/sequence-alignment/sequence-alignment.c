@@ -276,7 +276,11 @@ void destroySequence(sequence_t *sequence) {
 }
 
 // Destroy array of weights
-void destroyCharacterWeights() { free(weights); }
+void destroyCharacterWeights() {
+  free(weights);
+  free(weightsByByte[0]);
+  free(weightsByByte);
+}
 
 // Reset array of weights with new size
 void resetCharacterWeights() {

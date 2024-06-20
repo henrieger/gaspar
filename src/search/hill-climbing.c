@@ -87,6 +87,8 @@ void nniCicle(tree_t *tree, int score, config_t *config, answer_t *answer) {
     }
 
   } while (bestScore < score);
+
+  free(evaluated);
 }
 
 void graftRecursive(tree_t *tree, int pruneRoot, int subtree, int left,
