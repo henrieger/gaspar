@@ -51,10 +51,10 @@ hillClimbingNni {
 
 geneticAlgorithmSpr {
   searchMethod geneticAlgorithm
-  gaParams spr 50% 8 10000
+  gaParams spr 5% 8 1000000 20000
 }
 
 geneticAlgorithmNni {
  searchMethod geneticAlgorithm
- gaParams nni 50% 8 10000
+ gaParams nni 0% 8 1000000 20000
 }

@@ -41,23 +41,19 @@ analyses:
 hillClimbingSpr {
   searchMethod hillClimbing
   hcParams spr 8
-  bsParams 999
 }
 
 hillClimbingNni {
   searchMethod hillClimbing
   hcParams nni 8
-  bsParams 999
 }
 
 geneticAlgorithmSpr {
   searchMethod geneticAlgorithm
-  gaParams spr 50% 8 100000
-  bsParams 999
+  gaParams spr 5% 8 1000000 20000
 }
 
 geneticAlgorithmNni {
  searchMethod geneticAlgorithm
- gaParams nni 50% 8 100000
- bsParams 999
+ gaParams nni 50% 8 1000000 20000
 }
