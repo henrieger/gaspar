@@ -18,6 +18,7 @@ void setConfigsToDefault(config_t *config) {
   // config->ga_recombinationOperator = pdr;
   config->ga_populationSize = 8;
   config->ga_generations = 10000;
+  config->ga_generationCuttof = 100;
   config->spr_probability = 0.5;
   config->bs_replicates = 99;
 }

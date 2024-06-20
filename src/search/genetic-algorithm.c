@@ -29,7 +29,8 @@ tree_t *sampleRandomTree(tree_t **population, double *probabilities,
 // Run a single generation from the genetic algorithm search
 void geneticAlgorithmGeneration(config_t *config, tree_t **population,
                                 tree_t **newPopulation, unsigned int *scores,
-                                double *probabilities) {
+                                double *probabilities, answer_t *answer,
+                                unsigned int *noChangeGenerations) {
   // Evaluate all individuals
   for (int i = 0; i < config->ga_populationSize; i++) {
     scores[i] = config->evalFn(population[i], config);
@@ -43,6 +44,17 @@ void geneticAlgorithmGeneration(config_t *config, tree_t **population,
       bestScore = scores[i];
       bestPosition = i;
     }
+  }
+
+  // Verify generation cutoff
+  if (bestScore < getScore(answer))
+    *noChangeGenerations = 0;
+  else
+    (*noChangeGenerations)++;
+
+  // Update answer with relevant results
+  for (int i = 0; i < config->ga_populationSize; i++) {
+    updateAnswer(answer, population[i], scores[i]);
   }
 
 #ifdef DEBUG
@@ -87,12 +99,16 @@ answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
     population[i] = randomTree(alignment);
   }
 
-  for (int i = 0; i < config->ga_generations; i++) {
+  unsigned int noChangeGenerations = 0;
+
+  for (int i = 0; i < config->ga_generations &&
+                  noChangeGenerations < config->ga_generationCuttof;
+       i++) {
 #ifdef DEBUG
     printf("=== Generation %d ===\n", i + 1);
 #endif /* ifdef DEBUG */
     geneticAlgorithmGeneration(config, population, newPopulation, scores,
-                               probabilities);
+                               probabilities, answer, &noChangeGenerations);
     // Swap populations
     tree_t **aux = population;
     population = newPopulation;
@@ -107,7 +123,7 @@ answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
   for (int i = 0; i < config->ga_populationSize; i++)
     scores[i] = config->evalFn(population[i], config);
 
-  // Put all relevant trees in answer
+  // Update answer with relevant results one last time
   for (int i = 0; i < config->ga_populationSize; i++)
     updateAnswer(answer, population[i], scores[i]);
 

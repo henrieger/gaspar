@@ -28,6 +28,7 @@ typedef struct config {
   void (*ga_recombinationOperator)(tree_t *tree1, tree_t *tree2);
   unsigned int ga_populationSize;
   unsigned int ga_generations;
+  unsigned int ga_generationCuttof;
 
   // SPR params
   double spr_probability;

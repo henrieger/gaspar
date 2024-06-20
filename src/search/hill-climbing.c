@@ -35,7 +35,7 @@ int wasEvaluated(int *evaluated, int size, int leaf) {
   return 0;
 }
 
-void nniCicle(tree_t *tree, int score, config_t *config) {
+void nniCicle(tree_t *tree, int score, config_t *config, answer_t *answer) {
   int bestScore = score;
   int bestN1 = -1;
   int bestN2 = -1;
@@ -81,8 +81,10 @@ void nniCicle(tree_t *tree, int score, config_t *config) {
       evaluated[i] = tree->leaves + i;
     }
 
-    if (bestN1 >= 0)
+    if (bestN1 >= 0) {
       nni(tree, bestN1, bestN2, bestJoint);
+      updateAnswer(answer, tree, bestScore);
+    }
 
   } while (bestScore < score);
 }
@@ -157,7 +159,7 @@ void graftRecursive(tree_t *tree, int pruneRoot, int subtree, int left,
   }
 }
 
-void sprCicle(tree_t *tree, int score, config_t *config) {
+void sprCicle(tree_t *tree, int score, config_t *config, answer_t *answer) {
   int bestScore = score;
   int bestPruneRoot = -1;
   int bestSubtree = -1;
@@ -225,6 +227,7 @@ void sprCicle(tree_t *tree, int score, config_t *config) {
     if (bestPruneRoot >= 0) {
       subtreePrune(tree, bestPruneRoot, bestSubtree);
       subtreeRegraft(tree, bestPruneRoot, bestGraftNode1, bestGraftNode2);
+      updateAnswer(answer, tree, bestScore);
     }
 
 #ifdef DEBUG
@@ -236,7 +239,8 @@ void sprCicle(tree_t *tree, int score, config_t *config) {
 }
 
 // Single replicate of hill climbing search returning one optimal tree
-tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config) {
+tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config,
+                              answer_t *answer) {
   // Initialize a random tree
   tree_t *tree = randomTree(alignment);
   int score = config->evalFn(tree, config);
@@ -250,10 +254,10 @@ tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config) {
 
   switch (config->hc_operator) {
   case NNI:
-    nniCicle(tree, score, config);
+    nniCicle(tree, score, config, answer);
     break;
   case SPR:
-    sprCicle(tree, score, config);
+    sprCicle(tree, score, config, answer);
     break;
   }
 
@@ -268,8 +272,7 @@ answer_t *hillClimbingSearch(alignment_t *alignment, config_t *config) {
 #ifdef DEBUG
     printf("-- HC Replicate %d --\n", i + 1);
 #endif /* ifdef DEBUG */
-    tree_t *tree = hillClimbingReplicate(alignment, config);
-    updateAnswer(answer, tree, config->evalFn(tree, config));
+    tree_t *tree = hillClimbingReplicate(alignment, config, answer);
     destroyTree(tree);
   }
 

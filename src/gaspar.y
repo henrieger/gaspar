@@ -142,7 +142,7 @@ hcReplicates:
 ;
 
 gaParams:
-  GA_PARAMS gaMutationOperator gaProbability gaPopulationSize gaGenerations
+  GA_PARAMS gaMutationOperator gaProbability gaPopulationSize gaGenerations gaGenerationCuttof
 ;
 
 gaMutationOperator:
@@ -158,8 +158,12 @@ gaPopulationSize:
   NUMBER { config.ga_populationSize = atoi(token); }
 ;
 
-gaGenerations:
+gaGenerationCuttof:
   NUMBER { config.ga_generations = atoi(token); }
+;
+
+gaGenerations:
+  NUMBER { config.ga_generationCuttof = atoi(token); }
 ;
 
 bsParams:
