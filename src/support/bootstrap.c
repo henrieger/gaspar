@@ -56,16 +56,16 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   printf("\nOriginal Analysis:\n\n");
   printAnswer(answer, NULL);
   fprintf(datFp, "%d\n", getScore(answer));
-  printf("\nGenerating %d bootstrap replicates...\n", config->bs_replicates);
+  printf("\nGenerating %d more bootstrap replicates...\n", config->bs_replicates-1);
 
   // Output and reset number of parsimony calls
   fprintf(datFp, "%ld\n", getParsimonyCalls());
   resetParsimonyCalls();
   fclose(datFp);
 
-  // Generate n replicates with bootstrapped weights
-  for (int i = 0; i < config->bs_replicates; i++) {
-    printf("- Replicate %d\n", i + 1);
+  // Generate n-1 replicates with bootstrapped weights
+  for (int i = 1; i < config->bs_replicates; i++) {
+    printf("- Replicate %d\n", i);
     destroyAnswer(answer);
     bootstrapCharWeights();
     answer = config->searchMethod(alignment, config);
