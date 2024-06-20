@@ -11,16 +11,16 @@ void setConfigsToDefault(config_t *config) {
   config->name[0] = (char)0;
   config->searchMethod = geneticAlgorithmSearch;
   config->evalFn = fitchParsimony;
-  config->answer_size = 100;
-  config->hc_operator = SPR;
+  config->answer_size = 10000;
+  config->hc_operator = NNI;
   config->hc_replicates = 8;
   config->ga_mutationOperator = randomSPR;
   // config->ga_recombinationOperator = pdr;
   config->ga_populationSize = 8;
-  config->ga_generations = 10000;
-  config->ga_generationCuttof = 100;
-  config->spr_probability = 0.5;
-  config->bs_replicates = 99;
+  config->ga_generations = 1000000;
+  config->ga_generationCuttof = 20000;
+  config->spr_probability = 0.05;
+  config->bs_replicates = 100;
 }
 
 // Set the name of the analisys
