@@ -9,6 +9,23 @@
 #include <tree/random.h>
 #include <tree/tree.h>
 
+int *generationBest; // Array with the best score in each generation
+
+// Allocate array of generation bests
+void createGenerationBests(config_t *config) {
+  generationBest = malloc(config->ga_generations * sizeof(int));
+  resetGenerationBests(config);
+}
+
+// Reset array of generation bests
+void resetGenerationBests(config_t *config) {
+  for (int i = 0; i < config->ga_generations; i++)
+    generationBest[i] = -1;
+}
+
+// Destroy array of generation bests
+void destroyGenerationBests(config_t *config) { free(generationBest); }
+
 double fitnessFunction(int individualScore, int bestScore) {
   return exp(bestScore - individualScore);
 }
@@ -117,6 +134,9 @@ answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
     // Clear previous population
     for (int j = 0; j < config->ga_populationSize; j++)
       destroyTree(newPopulation[j]);
+
+    // Save score in array of best of each generation
+    generationBest[i] = scores[0];
   }
 
   // Calculate scores one last time
