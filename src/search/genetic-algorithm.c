@@ -63,14 +63,16 @@ void geneticAlgorithmGeneration(config_t *config, tree_t **population,
     }
   }
 
-  // Verify generation cutoff
-  if (bestScore < getScore(answer))
+  // Verify generation cutoff and update best answer
+  if (bestScore < getScore(answer)) {
     *noChangeGenerations = 0;
+    updateAnswer(answer, population[0], scores[0]);
+  }
   else
     (*noChangeGenerations)++;
 
   // Update answer with relevant results
-  for (int i = 0; i < config->ga_populationSize; i++) {
+  for (int i = 1; i < config->ga_populationSize; i++) {
     updateAnswer(answer, population[i], scores[i]);
   }
 

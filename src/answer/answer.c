@@ -57,9 +57,10 @@ void printAnswer(answer_t *answer, FILE *fp) {
   if (!fp)
     finalFile = stdout;
 
-  fprintf(finalFile, "-- ANSWER --\nMin score: %u\nTrees:\n", getScore(answer));
-  for (int i = 0; answer->trees[i] && i < answer->numTrees; i++) {
-    fprintf(finalFile, "\t");
+  fprintf(finalFile, "-- ANSWER --\nMin score: %u\nTrees: %d\n", getScore(answer), answer->currTree);
+  if (answer->currTree < 16)
+    for (int i = 0; answer->trees[i] && i < answer->numTrees; i++) {
+      fprintf(finalFile, "\t");
 
 #ifdef DEBUG
     printTree(answer->trees[i]);
