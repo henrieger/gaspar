@@ -43,8 +43,6 @@ do
       generate_results strict.intree
 
       head -n2 ${ANALYSIS_NAME}.dat >> final.dat
-      
-      exit
     done
     rm strict.intree
 
