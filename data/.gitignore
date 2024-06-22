@@ -1,3 +1,4 @@
 *.nex
 *.inf
 !intree
+!*.dat

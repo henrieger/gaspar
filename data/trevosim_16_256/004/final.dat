@@ -1,0 +1,25 @@
+branchAndBoundSearch
+1.0 1.0
+1.0 1.0
+315
+42267243
+geneticAlgorithmNni
+1.0 1.0
+1.0 1.0
+315
+16000800
+geneticAlgorithmSpr
+0.96 1.0
+0.6923076923076923 0.7142857142857143
+350
+604100
+hillClimbingNni
+1.0 1.0
+1.0 1.0
+315
+6100244
+hillClimbingSpr
+1.0 1.0
+1.0 1.0
+315
+63890
