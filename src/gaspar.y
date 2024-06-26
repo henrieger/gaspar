@@ -158,11 +158,11 @@ gaPopulationSize:
   NUMBER { config.ga_populationSize = atoi(token); }
 ;
 
-gaGenerationCuttof:
+gaGenerations:
   NUMBER { config.ga_generations = atoi(token); }
 ;
 
-gaGenerations:
+gaGenerationCuttof:
   NUMBER { config.ga_generationCuttof = atoi(token); }
 ;
 
