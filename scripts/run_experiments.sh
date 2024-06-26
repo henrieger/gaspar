@@ -44,8 +44,8 @@ do
 
       head -n2 ${ANALYSIS_NAME}.dat >> final.dat
     done
-    rm strict.intree
-
+    
+    rm *.intree
     cd $SCRIPTS_DIR
   done
 done
