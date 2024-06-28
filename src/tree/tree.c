@@ -84,6 +84,33 @@ void changeEdge(tree_t *tree, int node, int oldEdge, int newEdge) {
     nodeStruct->edge3 = newEdge;
 }
 
+// Check if two nodes contain the same edges. Assumes no repetitions.
+uint8_t areEqualNodes(node_t *t1, node_t *t2) {
+  uint8_t edge1Present = t1->edge1 == t2->edge1 || t1->edge1 == t2->edge2 ||
+                         t1->edge1 == t2->edge3;
+  uint8_t edge2Present = t1->edge2 == t2->edge1 || t1->edge2 == t2->edge2 ||
+                         t1->edge2 == t2->edge3;
+  uint8_t edge3Present = t1->edge3 == t2->edge1 || t1->edge3 == t2->edge2 ||
+                         t1->edge3 == t2->edge3;
+  return edge1Present && edge2Present && edge3Present;
+}
+
+// Return TRUE if all internal nodes of both trees have the same edges. FALSE
+// otherwise. IMPORTANT: It is not an accurate comparison of equality between
+// trees
+uint8_t areEqual(tree_t *t1, tree_t *t2) {
+  if (t1 == t2)
+    return 1;
+
+  if (t1->size != t2->size)
+    return 0;
+
+  for (int i = 0; i < t1->leaves - 2; i++)
+    if (!areEqualNodes(&(t1->internal[i]), &(t2->internal[i])))
+      return 0;
+  return 1;
+}
+
 // Search a node by its label.
 int searchNodeByLabel(tree_t *tree, const char *label) {
   for (int i = 0; i < tree->size; i++)

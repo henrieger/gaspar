@@ -45,6 +45,12 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score) {
 #endif
   if (score < getScore(answer))
     resetAndUpdateScore(answer, score);
+
+  for (int i = 0; i < answer->currTree; i++) {
+    if (areEqual(tree, answer->trees[i]))
+      return;
+  }
+
   insertAnswer(answer, tree);
 }
 

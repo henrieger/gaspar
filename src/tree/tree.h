@@ -31,6 +31,11 @@ int nodeDegree(tree_t *tree, int node);
 // Return TRUE if node is leaf, FALSE otherwise.
 uint8_t isLeaf(tree_t *tree, int node);
 
+// Return TRUE if all internal nodes of both trees have the same edges. FALSE
+// otherwise. IMPORTANT: It is not an accurate comparison of equality between
+// trees
+uint8_t areEqual(tree_t *t1, tree_t *t2);
+
 // Change old edge in node to a new edge, independent of which edge it is
 void changeEdge(tree_t *tree, int node, int oldEdge, int newEdge);
 
