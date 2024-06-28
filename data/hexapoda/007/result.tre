@@ -1,0 +1,6 @@
+(((((((Diptera,Siphonaptera,Mecoptera),(Lepidoptera,Trichoptera)),
+Hymenoptera),((Raphidioptera,Megaloptera),Neuroptera),(Strepsiptera,
+Coleoptera)),(Hemiptera,Thysanoptera,(Psocoptera,Phthiraptera))),
+(((Blattodea,Isoptera),Mantodea),Xenonomia,Phasmatodea,Orthoptera),
+Plecoptera,((((Archaeognatha,((Collembola,Protura),Diplura)),
+Zygentoma),Ephemeroptera),Odonata),(Dermaptera,Embioptera)),Zoraptera);
