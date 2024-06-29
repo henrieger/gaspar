@@ -16,7 +16,7 @@ def main():
 
     tests = result.compare(correct, unrooted=True)
     cfi = (
-        (cfi_internal_nodes - 1) / (result_internal_nodes - 1)
+        (cfi_internal_nodes - 2) / (result_internal_nodes - 2)
         if result_internal_nodes != 1
         else 0
     )
