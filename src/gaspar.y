@@ -29,7 +29,7 @@
 %token SEARCH_METHOD BRANCH_AND_BOUND HILL_CLIMBING GENETIC_ALGORITHM
 %token TOKEN_NNI TOKEN_SPR TOKEN_TBR TOKEN_PDG
 %token EVALUATION EWMP
-%token HC_PARAMS GA_PARAMS BS_PARAMS
+%token HC_PARAMS GA_PARAMS BS_PARAMS SPR_PARAMS
 %token MAX_TREES PERCENT
 
 %%
@@ -111,6 +111,7 @@ option:
   | hcParams
   | gaParams
   | bsParams
+  | sprParams
   | maxTrees
 ;
 
@@ -142,7 +143,7 @@ hcReplicates:
 ;
 
 gaParams:
-  GA_PARAMS gaMutationOperator gaProbability gaPopulationSize gaGenerations gaGenerationCuttof
+  GA_PARAMS gaMutationOperator gaPopulationSize gaGenerations gaGenerationCuttof
 ;
 
 gaMutationOperator:
@@ -150,8 +151,8 @@ gaMutationOperator:
   | TOKEN_NNI { config.ga_mutationOperator = randomNNI; }
 ;
 
-gaProbability:
-  NUMBER PERCENT { config.spr_probability = atof(token) / 100; }
+sprParams:
+  SPR_PARAMS NUMBER PERCENT { config.spr_probability = atof(token) / 100; }
 ;
 
 gaPopulationSize:

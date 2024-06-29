@@ -147,6 +147,11 @@ bsParams {
   return BS_PARAMS;
 }
 
+sprParams {
+  assignToken("sprParams");
+  return SPR_PARAMS;
+}
+
 {number} {
   assignToken("number");
   return NUMBER;
