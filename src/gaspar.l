@@ -122,6 +122,11 @@ nni {
   return TOKEN_NNI;
 }
 
+hybrid {
+  assignToken("hybrid");
+  return TOKEN_HYBRID;
+}
+
 tbr {
   assignToken("tbr");
   return TOKEN_TBR;
@@ -150,6 +155,11 @@ bsParams {
 sprParams {
   assignToken("sprParams");
   return SPR_PARAMS;
+}
+
+hybridParams {
+  assignToken("hybridParams");
+  return HYBRID_PARAMS;
 }
 
 {number} {

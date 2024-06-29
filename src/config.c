@@ -21,6 +21,7 @@ void setConfigsToDefault(config_t *config) {
   config->ga_generationCuttof = 20000;
   config->ga_selectionStrength = 0.5;
   config->spr_probability = 0.05;
+  config->hybrid_nniProb = 0.8;
   config->bs_replicates = 100;
 }
 

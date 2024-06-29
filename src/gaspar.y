@@ -16,6 +16,7 @@
 #include "tree/random.h"
 #include "operators/nni.h"
 #include "operators/spr.h"
+#include "operators/hybrid.h"
 #include "support/bootstrap.h"
 
 %}
@@ -27,9 +28,9 @@
 %token ANALYSES
 %token TAXA_TOKEN CHAR_TOKEN
 %token SEARCH_METHOD BRANCH_AND_BOUND HILL_CLIMBING GENETIC_ALGORITHM
-%token TOKEN_NNI TOKEN_SPR TOKEN_TBR TOKEN_PDG
+%token TOKEN_NNI TOKEN_SPR TOKEN_HYBRID TOKEN_TBR TOKEN_PDG
 %token EVALUATION EWMP
-%token HC_PARAMS GA_PARAMS BS_PARAMS SPR_PARAMS
+%token HC_PARAMS GA_PARAMS BS_PARAMS SPR_PARAMS HYBRID_PARAMS
 %token MAX_TREES PERCENT
 
 %%
@@ -112,6 +113,7 @@ option:
   | gaParams
   | bsParams
   | sprParams
+  | hybridParams
   | maxTrees
 ;
 
@@ -149,14 +151,11 @@ gaParams:
 gaMutationOperator:
   TOKEN_SPR { config.ga_mutationOperator = randomSPR; }
   | TOKEN_NNI { config.ga_mutationOperator = randomNNI; }
+  | TOKEN_HYBRID { config.ga_mutationOperator = hybridOp; }
 ;
 
 gaSelectionStrength:
   NUMBER { config.ga_selectionStrength = atof(token) / 100; } PERCENT
-
-sprParams:
-  SPR_PARAMS NUMBER { config.spr_probability = atof(token) / 100; } PERCENT
-;
 
 gaPopulationSize:
   NUMBER { config.ga_populationSize = atoi(token); }
@@ -172,6 +171,14 @@ gaGenerationCuttof:
 
 bsParams:
   BS_PARAMS NUMBER { config.bs_replicates = atoi(token); }
+;
+
+sprParams:
+  SPR_PARAMS NUMBER { config.spr_probability = atof(token) / 100; } PERCENT
+;
+
+hybridParams:
+  HYBRID_PARAMS NUMBER { config.hybrid_nniProb = atof(token) / 100; } PERCENT
 ;
 
 maxTrees:

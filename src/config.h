@@ -34,6 +34,9 @@ typedef struct config {
   // SPR params
   double spr_probability;
 
+  // Hybrid operator params
+  double hybrid_nniProb;
+
   // Bootstrap params
   unsigned int bs_replicates;
 } config_t;
