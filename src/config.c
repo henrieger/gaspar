@@ -19,6 +19,7 @@ void setConfigsToDefault(config_t *config) {
   config->ga_populationSize = 8;
   config->ga_generations = 1000000;
   config->ga_generationCuttof = 20000;
+  config->ga_selectionStrength = 0.5;
   config->spr_probability = 0.05;
   config->bs_replicates = 100;
 }

@@ -26,8 +26,8 @@ void resetGenerationBests(config_t *config) {
 // Destroy array of generation bests
 void destroyGenerationBests(config_t *config) { free(generationBest); }
 
-double fitnessFunction(int individualScore, int bestScore) {
-  return exp(bestScore - individualScore);
+double fitnessFunction(int individualScore, int bestScore, double s) {
+  return exp(s * (bestScore - individualScore));
 }
 
 double sampleProb() { return (double)rand() / (double)(RAND_MAX); }
@@ -67,8 +67,7 @@ void geneticAlgorithmGeneration(config_t *config, tree_t **population,
   if (bestScore < getScore(answer)) {
     *noChangeGenerations = 0;
     updateAnswer(answer, population[0], scores[0]);
-  }
-  else
+  } else
     (*noChangeGenerations)++;
 
   // Update answer with relevant results
@@ -85,10 +84,12 @@ void geneticAlgorithmGeneration(config_t *config, tree_t **population,
 #endif /* ifdef DEBUG */
 
   // Calculate sum of prefixes of probabilities for all individuals
-  probabilities[0] = fitnessFunction(scores[0], bestScore);
+  probabilities[0] =
+      fitnessFunction(scores[0], bestScore, config->ga_selectionStrength);
   for (int i = 1; i < config->ga_populationSize; i++)
     probabilities[i] =
-        probabilities[i - 1] + fitnessFunction(scores[i], bestScore);
+        probabilities[i - 1] +
+        fitnessFunction(scores[i], bestScore, config->ga_selectionStrength);
   for (int i = 0; i < config->ga_populationSize; i++)
     probabilities[i] /= probabilities[config->ga_populationSize - 1];
 

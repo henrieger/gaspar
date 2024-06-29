@@ -29,6 +29,7 @@ typedef struct config {
   unsigned int ga_populationSize;
   unsigned int ga_generations;
   unsigned int ga_generationCuttof;
+  double ga_selectionStrength;
 
   // SPR params
   double spr_probability;

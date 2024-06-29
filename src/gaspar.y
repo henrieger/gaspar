@@ -143,7 +143,7 @@ hcReplicates:
 ;
 
 gaParams:
-  GA_PARAMS gaMutationOperator gaPopulationSize gaGenerations gaGenerationCuttof
+  GA_PARAMS gaMutationOperator gaSelectionStrength gaPopulationSize gaGenerations gaGenerationCuttof
 ;
 
 gaMutationOperator:
@@ -151,8 +151,11 @@ gaMutationOperator:
   | TOKEN_NNI { config.ga_mutationOperator = randomNNI; }
 ;
 
+gaSelectionStrength:
+  NUMBER { config.ga_selectionStrength = atof(token) / 100; } PERCENT
+
 sprParams:
-  SPR_PARAMS NUMBER PERCENT { config.spr_probability = atof(token) / 100; }
+  SPR_PARAMS NUMBER { config.spr_probability = atof(token) / 100; } PERCENT
 ;
 
 gaPopulationSize:
