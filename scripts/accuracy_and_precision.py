@@ -15,11 +15,10 @@ def main():
         cfi_internal_nodes += 0 if n.is_leaf() else 1
 
     tests = result.compare(correct, unrooted=True)
-    cfi = (
-        (cfi_internal_nodes - 2) / (result_internal_nodes - 2)
-        if result_internal_nodes != 1
-        else 0
-    )
+    try:
+        cfi = (cfi_internal_nodes - 2) / (result_internal_nodes - 2)
+    except ZeroDivisionError:
+        cfi = 0
 
     print(1 - tests["norm_rf"], cfi)
 

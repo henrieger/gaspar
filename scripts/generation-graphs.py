@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy
 
-data_path = "../data/trevosim_16_256/"
+data_path = "../data/trevosim_32_512/"
 
 
 def main():
@@ -23,8 +23,8 @@ def main():
                 else:
                     data[algorithm] = [scores]
 
+    maximum = 0
     for key in data:
-        maximum = 0
         for value in data[key]:
             maximum = max(maximum, len(value))
 
@@ -39,7 +39,11 @@ def main():
     for key, value in data.items():
         averages[key] = numpy.average(value, axis=0)
 
-    colors = {"geneticAlgorithmNni": "green", "geneticAlgorithmSpr": "blue"}
+    colors = {
+        "geneticAlgorithmNni": "green",
+        "geneticAlgorithmSpr": "blue",
+        "geneticAlgorithmHybrid": "cyan",
+    }
 
     plt.figure()
     for key in data:

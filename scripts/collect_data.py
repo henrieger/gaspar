@@ -2,7 +2,7 @@ import os
 import numpy
 import scipy
 
-data_path = "../data/trevosim_32_256/"
+data_path = "../data/trevosim_32_1024/"
 
 
 class DataCollection:
@@ -35,12 +35,6 @@ class DataCollection:
 def divide_chunks(data: list, n: int):
     for i in range(0, len(data), n):
         yield data[i : i + n]
-
-
-def get_alternative_hypothesis(key: str):
-    if key == "exec" or key == "score":
-        return "less"
-    return "greater"
 
 
 def main():
@@ -79,20 +73,22 @@ def main():
             k, DataCollection(mrc_acc, mrc_prec, strict_acc, strict_prec, scores, execs)
         )
 
-    print("\nT-tests: (statistic, p-value)\n")
+    print("\nT-tests:\n")
 
-    t_sample_ga = data_group["geneticAlgorithmNni"]
+    t_sample_ga = data_group["geneticAlgorithmSpr"]
     t_sample_hc = data_group["hillClimbingSpr"]
 
     for key in t_sample_ga[0].to_dir():
-        value_ag = [v.to_dir()[key] for v in t_sample_ga]
+        print(f"{key}:")
         value_hc = [v.to_dir()[key] for v in t_sample_hc]
-        t_test = scipy.stats.ttest_rel(
-            value_hc,
-            value_ag,
-            alternative=get_alternative_hypothesis(key),
-        )
-        print(f"{key}: ({float(t_test.statistic)}, {float(t_test.pvalue)})")
+        value_ag = [v.to_dir()[key] for v in t_sample_ga]
+        for alternative in ['less', 'greater']:
+            t_test = scipy.stats.ttest_rel(
+                value_hc,
+                value_ag,
+                alternative=alternative,
+            )
+            print(f"\t{alternative}: {float(t_test.pvalue)}")
 
 
 if __name__ == "__main__":
