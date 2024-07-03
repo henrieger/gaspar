@@ -3,23 +3,28 @@ branchAndBoundSearch
 1.0 1.0
 307
 180255293
+geneticAlgorithmHybrid
+1.0 1.0
+1.0 1.0
+307
+16650000
 geneticAlgorithmNni
 1.0 1.0
 1.0 1.0
 307
-18490600
+16120752
 geneticAlgorithmSpr
 1.0 1.0
 1.0 1.0
 307
-591666
+607192
 hillClimbingNni
 1.0 1.0
 1.0 1.0
 307
-5969646
+5903476
 hillClimbingSpr
 1.0 1.0
 1.0 1.0
 307
-56870
+62486

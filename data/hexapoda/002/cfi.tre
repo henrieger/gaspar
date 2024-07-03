@@ -1,6 +1,6 @@
-((((((Diptera,Siphonaptera,Mecoptera),Lepidoptera,Trichoptera),
-((((((Collembola,Protura),Diplura),Archaeognatha),Odonata,Zygentoma,
-Ephemeroptera),Dermaptera,Blattodea,Mantodea,Phasmatodea,Embioptera,
-Zoraptera,Isoptera,Xenonomia,Plecoptera,Orthoptera),Thysanoptera,
-Hemiptera,Psocoptera,Phthiraptera),Hymenoptera),(Coleoptera,Strepsiptera)),
-Raphidioptera,Neuroptera),Megaloptera);
+(((((((((Isoptera,Blattodea),Mantodea),((((Diptera,Mecoptera,
+Siphonaptera),(Trichoptera,Lepidoptera)),((Strepsiptera,Coleoptera),
+(Raphidioptera,Megaloptera,Neuroptera)),Hymenoptera),Thysanoptera,
+Hemiptera,(Phthiraptera,Psocoptera)),Plecoptera,Embioptera,Zoraptera,
+Orthoptera,Dermaptera,Phasmatodea,Xenonomia),Odonata,Ephemeroptera),
+Zygentoma),Archaeognatha),Diplura),Protura),Collembola);
