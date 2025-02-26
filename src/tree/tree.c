@@ -10,7 +10,7 @@ node_t *newNode(sequence_t *sequence, const char *label) {
   node_t *n = malloc(sizeof(node_t));
   n->sequence = sequence;
   n->label = label;
-  n->edge1 = n->edge2 = n->edge3 = -1;
+  n->edges[0] = n->edges[1] = n->edges[2] = -1;
   return n;
 }
 
@@ -22,7 +22,7 @@ tree_t *newTree(unsigned int leaves) {
 
   t->nodes = malloc(t->size * sizeof(node_t));
   for (int i = 0; i < t->size; i++) {
-    t->nodes[i].edge1 = t->nodes[i].edge2 = t->nodes[i].edge3 = -1;
+    t->nodes[i].edges[0] = t->nodes[i].edges[1] = t->nodes[i].edges[2] = -1;
     t->nodes[i].label = NULL;
     t->nodes[i].sequence = NULL;
   }
@@ -60,11 +60,11 @@ int nodeDegree(tree_t *tree, int node) {
 
   int sum = 0;
 
-  if (tree->nodes[node].edge1 >= 0)
+  if (tree->nodes[node].edges[0] >= 0)
     sum++;
-  if (tree->nodes[node].edge2 >= 0)
+  if (tree->nodes[node].edges[1] >= 0)
     sum++;
-  if (tree->nodes[node].edge3 >= 0)
+  if (tree->nodes[node].edges[2] >= 0)
     sum++;
 
   return sum;
@@ -76,22 +76,25 @@ uint8_t isLeaf(tree_t *tree, int node) { return nodeDegree(tree, node) == 1; }
 // Change old edge in node to a new edge, independent of which edge it is
 void changeEdge(tree_t *tree, int node, int oldEdge, int newEdge) {
   node_t *nodeStruct = &(tree->nodes[node]);
-  if (nodeStruct->edge1 == oldEdge)
-    nodeStruct->edge1 = newEdge;
-  else if (nodeStruct->edge2 == oldEdge)
-    nodeStruct->edge2 = newEdge;
-  else if (nodeStruct->edge3 == oldEdge)
-    nodeStruct->edge3 = newEdge;
+  if (nodeStruct->edges[0] == oldEdge)
+    nodeStruct->edges[0] = newEdge;
+  else if (nodeStruct->edges[1] == oldEdge)
+    nodeStruct->edges[1] = newEdge;
+  else if (nodeStruct->edges[2] == oldEdge)
+    nodeStruct->edges[2] = newEdge;
 }
 
 // Check if two nodes contain the same edges. Assumes no repetitions.
 uint8_t areEqualNodes(node_t *t1, node_t *t2) {
-  uint8_t edge1Present = t1->edge1 == t2->edge1 || t1->edge1 == t2->edge2 ||
-                         t1->edge1 == t2->edge3;
-  uint8_t edge2Present = t1->edge2 == t2->edge1 || t1->edge2 == t2->edge2 ||
-                         t1->edge2 == t2->edge3;
-  uint8_t edge3Present = t1->edge3 == t2->edge1 || t1->edge3 == t2->edge2 ||
-                         t1->edge3 == t2->edge3;
+  uint8_t edge1Present = t1->edges[0] == t2->edges[0] ||
+                         t1->edges[0] == t2->edges[1] ||
+                         t1->edges[0] == t2->edges[2];
+  uint8_t edge2Present = t1->edges[1] == t2->edges[0] ||
+                         t1->edges[1] == t2->edges[1] ||
+                         t1->edges[1] == t2->edges[2];
+  uint8_t edge3Present = t1->edges[2] == t2->edges[0] ||
+                         t1->edges[2] == t2->edges[1] ||
+                         t1->edges[2] == t2->edges[2];
   return edge1Present && edge2Present && edge3Present;
 }
 
@@ -126,14 +129,14 @@ tree_t *smallestTree(alignment_t *alignment) {
   t->root = alignment->taxa;
 
   // Set parent of three OTUs as the root
-  t->nodes[0].edge1 = t->root;
-  t->nodes[1].edge1 = t->root;
-  t->nodes[2].edge1 = t->root;
+  t->nodes[0].edges[0] = t->root;
+  t->nodes[1].edges[0] = t->root;
+  t->nodes[2].edges[0] = t->root;
 
   // Set the children of the root as the OTUs
-  t->nodes[t->root].edge1 = 0;
-  t->nodes[t->root].edge2 = 1;
-  t->nodes[t->root].edge3 = 2;
+  t->nodes[t->root].edges[0] = 0;
+  t->nodes[t->root].edges[1] = 1;
+  t->nodes[t->root].edges[2] = 2;
 
   return t;
 }
@@ -145,7 +148,8 @@ void printTree(tree_t *tree) {
          tree->size, tree->leaves, tree->root, tree->nodes, tree->internal);
   for (int i = 0; i < tree->size; i++) {
     printf("\t%d (%s): [%d %d %d]\t", i, tree->nodes[i].label,
-           tree->nodes[i].edge1, tree->nodes[i].edge2, tree->nodes[i].edge3);
+           tree->nodes[i].edges[0], tree->nodes[i].edges[1],
+           tree->nodes[i].edges[2]);
     printSequence(tree->nodes[i].sequence);
   }
 }
@@ -164,18 +168,18 @@ void printNewickNode(tree_t *tree, int node, int from, FILE *fp) {
     return;
 
   fprintf(fp, "(");
-  if (from == nodeStruct->edge1) {
-    printNewickNode(tree, nodeStruct->edge2, node, fp);
+  if (from == nodeStruct->edges[0]) {
+    printNewickNode(tree, nodeStruct->edges[1], node, fp);
     fprintf(fp, ",");
-    printNewickNode(tree, nodeStruct->edge3, node, fp);
-  } else if (from == nodeStruct->edge2) {
-    printNewickNode(tree, nodeStruct->edge1, node, fp);
+    printNewickNode(tree, nodeStruct->edges[2], node, fp);
+  } else if (from == nodeStruct->edges[1]) {
+    printNewickNode(tree, nodeStruct->edges[0], node, fp);
     fprintf(fp, ",");
-    printNewickNode(tree, nodeStruct->edge3, node, fp);
-  } else if (from == nodeStruct->edge3) {
-    printNewickNode(tree, nodeStruct->edge1, node, fp);
+    printNewickNode(tree, nodeStruct->edges[2], node, fp);
+  } else if (from == nodeStruct->edges[2]) {
+    printNewickNode(tree, nodeStruct->edges[0], node, fp);
     fprintf(fp, ",");
-    printNewickNode(tree, nodeStruct->edge2, node, fp);
+    printNewickNode(tree, nodeStruct->edges[1], node, fp);
   }
   fprintf(fp, ")");
 }
@@ -198,9 +202,9 @@ void printNewick(tree_t *tree, FILE *fp) {
     return;
 
   fprintf(finalFile, "(");
-  printNewickNode(tree, tree->root, rootStruct->edge1, finalFile);
+  printNewickNode(tree, tree->root, rootStruct->edges[0], finalFile);
   fprintf(finalFile, ",");
-  printNewickNode(tree, rootStruct->edge1, tree->root, finalFile);
+  printNewickNode(tree, rootStruct->edges[0], tree->root, finalFile);
   fprintf(finalFile, ")");
 }
 
@@ -224,9 +228,9 @@ tree_t *copyTree(const tree_t *tree) {
     copy->internal[i].sequence = &(copySequenceArray[i]);
 
   for (int i = 0; i < tree->size; i++) {
-    copy->nodes[i].edge1 = tree->nodes[i].edge1;
-    copy->nodes[i].edge2 = tree->nodes[i].edge2;
-    copy->nodes[i].edge3 = tree->nodes[i].edge3;
+    copy->nodes[i].edges[0] = tree->nodes[i].edges[0];
+    copy->nodes[i].edges[1] = tree->nodes[i].edges[1];
+    copy->nodes[i].edges[2] = tree->nodes[i].edges[2];
     copy->nodes[i].label = tree->nodes[i].label;
   }
 

@@ -1,5 +1,5 @@
 CC = gcc
-LDLIBS = -ll -ly -lc -lm
+LDLIBS = -lfl -ly -lc -lm
 OBJECTS = *.o */*.o
 EXECUTABLE = gaspar
 SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/ support/
@@ -18,7 +18,7 @@ lex.yy.c: gaspar.l gaspar.h
 	flex gaspar.l
 
 gaspar.tab.c: gaspar.y gaspar.h
-	bison gaspar.y -d -v
+	bison gaspar.y -d -v -Wcounterexamples
 
 gaspar.o: gasparFunctions.c gaspar.h
 	${CC} ${CFLAGS} -c gasparFunctions.c -o gaspar.o

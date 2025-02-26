@@ -25,12 +25,12 @@ void addNodeAndProceed(tree_t *tree, int n1, int n2, alignment_t *alignment,
   changeEdge(tree, n2, n1, baseNode);
 
   // Associate edges of internal node
-  tree->nodes[baseNode].edge1 = n1;
-  tree->nodes[baseNode].edge2 = n2;
-  tree->nodes[baseNode].edge3 = taxon;
+  tree->nodes[baseNode].edges[0] = n1;
+  tree->nodes[baseNode].edges[1] = n2;
+  tree->nodes[baseNode].edges[2] = taxon;
 
   // Associate "root" of new taxon
-  tree->nodes[taxon].edge1 = baseNode;
+  tree->nodes[taxon].edges[0] = baseNode;
 
   // Search next taxon with new node in place
   branchAndBoundRecursive(tree, n1, alignment, config, taxon + 1, n1, answer);
@@ -58,16 +58,20 @@ void branchAndBoundRecursive(tree_t *tree, int node, alignment_t *alignment,
     return;
   }
 
-  int oldEdge1 = tree->nodes[node].edge1;
-  int oldEdge2 = tree->nodes[node].edge2;
-  int oldEdge3 = tree->nodes[node].edge3;
+  int oldedges[3];
+  oldedges[0] = tree->nodes[node].edges[0];
+  oldedges[1] = tree->nodes[node].edges[1];
+  oldedges[2] = tree->nodes[node].edges[2];
 
-  if (oldEdge1 >= 0 && oldEdge1 != from)
-    addNodeAndProceed(tree, node, oldEdge1, alignment, config, taxon, answer);
-  if (oldEdge2 >= 0 && oldEdge2 != from)
-    addNodeAndProceed(tree, node, oldEdge2, alignment, config, taxon, answer);
-  if (oldEdge3 >= 0 && oldEdge3 != from)
-    addNodeAndProceed(tree, node, oldEdge3, alignment, config, taxon, answer);
+  if (oldedges[0] >= 0 && oldedges[0] != from)
+    addNodeAndProceed(tree, node, oldedges[0], alignment, config, taxon,
+                      answer);
+  if (oldedges[1] >= 0 && oldedges[1] != from)
+    addNodeAndProceed(tree, node, oldedges[1], alignment, config, taxon,
+                      answer);
+  if (oldedges[2] >= 0 && oldedges[2] != from)
+    addNodeAndProceed(tree, node, oldedges[2], alignment, config, taxon,
+                      answer);
 }
 
 // Performs a branch and bound search with given alignment and eval function.

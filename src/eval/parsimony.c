@@ -86,15 +86,15 @@ int fitchParsimonyRecursive(tree_t *tree, int node, int from) {
   node_t *nodeStruct = &(tree->nodes[node]);
 
   // Select nodes of recursion based on root
-  if (nodeStruct->edge1 == from) {
-    n1 = nodeStruct->edge2;
-    n2 = nodeStruct->edge3;
-  } else if (nodeStruct->edge2 == from) {
-    n1 = nodeStruct->edge1;
-    n2 = nodeStruct->edge3;
-  } else if (nodeStruct->edge3 == from) {
-    n1 = nodeStruct->edge1;
-    n2 = nodeStruct->edge2;
+  if (nodeStruct->edges[0] == from) {
+    n1 = nodeStruct->edges[1];
+    n2 = nodeStruct->edges[2];
+  } else if (nodeStruct->edges[1] == from) {
+    n1 = nodeStruct->edges[0];
+    n2 = nodeStruct->edges[2];
+  } else if (nodeStruct->edges[2] == from) {
+    n1 = nodeStruct->edges[0];
+    n2 = nodeStruct->edges[1];
   }
 
   return fitchParsimonyRecursive(tree, n1, node) +
@@ -110,7 +110,7 @@ int fitchParsimony(tree_t *tree, config_t *config) {
   parsimonyCalls++;
 
   int root1 = tree->root;
-  int root2 = tree->nodes[tree->root].edge1;
+  int root2 = tree->nodes[tree->root].edges[0];
 
   return fitchParsimonyRecursive(tree, root1, root2) +
          fitchParsimonyRecursive(tree, root2, root1) +
@@ -123,10 +123,6 @@ void destroyGlobalAuxSequences() {
   free(r);
 }
 
-inline void resetParsimonyCalls() {
-  parsimonyCalls = 0;
-}
+inline void resetParsimonyCalls() { parsimonyCalls = 0; }
 
-inline unsigned long getParsimonyCalls() {
-  return parsimonyCalls;
-}
+inline unsigned long getParsimonyCalls() { return parsimonyCalls; }

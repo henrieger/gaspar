@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 typedef struct node {
-  int edge1, edge2, edge3;
+  int edges[3];
   sequence_t *sequence;
   const char *label;
 } node_t;

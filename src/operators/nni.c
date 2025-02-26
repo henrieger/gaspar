@@ -1,26 +1,26 @@
 #include "nni.h"
 
+#include <config.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tree/random.h>
 #include <tree/tree.h>
-#include <config.h>
 
 // Find the node in n1 to be swapped
 int findN1Swapper(tree_t *tree, int n1, int n2) {
-  if (tree->nodes[n1].edge3 == n2)
-    return tree->nodes[n1].edge2;
-  return tree->nodes[n1].edge3;
+  if (tree->nodes[n1].edges[2] == n2)
+    return tree->nodes[n1].edges[1];
+  return tree->nodes[n1].edges[2];
 }
 
 // Find the node in n2 to be swapped
 int findN2Swapper(tree_t *tree, int n1, int n2, int joint) {
-  if (joint == 1 && tree->nodes[n2].edge1 != n1)
-    return tree->nodes[n2].edge1;
-  if (tree->nodes[n2].edge3 != n1)
-    return tree->nodes[n2].edge3;
-  return tree->nodes[n2].edge2;
+  if (joint == 1 && tree->nodes[n2].edges[0] != n1)
+    return tree->nodes[n2].edges[0];
+  if (tree->nodes[n2].edges[2] != n1)
+    return tree->nodes[n2].edges[2];
+  return tree->nodes[n2].edges[1];
 }
 
 // Create a Nearest Neighbor Interchange operation in the out edge connected to

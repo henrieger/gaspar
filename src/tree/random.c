@@ -88,10 +88,10 @@ tree_t *randomTree(alignment_t *alignment) {
     int node2 = removeNodeAtIndex(&nodeList, index2);
 
     // Create the new internal node
-    tree->nodes[node1].edge1 = alignment->taxa + i;
-    tree->nodes[node2].edge1 = alignment->taxa + i;
-    tree->internal[i].edge2 = node1;
-    tree->internal[i].edge3 = node2;
+    tree->nodes[node1].edges[0] = alignment->taxa + i;
+    tree->nodes[node2].edges[0] = alignment->taxa + i;
+    tree->internal[i].edges[1] = node1;
+    tree->internal[i].edges[2] = node2;
 
     // Append new internal node to list
     appendToList(&nodeList, alignment->taxa + i);
@@ -100,8 +100,8 @@ tree_t *randomTree(alignment_t *alignment) {
   // Create the last internal node
   int node1 = removeNodeAtIndex(&nodeList, 1);
   int node2 = removeNodeAtIndex(&nodeList, 0);
-  tree->nodes[node1].edge1 = node2;
-  tree->nodes[node2].edge1 = node1;
+  tree->nodes[node1].edges[0] = node2;
+  tree->nodes[node2].edges[0] = node1;
 
   tree->root = tree->size - 1;
 
@@ -119,17 +119,17 @@ inline int randomInternalNode(int numLeaves) {
 // Return a random non-null edge of node
 int randomEdge(tree_t *tree, int node) {
   int edge = rand() % 3;
-  int result = tree->nodes[node].edge3;
+  int result = tree->nodes[node].edges[2];
 
   // Only need to check for at most 2 extra edges as at least one will point to
   // an internal node
   for (int i = 0; i < 3; i++) {
     if (edge == 0)
-      result = tree->nodes[node].edge1;
+      result = tree->nodes[node].edges[0];
     else if (edge == 1)
-      result = tree->nodes[node].edge2;
+      result = tree->nodes[node].edges[1];
     else
-      result = tree->nodes[node].edge3;
+      result = tree->nodes[node].edges[2];
 
     // If the node is invalid, try the next edge
     if (result < 0)
@@ -144,17 +144,17 @@ int randomEdge(tree_t *tree, int node) {
 // Return a random internal edge of node
 int randomInternalEdge(tree_t *tree, int node) {
   int edge = rand() % 3;
-  int result = tree->nodes[node].edge3;
+  int result = tree->nodes[node].edges[2];
 
   // Only need to check for at most 2 extra edges as at least one will point to
   // an internal node
   for (int i = 0; i < 3; i++) {
     if (edge == 0)
-      result = tree->nodes[node].edge1;
+      result = tree->nodes[node].edges[0];
     else if (edge == 1)
-      result = tree->nodes[node].edge2;
+      result = tree->nodes[node].edges[1];
     else
-      result = tree->nodes[node].edge3;
+      result = tree->nodes[node].edges[2];
 
     // If the node is invalid, try the next edge
     if (result < 0 || isLeaf(tree, result))
@@ -179,15 +179,15 @@ void randomSubtreeRecursive(tree_t *tree, int node, int from, int *subtree1,
     *subtree2 = randomEdge(tree, node);
     return;
   } else {
-    if (tree->nodes[node].edge1 != from)
-      randomSubtreeRecursive(tree, tree->nodes[node].edge1, node, subtree1, subtree2,
-                    probability);
-    if (tree->nodes[node].edge2 != from)
-      randomSubtreeRecursive(tree, tree->nodes[node].edge2, node, subtree1, subtree2,
-                    probability);
-    if (tree->nodes[node].edge2 != from)
-      randomSubtreeRecursive(tree, tree->nodes[node].edge2, node, subtree1, subtree2,
-                    probability);
+    if (tree->nodes[node].edges[0] != from)
+      randomSubtreeRecursive(tree, tree->nodes[node].edges[0], node, subtree1,
+                             subtree2, probability);
+    if (tree->nodes[node].edges[1] != from)
+      randomSubtreeRecursive(tree, tree->nodes[node].edges[1], node, subtree1,
+                             subtree2, probability);
+    if (tree->nodes[node].edges[1] != from)
+      randomSubtreeRecursive(tree, tree->nodes[node].edges[1], node, subtree1,
+                             subtree2, probability);
   }
 }
 
@@ -198,15 +198,15 @@ void randomSubtree(tree_t *tree, int node, int *subtree1, int *subtree2,
   *subtree1 = *subtree2 = -1;
 
   randomSubtreeRecursive(tree, node, -1, subtree1, subtree2, probability);
-  
+
   // If random process didn't retrieve an edge, get the first one
   if (*subtree1 < 0 || *subtree2 < 0) {
     *subtree1 = node;
-    if (tree->nodes[node].edge1 >= 0)
-      *subtree2 = tree->nodes[node].edge1;
-    else if (tree->nodes[node].edge2 >= 0)
-      *subtree2 = tree->nodes[node].edge2;
-    else if (tree->nodes[node].edge3 >= 0)
-      *subtree2 = tree->nodes[node].edge3;
+    if (tree->nodes[node].edges[0] >= 0)
+      *subtree2 = tree->nodes[node].edges[0];
+    else if (tree->nodes[node].edges[1] >= 0)
+      *subtree2 = tree->nodes[node].edges[1];
+    else if (tree->nodes[node].edges[2] >= 0)
+      *subtree2 = tree->nodes[node].edges[2];
   }
 }

@@ -1,22 +1,22 @@
 #include "spr.h"
 
+#include <config.h>
 #include <stdio.h>
 #include <tree/random.h>
 #include <tree/tree.h>
-#include <config.h>
 
 // Determine node to the "left" of subtree
 int findLeft(tree_t *tree, int pruneNode, int pruneEdge) {
-  if (pruneEdge == tree->nodes[pruneNode].edge1)
-    return tree->nodes[pruneNode].edge2;
-  return tree->nodes[pruneNode].edge1;
+  if (pruneEdge == tree->nodes[pruneNode].edges[0])
+    return tree->nodes[pruneNode].edges[1];
+  return tree->nodes[pruneNode].edges[0];
 }
 
 // Determine node to the "right" of subtree
 int findRight(tree_t *tree, int pruneNode, int pruneEdge) {
-  if (pruneEdge == tree->nodes[pruneNode].edge3)
-    return tree->nodes[pruneNode].edge2;
-  return tree->nodes[pruneNode].edge3;
+  if (pruneEdge == tree->nodes[pruneNode].edges[2])
+    return tree->nodes[pruneNode].edges[1];
+  return tree->nodes[pruneNode].edges[2];
 }
 
 // Performs the pruning step of SPR, separating the subtree rooted in pruneRoot.
@@ -68,7 +68,8 @@ void randomSPR(tree_t *tree, config_t *config) {
 
   // Select a random edge to graft
   int graftNode1, graftNode2;
-  randomSubtree(tree, remainingTree, &graftNode1, &graftNode2, config->spr_probability);
+  randomSubtree(tree, remainingTree, &graftNode1, &graftNode2,
+                config->spr_probability);
 
 #ifdef DEBUG
   printf("Regrafting at (%d %d)\n", graftNode1, graftNode2);
