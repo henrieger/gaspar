@@ -31,7 +31,7 @@
 %token TOKEN_NNI TOKEN_SPR TOKEN_HYBRID TOKEN_TBR TOKEN_PDG
 %token EVALUATION EWMP
 %token HC_PARAMS GA_PARAMS BS_PARAMS SPR_PARAMS HYBRID_PARAMS
-%token MAX_TREES PERCENT
+%token MAX_TREES PERCENT SEED
 
 %%
 
@@ -87,8 +87,12 @@ charset:
   | MISSING_DATA { addMissingData(); }
 ;
 
+analyses_declaration:
+  ANALYSES COLON analyses
+;
+
 opt_analyses:
-  ANALYSES COLON analyses | { bootstrap(alignment, &config); } ;
+  seed analyses_declaration | seed { bootstrap(alignment, &config); } | analyses_declaration | { bootstrap(alignment, &config); } ;
 
 analyses:
   analyses analysis
@@ -183,6 +187,10 @@ hybridParams:
 
 maxTrees:
   MAX_TREES NUMBER { config.answer_size = atoi(token); }
+;
+
+seed:
+  SEED NUMBER {srand(atoi(token)); printf("\nSeed: %d\n", atoi(token)); }
 ;
 
 %%

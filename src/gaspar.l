@@ -162,6 +162,11 @@ hybridParams {
   return HYBRID_PARAMS;
 }
 
+seed {
+  assignToken("seed");
+  return SEED;
+}
+
 {number} {
   assignToken("number");
   return NUMBER;
