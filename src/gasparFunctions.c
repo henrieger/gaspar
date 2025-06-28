@@ -3,6 +3,7 @@
 #include "sequence-alignment/sequence-alignment.h"
 
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 char token[TOKEN_SIZE];
@@ -35,7 +36,7 @@ void initializeAlignment() {
   for (int i = 1; i < getAlignmentSize(); i++)
     labels[i] = *labels + (i * LABEL_SIZE);
   alignment = newAlignment(getAlignmentSize(), labels);
-  createCharacterWeightsByByte();
+  createCumulativeCharacterWeights();
   createCharacterWeights();
 }
 
@@ -47,13 +48,12 @@ void addNumbersToSequence() {
       printError("Char values must be between 0-%d. Found %d\n",
                  CHAR_STATES - 1, charValue);
 
-    int allowedTIndex = character / (8 * sizeof(allowed_t));
-    int positionInAllowedT = (character / (8 * sizeof(long long))) % 4;
-    int shiftAmount = character % (8 * sizeof(long long));
+    uint8_t *sequenceInBytes =
+        (uint8_t *)alignment->sequences[taxon].allowed[charValue];
+    int index = character / 8;
+    int shiftAmount = character % 8;
+    sequenceInBytes[index] |= 1 << shiftAmount;
 
-    alignment->sequences[taxon]
-        .allowed[charValue][allowedTIndex][positionInAllowedT] |=
-        1LL << shiftAmount;
     character++;
   }
 }
@@ -61,12 +61,11 @@ void addNumbersToSequence() {
 // Adds a missing data to current sequence
 void addMissingData() {
   for (int i = 0; i < CHAR_STATES; i++) {
-    int allowedTIndex = character / (8 * sizeof(allowed_t));
-    int positionInAllowedT = (character / (8 * sizeof(long long))) % 4;
-    int shiftAmount = character % (8 * sizeof(long long));
-
-    alignment->sequences[taxon].allowed[i][allowedTIndex][positionInAllowedT] |=
-        1LL << shiftAmount;
+    uint8_t *sequenceInBytes =
+        (uint8_t *)alignment->sequences[taxon].allowed[i];
+    int index = character / 8;
+    int shiftAmount = character % 8;
+    sequenceInBytes[index] |= 1 << shiftAmount;
   }
   character++;
 }
@@ -79,13 +78,11 @@ void addMultistateChar() {
       printError("Char values must be between 0-%d. Found %d\n",
                  CHAR_STATES - 1, charValue);
 
-    int allowedTIndex = character / (8 * sizeof(allowed_t));
-    int positionInAllowedT = (character / (8 * sizeof(long long))) % 4;
-    int shiftAmount = character % (8 * sizeof(long long));
-
-    alignment->sequences[taxon]
-        .allowed[charValue][allowedTIndex][positionInAllowedT] |=
-        1LL << shiftAmount;
+    uint8_t *sequenceInBytes =
+        (uint8_t *)alignment->sequences[taxon].allowed[charValue];
+    int index = character / 8;
+    int shiftAmount = character % 8;
+    sequenceInBytes[index] |= 1 << shiftAmount;
   }
   character++;
 }
