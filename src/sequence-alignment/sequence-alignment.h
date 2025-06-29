@@ -1,15 +1,15 @@
 #ifndef __SEQUENCE_ALIGNMENT_H__
 #define __SEQUENCE_ALIGNMENT_H__
 
-#include <immintrin.h>
+#include <stdint.h>
 
 #define LABEL_SIZE 1025
 #define CHAR_STATES 8
 
-#define allowed_t __m256i
+#define allowedStateMask_t uint8_t
 
 typedef struct sequence {
-  allowed_t *allowed[CHAR_STATES];
+  allowedStateMask_t *allowedStateMask[CHAR_STATES];
 } sequence_t;
 
 typedef struct alignment {
@@ -23,6 +23,16 @@ extern int alignmentSize; // Global amount of taxa in the alignment
 extern int *weights;      // Array of weights of characters
 extern int *
     *cumulativeWeights; // Array of weights of characters summed in bytes
+
+#if AVX2_CHARACTERS == 1
+#include <immintrin.h>
+#define MIN_SEQ_CHUNK_SIZE sizeof(__m256i_u)
+#elif AVX512_CHARACTERS == 1
+#include <immintrin.h>
+#define MIN_SEQ_CHUNK_SIZE sizeof(__m512i_u)
+#else
+#define MIN_SEQ_CHUNK_SIZE sizeof(uint64_t)
+#endif
 
 // Get the global amount of characters in a sequence
 int getSequenceSize();
@@ -49,7 +59,7 @@ void incrementCharacterWeight(int i);
 unsigned long allowedArraySize();
 
 // Allocate space for a new array of allowed states
-allowed_t *newAllowedStates();
+allowedStateMask_t *newAllowedStates();
 
 // Allocate space for a sequence
 sequence_t *newSequence();
@@ -74,10 +84,10 @@ void createCharacterWeights();
 void createCumulativeCharacterWeights();
 
 // Aggregate character weights by byte
-void calculateWeightsByByte();
+void calculateCumulativeWeights();
 
 // Return value of sum of weights given byte and mask value
-int getWeightsByByte(int i, int byteValue);
+int getCumulativeWeights(int i, int byteValue);
 
 // Print information about a sequence
 void printSequence(sequence_t *sequence);

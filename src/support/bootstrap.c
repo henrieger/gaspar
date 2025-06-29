@@ -17,7 +17,7 @@ void bootstrapCharWeights() {
     int randomPos = rand() % getSequenceSize();
     incrementCharacterWeight(randomPos);
   }
-  calculateWeightsByByte();
+  calculateCumulativeWeights();
 }
 
 // Print the trees generated in the replicate with their respective weights.
@@ -43,9 +43,8 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   char treeFilename[LABEL_SIZE], datFilename[LABEL_SIZE];
   if (strlen(config->name) == 0) {
     strcpy(treeFilename, "intree");
-  strcpy(datFilename, "dat");
-    }
-  else {
+    strcpy(datFilename, "dat");
+  } else {
     strncpy(treeFilename, config->name, LABEL_SIZE);
     strcat(treeFilename, ".intree");
 
@@ -65,7 +64,8 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   printf("\nOriginal Analysis:\n\n");
   printAnswer(answer, NULL);
   fprintf(datFp, "%d\n", getScore(answer));
-  printf("\nGenerating %d more bootstrap replicates...\n", config->bs_replicates-1);
+  printf("\nGenerating %d more bootstrap replicates...\n",
+         config->bs_replicates - 1);
 
   // Output and reset number of parsimony calls
   fprintf(datFp, "%ld\n", getParsimonyCalls());

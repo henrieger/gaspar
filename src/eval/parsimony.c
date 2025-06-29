@@ -1,70 +1,64 @@
 #include "parsimony.h"
 
 #include <config.h>
-#include <immintrin.h>
+#include <sequence-alignment/mask-operations.h>
 #include <sequence-alignment/sequence-alignment.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <tree/tree.h>
 
 sequence_t *unionSeq;
 sequence_t *interSeq;
-allowed_t *r;
+allowedStateMask_t *r, *notR, *aux1, *aux2;
 unsigned long parsimonyCalls;
 
 void initializeGlobalAuxSequences() {
   unionSeq = newSequence();
   interSeq = newSequence();
   r = newAllowedStates();
+  notR = newAllowedStates();
+  aux1 = newAllowedStates();
+  aux2 = newAllowedStates();
 }
 
-int scoreFromInters(allowed_t *r) {
+int scoreFromInters(allowedStateMask_t *r) {
   int score = 0;
   int seqSizeInBytes = (7 + getSequenceSize()) / 8;
 
   char *charR = (char *)r;
 
   for (int i = 0; i < seqSizeInBytes; i++) {
-    score += getWeightsByByte(i, ~(charR[i]) & 0xff);
+    score += getCumulativeWeights(i, ~(charR[i]) & 0xff);
   }
 
   return score;
 }
 
 int localParsimony(tree_t *tree, int n1, int n2, int node) {
-  node_t *nodeStruct1 = &(tree->nodes[n1]);
-  node_t *nodeStruct2 = &(tree->nodes[n2]);
+  allowedStateMask_t **mask1 = tree->nodes[n1].sequence->allowedStateMask;
+  allowedStateMask_t **mask2 = tree->nodes[n2].sequence->allowedStateMask;
 
   int arraySize = allowedArraySize();
 
   for (int i = 0; i < arraySize; i++)
-    r[i] = _mm256_setzero_si256();
+    r[i] = 0;
 
   for (int i = 0; i < CHAR_STATES; i++) {
-    for (int j = 0; j < arraySize; j++) {
-      // U = n1.sequence | n2.sequence
-      unionSeq->allowed[i][j] =
-          _mm256_or_si256(nodeStruct1->sequence->allowed[i][j],
-                          nodeStruct2->sequence->allowed[i][j]);
+    // U = n1.sequence | n2.sequence
+    maskUnion(unionSeq->allowedStateMask[i], mask1[i], mask2[i]);
 
-      // I = n1.sequence & n2.sequence
-      interSeq->allowed[i][j] =
-          _mm256_and_si256(nodeStruct1->sequence->allowed[i][j],
-                           nodeStruct2->sequence->allowed[i][j]);
-      // R = U(I)
-      r[j] = _mm256_or_si256(r[j], interSeq->allowed[i][j]);
-    }
+    // I = n1.sequence & n2.sequence
+    maskIntersection(interSeq->allowedStateMask[i], mask1[i], mask2[i]);
+    // R = U(I)
+    maskUnion(r, r, interSeq->allowedStateMask[i]);
   }
 
   if (node > 0) {
     for (int i = 0; i < CHAR_STATES; i++) {
-      for (int j = 0; j < arraySize; j++) {
-        // n.sequence = (I & R) | (U & ~R)
-        tree->nodes[node].sequence->allowed[i][j] = _mm256_or_si256(
-            _mm256_and_si256(interSeq->allowed[i][j], r[j]),
-            _mm256_and_si256(unionSeq->allowed[i][j],
-                             _mm256_xor_si256(r[j], _mm256_set1_epi64x(-1LL))));
-      }
+      // n.sequence = (I & R) | (U & ~R)
+      maskIntersection(aux1, interSeq->allowedStateMask[i], r);
+      maskNot(notR, r);
+      maskIntersection(aux2, unionSeq->allowedStateMask[i], notR);
+      maskUnion(tree->nodes[node].sequence->allowedStateMask[i], aux1, aux2);
     }
   }
 
@@ -121,6 +115,9 @@ void destroyGlobalAuxSequences() {
   destroySequence(unionSeq);
   destroySequence(interSeq);
   free(r);
+  free(notR);
+  free(aux1);
+  free(aux2);
 }
 
 inline void resetParsimonyCalls() { parsimonyCalls = 0; }

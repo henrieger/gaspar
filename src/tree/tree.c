@@ -217,8 +217,8 @@ tree_t *copyTree(const tree_t *tree) {
   for (int i = 0; i < tree->leaves - 2; i++) {
     for (int j = 0; j < CHAR_STATES; j++) {
       for (int k = 0; k < allowedArraySize(); k++)
-        copySequenceArray[i].allowed[j][k] =
-            tree->internal[i].sequence->allowed[j][k];
+        copySequenceArray[i].allowedStateMask[j][k] =
+            tree->internal[i].sequence->allowedStateMask[j][k];
     }
   }
 
@@ -245,7 +245,7 @@ void destroyTree(tree_t *tree) {
   if (!tree)
     return;
 
-  free(tree->internal[0].sequence->allowed[0]);
+  free(tree->internal[0].sequence->allowedStateMask[0]);
   free(tree->internal[0].sequence);
   free(tree->nodes);
   free(tree);

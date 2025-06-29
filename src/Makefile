@@ -4,7 +4,7 @@ OBJECTS = *.o */*.o
 EXECUTABLE = gaspar
 SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/ support/
 TESTS = test-cases/
-CFLAGS = -Wall -I${CURDIR}
+CFLAGS = -Wall -I${CURDIR} -march=native
 TARGETS = 
 
 all: $(SUBDIRS) gaspar
@@ -38,7 +38,7 @@ $(TESTS):
 optimize: TARGETS += optimize
 optimize: all
 
-debug: CFLAGS += -g -DDEBUG
+debug: CFLAGS += -g -DDEBUG -fsanitize=address
 debug: TARGETS += debug
 debug: all
 

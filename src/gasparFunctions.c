@@ -49,7 +49,7 @@ void addNumbersToSequence() {
                  CHAR_STATES - 1, charValue);
 
     uint8_t *sequenceInBytes =
-        (uint8_t *)alignment->sequences[taxon].allowed[charValue];
+        (uint8_t *)alignment->sequences[taxon].allowedStateMask[charValue];
     int index = character / 8;
     int shiftAmount = character % 8;
     sequenceInBytes[index] |= 1 << shiftAmount;
@@ -62,7 +62,7 @@ void addNumbersToSequence() {
 void addMissingData() {
   for (int i = 0; i < CHAR_STATES; i++) {
     uint8_t *sequenceInBytes =
-        (uint8_t *)alignment->sequences[taxon].allowed[i];
+        (uint8_t *)alignment->sequences[taxon].allowedStateMask[i];
     int index = character / 8;
     int shiftAmount = character % 8;
     sequenceInBytes[index] |= 1 << shiftAmount;
@@ -79,7 +79,7 @@ void addMultistateChar() {
                  CHAR_STATES - 1, charValue);
 
     uint8_t *sequenceInBytes =
-        (uint8_t *)alignment->sequences[taxon].allowed[charValue];
+        (uint8_t *)alignment->sequences[taxon].allowedStateMask[charValue];
     int index = character / 8;
     int shiftAmount = character % 8;
     sequenceInBytes[index] |= 1 << shiftAmount;

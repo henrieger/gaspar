@@ -5,7 +5,7 @@
 #include <config.h>
 #include <operators/nni.h>
 #include <sequence-alignment/sequence-alignment.h>
-#include <stdio.h>
+#include <stdlib.h>
 #include <tree/random.h>
 #include <tree/tree.h>
 

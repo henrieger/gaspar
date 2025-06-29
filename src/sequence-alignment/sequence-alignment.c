@@ -1,6 +1,6 @@
 #include "sequence-alignment.h"
 
-#include <immintrin.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,7 @@ int *weights;            // Array of weights of characters
 int **cumulativeWeights; // Array of weights of characters summed in bytes
 int allowedArraySizeVar; // Global size of allowed states array
 
-#define AVX2_ALIGN 32
+#define CEIL_DIV(n, q) (((n) + (q) - 1) / (q))
 
 // Get the global amount of characters in a sequence
 inline int getSequenceSize() { return sequenceSize; }
@@ -22,9 +22,12 @@ inline int getAlignmentSize() { return alignmentSize; }
 // Get weight of character c
 inline int getCharacterWeight(int i) { return weights[i]; }
 
+// Get size of character state mask in bytes, according to size of struct for
+// calculations
 void setAllowedArraySize(int seqSize) {
-  allowedArraySizeVar = (seqSize + (sizeof(allowed_t) * CHAR_STATES) - 1) /
-                        (CHAR_STATES * sizeof(allowed_t));
+  const int bytesInMask = CEIL_DIV(seqSize, 8);
+  const int numberOfChunks = CEIL_DIV(bytesInMask, MIN_SEQ_CHUNK_SIZE);
+  allowedArraySizeVar = numberOfChunks * MIN_SEQ_CHUNK_SIZE;
 }
 
 // Set the value of the global amount of characters in a sequence
@@ -45,12 +48,11 @@ inline void incrementCharacterWeight(int i) { weights[i]++; }
 // Size of an allowed states array
 inline unsigned long allowedArraySize() { return allowedArraySizeVar; }
 
-// Allocate space for a new array of allowed states
-allowed_t *newAllowedStates() {
-  allowed_t *a =
-      aligned_alloc(AVX2_ALIGN, allowedArraySize() * sizeof(allowed_t));
+// Allocate space for a new mask of character state
+allowedStateMask_t *newAllowedStates() {
+  allowedStateMask_t *a = aligned_alloc(MIN_SEQ_CHUNK_SIZE, allowedArraySize());
   for (int i = 0; i < allowedArraySize(); i++)
-    a[i] = _mm256_setzero_si256();
+    a[i] = 0;
   return a;
 }
 
@@ -58,13 +60,16 @@ allowed_t *newAllowedStates() {
 sequence_t *newSequence() {
   sequence_t *s = malloc(sizeof(sequence_t));
 
-  s->allowed[0] = aligned_alloc(AVX2_ALIGN, CHAR_STATES * allowedArraySize() *
-                                                sizeof(allowed_t));
-  for (int i = 0; i < CHAR_STATES * allowedArraySize(); i++)
-    s->allowed[0][i] = _mm256_setzero_si256();
+  s->allowedStateMask[0] =
+      aligned_alloc(MIN_SEQ_CHUNK_SIZE, CHAR_STATES * allowedArraySize());
+  for (int i = 0;
+       i < CHAR_STATES * allowedArraySize() / sizeof(allowedStateMask_t); i++)
+    s->allowedStateMask[0][i] = 0;
 
   for (int i = 1; i < CHAR_STATES; i++)
-    s->allowed[i] = s->allowed[0] + i * allowedArraySize();
+    s->allowedStateMask[i] =
+        s->allowedStateMask[0] +
+        i * allowedArraySize() / sizeof(allowedStateMask_t);
 
   return s;
 }
@@ -72,18 +77,19 @@ sequence_t *newSequence() {
 // Allocate space for a sequence array
 sequence_t *newSequenceArray(unsigned int taxa) {
   sequence_t *sa = malloc(taxa * sizeof(sequence_t));
-  int allowedAbsoluteSize =
-      taxa * CHAR_STATES * allowedArraySize() * sizeof(allowed_t);
+  int allowedAbsoluteSize = taxa * CHAR_STATES * allowedArraySize();
 
-  sa[0].allowed[0] = aligned_alloc(AVX2_ALIGN, allowedAbsoluteSize);
-  for (int i = 0; i < allowedAbsoluteSize / sizeof(allowed_t); i++) {
-    sa[0].allowed[0][i] = _mm256_setzero_si256();
+  sa[0].allowedStateMask[0] =
+      aligned_alloc(MIN_SEQ_CHUNK_SIZE, allowedAbsoluteSize);
+  for (int i = 0; i < allowedAbsoluteSize / sizeof(allowedStateMask_t); i++) {
+    sa[0].allowedStateMask[0][i] = 0;
   }
 
   for (int i = 0; i < taxa; i++)
     for (int j = 0; j < CHAR_STATES; j++)
-      sa[i].allowed[j] =
-          sa[0].allowed[0] + allowedArraySize() * (i * CHAR_STATES + j);
+      sa[i].allowedStateMask[j] = sa[0].allowedStateMask[0] +
+                                  allowedArraySize() * (i * CHAR_STATES + j) /
+                                      sizeof(allowedStateMask_t);
 
   return sa;
 }
@@ -100,10 +106,11 @@ alignment_t *newAlignment(unsigned int taxa, char **labels) {
 // Return a pointer to a complete copy of the sequence
 sequence_t *copySequence(sequence_t *src) {
   sequence_t *copy = newSequence();
-  memcpy(copy->allowed, src->allowed, CHAR_STATES * sizeof(allowed_t *));
+  memcpy(copy->allowedStateMask, src->allowedStateMask,
+         CHAR_STATES * sizeof(allowedStateMask_t *));
   for (int i = 0; i < CHAR_STATES; i++) {
-    memcpy(&(copy->allowed[i]), &(src->allowed[i]),
-           allowedArraySize() * sizeof(allowed_t));
+    memcpy(&(copy->allowedStateMask[i]), &(src->allowedStateMask[i]),
+           allowedArraySize() * sizeof(allowedStateMask_t));
   }
   return copy;
 }
@@ -115,30 +122,29 @@ alignment_t *copyAlignment(alignment_t *src) {
   for (int i = 0; i < src->taxa; i++)
     for (int j = 0; j < CHAR_STATES; j++) {
       for (int k = 0; k < allowedArraySize(); k++)
-        copy->sequences[i].allowed[j][k] = src->sequences[i].allowed[j][k];
+        copy->sequences[i].allowedStateMask[j][k] =
+            src->sequences[i].allowedStateMask[j][k];
     }
   return copy;
 }
 
 // Allocate space for character weights and assign all as 1
 void createCharacterWeights() {
-  weights = malloc(256 * allowedArraySize() * sizeof(int));
+  weights = malloc(allowedArraySize() * 8 * sizeof(int));
   resetCharacterWeights();
 }
 
-// Allocate space for character weights summed for each byte
+// Allocate space for character weights summed for each byte combination
 void createCumulativeCharacterWeights() {
-  int bytesInSequence = (7 + getSequenceSize() / 8);
-
-  cumulativeWeights = malloc(bytesInSequence * sizeof(int *));
-  cumulativeWeights[0] = malloc(bytesInSequence * 256 * sizeof(int));
-  for (int i = 1; i < bytesInSequence; i++)
+  cumulativeWeights = malloc(allowedArraySize() * 8 * sizeof(int *));
+  cumulativeWeights[0] = malloc(allowedArraySize() * 8 * 256 * sizeof(int));
+  for (int i = 1; i < allowedArraySize() * 8; i++)
     cumulativeWeights[i] = cumulativeWeights[0] + 256 * i;
 }
 
 // Aggregate character weights by byte
-void calculateWeightsByByte() {
-  int bytesInSequence = (7 + getSequenceSize()) / 8;
+void calculateCumulativeWeights() {
+  int bytesInSequence = CEIL_DIV(getSequenceSize(), 8);
   for (int i = 0; i < bytesInSequence; i++) {
     for (int j = 0; j < 256; j++) {
       cumulativeWeights[i][j] = 0;
@@ -149,8 +155,8 @@ void calculateWeightsByByte() {
 }
 
 // Return value of sum of weights given byte and mask value
-inline int getWeightsByByte(int i, int byteValue) {
-  return cumulativeWeights[i][byteValue];
+inline int getCumulativeWeights(int bytePos, int byteValue) {
+  return cumulativeWeights[bytePos][byteValue];
 }
 
 // Print a single character
@@ -163,42 +169,33 @@ void printSequence(sequence_t *sequence) {
 #endif /*ifdef DEBUG */
 
 #define stateInPosition(charValue)                                             \
-  ((sequence->allowed[charValue][i][j] >> k) & 1L)
+  ((sequence->allowedStateMask[charValue][i / 8] >> (i % 8)) & 1)
 
-  int bitsCounted = 0;
+  for (int i = 0; i < getSequenceSize(); i++) {
+    int possibleStates = 0;
 
-  for (int i = 0; i < allowedArraySize(); i++) {
-    for (int j = 0; j < 4; j++) {
-      for (int k = 0; k < 64 && bitsCounted < getSequenceSize();
-           k++, bitsCounted++) {
-        long possibleStates = 0;
+    for (int charValue = 0; charValue < CHAR_STATES; charValue++)
+      possibleStates += stateInPosition(charValue);
 
-        for (int charValue = 0; charValue < CHAR_STATES; charValue++)
-          possibleStates += stateInPosition(charValue);
-
-        // printf("Possible states: %ld ", possibleStates);
-
-        if (possibleStates == CHAR_STATES) {
-          printf("?");
-          continue;
-        }
-
-        if (possibleStates == 0) {
-          printf("-");
-          continue;
-        }
-
-        if (possibleStates > 1)
-          printf("[");
-
-        for (int charValue = 0; charValue < CHAR_STATES; charValue++)
-          if (stateInPosition(charValue))
-            printf("%d", charValue);
-
-        if (possibleStates > 1)
-          printf("]");
-      }
+    if (possibleStates == CHAR_STATES) {
+      printf("?");
+      continue;
     }
+
+    if (possibleStates == 0) {
+      printf("-");
+      continue;
+    }
+
+    if (possibleStates > 1)
+      printf("[");
+
+    for (int charValue = 0; charValue < CHAR_STATES; charValue++)
+      if (stateInPosition(charValue))
+        printf("%d", charValue);
+
+    if (possibleStates > 1)
+      printf("]");
   }
   printf(";\n");
 }
@@ -212,10 +209,10 @@ void printAlignment(alignment_t *alignment) {
   printf("Sequences address: %p\n", alignment->sequences);
   for (int i = 0; i < getAlignmentSize(); i++) {
     printf("\tSequence %d address: %p\n", i,
-           &(alignment->sequences[i].allowed));
+           &(alignment->sequences[i].allowedStateMask));
     for (int j = 0; j < CHAR_STATES; j++) {
       printf("\t\tAllowed %ds in sequence %d: %p\n", j, i,
-             alignment->sequences[i].allowed[j]);
+             alignment->sequences[i].allowedStateMask[j]);
     }
   }
 #endif /* ifdef DEBUG */
@@ -231,9 +228,8 @@ void printAlignment(alignment_t *alignment) {
     printf("%s:\t", alignment->labels[i]);
     for (int j = 0; j < CHAR_STATES; j++)
       for (int k = 0; k < allowedArraySize(); k++)
-        for (int l = 0; l < 4; l++)
-          printf("%d-%d-%d:0x%016llx\t", j, k, l,
-                 alignment->sequences[i].allowed[j][k][l]);
+        printf("%d %d: %x\t", j, k,
+               alignment->sequences[i].allowedStateMask[j][k]);
     printf("\n");
   }
 #endif /* ifdef DEBUG */
@@ -242,12 +238,12 @@ void printAlignment(alignment_t *alignment) {
 // Print character weights
 void printCharacterWeights() {
   printf("Weights: [ ");
-  for (int i = 0; i < getSequenceSize(); i++)
+  for (int i = 0; i < 8 * allowedArraySize(); i++)
     printf("%d ", weights[i]);
   printf("]\n");
 
   printf("Weights by byte: [\n");
-  for (int i = 0; i < (7 + getSequenceSize()) / 8; i++) {
+  for (int i = 0; i < CEIL_DIV(getSequenceSize(), 8); i++) {
     printf("\t%d: [ ", i);
     for (int j = 0; j < 256; j++)
       printf("%d ", cumulativeWeights[i][j]);
@@ -261,7 +257,7 @@ void destroyAlignment(alignment_t *alignment) {
   if (!alignment)
     return;
 
-  free(alignment->sequences[0].allowed[0]);
+  free(alignment->sequences[0].allowedStateMask[0]);
   free(alignment->sequences);
   free(alignment);
 }
@@ -271,7 +267,7 @@ void destroySequence(sequence_t *sequence) {
   if (!sequence)
     return;
 
-  free(sequence->allowed[0]);
+  free(sequence->allowedStateMask[0]);
   free(sequence);
 }
 
@@ -286,7 +282,7 @@ void destroyCharacterWeights() {
 void resetCharacterWeights() {
   for (int i = 0; i < getSequenceSize(); i++)
     weights[i] = 1;
-  for (int i = getSequenceSize(); i < 256 * allowedArraySize(); i++)
+  for (int i = getSequenceSize(); i < 8 * allowedArraySize(); i++)
     weights[i] = 0;
-  calculateWeightsByByte();
+  calculateCumulativeWeights();
 }

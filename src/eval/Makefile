@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -I.. -mavx2
+CFLAGS = -Wall -I.. -march=native
 LDLIBS = 
 OBJECTS = *.o
 
@@ -9,7 +9,7 @@ parsimony.o: parsimony.c parsimony.h
 optimize: CFLAGS += -O3
 optimize: all
 
-debug: CFLAGS += -g -DDEBUG
+debug: CFLAGS += -g -DDEBUG -fsanitize=address
 debug: all
 
 profile: CFLAGS += -pg -O0
