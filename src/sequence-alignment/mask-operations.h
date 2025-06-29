@@ -1,9 +1,9 @@
 #include <sequence-alignment/sequence-alignment.h>
 
-void maskUnion(allowedStateMask_t *result, allowedStateMask_t *mask1,
-               allowedStateMask_t *mask2);
+void maskUnion(stateAllowedMask_t *result, stateAllowedMask_t *mask1,
+               stateAllowedMask_t *mask2);
 
-void maskIntersection(allowedStateMask_t *result, allowedStateMask_t *mask1,
-                      allowedStateMask_t *mask2);
+void maskIntersection(stateAllowedMask_t *result, stateAllowedMask_t *mask1,
+                      stateAllowedMask_t *mask2);
 
-void maskNot(allowedStateMask_t *result, allowedStateMask_t *mask);
+void maskNot(stateAllowedMask_t *result, stateAllowedMask_t *mask);

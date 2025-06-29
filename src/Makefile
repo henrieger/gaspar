@@ -2,7 +2,7 @@ CC = gcc
 LDLIBS = -lfl -ly -lc -lm
 OBJECTS = *.o */*.o
 EXECUTABLE = gaspar
-SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/ support/
+SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/ support/ utils/
 TESTS = test-cases/
 CFLAGS = -Wall -I${CURDIR} -march=native
 TARGETS = 

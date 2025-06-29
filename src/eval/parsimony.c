@@ -8,7 +8,7 @@
 
 sequence_t *unionSeq;
 sequence_t *interSeq;
-allowedStateMask_t *r, *notR, *aux1, *aux2;
+stateAllowedMask_t *r, *notR, *aux1, *aux2;
 unsigned long parsimonyCalls;
 
 void initializeGlobalAuxSequences() {
@@ -20,7 +20,7 @@ void initializeGlobalAuxSequences() {
   aux2 = newAllowedStates();
 }
 
-int scoreFromInters(allowedStateMask_t *r) {
+int scoreFromInters(stateAllowedMask_t *r) {
   int score = 0;
   int seqSizeInBytes = (7 + getSequenceSize()) / 8;
 
@@ -34,8 +34,8 @@ int scoreFromInters(allowedStateMask_t *r) {
 }
 
 int localParsimony(tree_t *tree, int n1, int n2, int node) {
-  allowedStateMask_t **mask1 = tree->nodes[n1].sequence->allowedStateMask;
-  allowedStateMask_t **mask2 = tree->nodes[n2].sequence->allowedStateMask;
+  stateAllowedMask_t **mask1 = tree->nodes[n1].sequence->stateAllowedMask;
+  stateAllowedMask_t **mask2 = tree->nodes[n2].sequence->stateAllowedMask;
 
   int arraySize = allowedArraySize();
 
@@ -44,21 +44,21 @@ int localParsimony(tree_t *tree, int n1, int n2, int node) {
 
   for (int i = 0; i < CHAR_STATES; i++) {
     // U = n1.sequence | n2.sequence
-    maskUnion(unionSeq->allowedStateMask[i], mask1[i], mask2[i]);
+    maskUnion(unionSeq->stateAllowedMask[i], mask1[i], mask2[i]);
 
     // I = n1.sequence & n2.sequence
-    maskIntersection(interSeq->allowedStateMask[i], mask1[i], mask2[i]);
+    maskIntersection(interSeq->stateAllowedMask[i], mask1[i], mask2[i]);
     // R = U(I)
-    maskUnion(r, r, interSeq->allowedStateMask[i]);
+    maskUnion(r, r, interSeq->stateAllowedMask[i]);
   }
 
   if (node > 0) {
     for (int i = 0; i < CHAR_STATES; i++) {
       // n.sequence = (I & R) | (U & ~R)
-      maskIntersection(aux1, interSeq->allowedStateMask[i], r);
+      maskIntersection(aux1, interSeq->stateAllowedMask[i], r);
       maskNot(notR, r);
-      maskIntersection(aux2, unionSeq->allowedStateMask[i], notR);
-      maskUnion(tree->nodes[node].sequence->allowedStateMask[i], aux1, aux2);
+      maskIntersection(aux2, unionSeq->stateAllowedMask[i], notR);
+      maskUnion(tree->nodes[node].sequence->stateAllowedMask[i], aux1, aux2);
     }
   }
 

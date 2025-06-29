@@ -6,10 +6,10 @@
 #define LABEL_SIZE 1025
 #define CHAR_STATES 8
 
-#define allowedStateMask_t uint8_t
+#define stateAllowedMask_t uint8_t
 
 typedef struct sequence {
-  allowedStateMask_t *allowedStateMask[CHAR_STATES];
+  stateAllowedMask_t *stateAllowedMask[CHAR_STATES];
 } sequence_t;
 
 typedef struct alignment {
@@ -58,8 +58,11 @@ void incrementCharacterWeight(int i);
 // Size of an allowed states array
 unsigned long allowedArraySize();
 
+// Get number of characters as determined by the underlying struct
+uint64_t charactersInMemory();
+
 // Allocate space for a new array of allowed states
-allowedStateMask_t *newAllowedStates();
+stateAllowedMask_t *newAllowedStates();
 
 // Allocate space for a sequence
 sequence_t *newSequence();
