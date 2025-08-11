@@ -2,62 +2,64 @@
 #define __TREE_H__
 
 #include <sequence-alignment/sequence-alignment.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct node {
-  int edges[3];
-  sequence_t *sequence;
-  const char *label;
-} node_t;
+#define NULL_EDGE -1
 
 typedef struct tree {
-  unsigned int size, leaves, root;
-  node_t *nodes, *internal;
+  int32_t *parent, *left, *right;
+  alignment_t *alignment;
+  stateAllowedMask_t ***internalSequences;
 } tree_t;
 
-// Create a new node.
-node_t *newNode(sequence_t *sequence, const char *label);
-
 // Create a new tree.
-tree_t *newTree(unsigned int leaves);
+tree_t *newTree(alignment_t *alignment);
 
-// Create a new tree from data in alignment.
-tree_t *newTreeFromAlignment(alignment_t *alignment);
+// Return the number of nodes in the tree.
+uint32_t treeNodes(tree_t *tree);
 
-// Returns the degree of the node
-int nodeDegree(tree_t *tree, int node);
+// Return the number of leaf nodes in the tree.
+uint32_t treeLeaves(tree_t *tree);
 
-// Return TRUE if node is leaf, FALSE otherwise.
-uint8_t isLeaf(tree_t *tree, int node);
+// Return the number of internal nodes in the tree.
+uint32_t treeInternalNodes(tree_t *tree);
 
-// Return TRUE if all internal nodes of both trees have the same edges. FALSE
+// Returns the index of the first leaf on the tree.
+uint32_t firstLeaf(tree_t *tree);
+
+// Create a new array of trees from the same alignment.
+tree_t *newTreeArray(uint32_t n, alignment_t *alignment);
+
+// Return true if node is leaf, false otherwise.
+bool isLeaf(tree_t *tree, int32_t node);
+
+// Return true if all internal nodes of both trees have the same edges, false
 // otherwise. IMPORTANT: It is not an accurate comparison of equality between
 // trees
-uint8_t areEqual(tree_t *t1, tree_t *t2);
-
-// Change old edge in node to a new edge, independent of which edge it is
-void changeEdge(tree_t *tree, int node, int oldEdge, int newEdge);
+bool areEqual(tree_t *t1, tree_t *t2);
 
 // Search a node by its label.
-int searchNodeByLabel(tree_t *tree, const char *label);
+int32_t searchNodeByLabel(tree_t *tree, const char *label);
 
 // Create the smallest possible tree (3 OTUs + 1 root HTU) from an alignment
-tree_t *smallestTree(alignment_t *alignment);
+tree_t *smallestTree(tree_t *tree);
 
 // Print tree internal structure.
 void printTree(tree_t *tree);
 
 // Print tree in Newick format as rooted and without final ";".
-void printNewick(tree_t *tree, FILE *fp);
+void printNewick(tree_t *tree, char *buffer, size_t size);
 
-// Returns a copy of the tree.
-tree_t *copyTree(const tree_t *tree);
-
-// Free space of node.
-void destroyNode(node_t *node);
+// Copy treeSrc to treeDst inplace
+void copyTree(tree_t *treeSrc, tree_t *treeDst);
 
 // Delete tree.
 void destroyTree(tree_t *tree);
+
+// Delete an array of trees allocated by newTreeArray.
+void destroyTreeArray(tree_t *treeArray);
 
 #endif // !__TREE_H__

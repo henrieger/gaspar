@@ -1,252 +1,209 @@
 #include "tree.h"
 #include <sequence-alignment/sequence-alignment.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Create a new node.
-node_t *newNode(sequence_t *sequence, const char *label) {
-  node_t *n = malloc(sizeof(node_t));
-  n->sequence = sequence;
-  n->label = label;
-  n->edges[0] = n->edges[1] = n->edges[2] = -1;
-  return n;
-}
-
 // Create a new tree.
-tree_t *newTree(unsigned int leaves) {
+tree_t *newTree(alignment_t *alignment) {
   tree_t *t = malloc(sizeof(tree_t));
-  t->leaves = leaves;
-  t->size = 2 * leaves - 2;
+  t->alignment = alignment;
 
-  t->nodes = malloc(t->size * sizeof(node_t));
-  for (int i = 0; i < t->size; i++) {
-    t->nodes[i].edges[0] = t->nodes[i].edges[1] = t->nodes[i].edges[2] = -1;
-    t->nodes[i].label = NULL;
-    t->nodes[i].sequence = NULL;
-  }
+  // Allocate space for all edge annotations in a single call
+  int32_t *arrays = malloc(3 * (2 * alignment->taxa - 1) * sizeof(int32_t));
+  t->parent = arrays;
+  t->left = arrays + 2 * alignment->taxa - 1;
+  t->right = arrays + 2 * (2 * alignment->taxa - 1);
 
-  t->internal = t->nodes + leaves;
-
-  return t;
-}
-
-// Create a new tree from data in alignment.
-tree_t *newTreeFromAlignment(alignment_t *alignment) {
-  // Create new tree and set leaf data as the alignment data
-  tree_t *t = newTree(alignment->taxa);
-  for (int i = 0; i < alignment->taxa; i++) {
-    t->nodes[i].sequence = &(alignment->sequences[i]);
-    t->nodes[i].label = alignment->labels[i];
-  }
-
-  // Allocate internal sequences
-  sequence_t *auxSequences = newSequenceArray(alignment->taxa - 2);
-  for (int i = 0; i < alignment->taxa - 2; i++) {
-    t->internal[i].sequence = &(auxSequences[i]);
-  }
-
-  // Set root arbitrarily to last leaf
-  t->root = alignment->taxa - 1;
+  t->internalSequences = newSequenceArray(
+      alignment->taxa - 1, alignment->characters, alignment->states);
 
   return t;
 }
 
-// Returns the degree of the node
-int nodeDegree(tree_t *tree, int node) {
-  if (node < 0)
-    return 0;
+// Return the number of nodes in the tree.
+uint32_t treeNodes(tree_t *tree) { return 2 * tree->alignment->taxa - 1; }
 
-  int sum = 0;
+// Return the number of leaf nodes in the tree.
+uint32_t treeLeaves(tree_t *tree) { return tree->alignment->taxa; }
 
-  if (tree->nodes[node].edges[0] >= 0)
-    sum++;
-  if (tree->nodes[node].edges[1] >= 0)
-    sum++;
-  if (tree->nodes[node].edges[2] >= 0)
-    sum++;
+// Return the number of internal nodes in the tree.
+uint32_t treeInternalNodes(tree_t *tree) { return tree->alignment->taxa - 1; }
 
-  return sum;
+// Returns the index of the first leaf on the tree.
+uint32_t firstLeaf(tree_t *tree) { return tree->alignment->taxa - 1; }
+
+// Create a new array of trees from the same alignment.
+tree_t *newTreeArray(uint32_t n, alignment_t *alignment) {
+  tree_t *trees = malloc(n * sizeof(tree_t));
+
+  // Allocate space for all edge annotations for all trees in a single call
+  int32_t *arrays = malloc(n * 3 * (2 * alignment->taxa - 1) * sizeof(int32_t));
+
+  // All trees point to the same alignment
+  for (int i = 0; i < n; i++)
+    trees[i].alignment = alignment;
+
+  // Set tree annotations for all trees from the sing {
+  // returntree->alignment->taxa - 1}le memory space
+  for (int i = 0; i < n; i++) {
+    trees[i].parent = arrays + (3 * i) * treeNodes(trees);
+    trees[i].left = arrays + (3 * i + 1) * treeNodes(trees);
+    trees[i].right = arrays + (3 * i + 2) * treeNodes(trees);
+  }
+
+  // Every tree will have independent internal sequences
+  trees[0].internalSequences = newSequenceArray(
+      n * treeInternalNodes(trees), alignment->characters, alignment->states);
+  for (int i = 0; i < n; i++)
+    trees[i].internalSequences =
+        trees[0].internalSequences + i * treeInternalNodes(trees);
+
+  return trees;
 }
 
-// Return TRUE if node is leaf, FALSE otherwise.
-uint8_t isLeaf(tree_t *tree, int node) { return nodeDegree(tree, node) == 1; }
+// Return true if node is leaf, false otherwise.
+bool isLeaf(tree_t *tree, int node) { return node >= firstLeaf(tree); }
 
-// Change old edge in node to a new edge, independent of which edge it is
-void changeEdge(tree_t *tree, int node, int oldEdge, int newEdge) {
-  node_t *nodeStruct = &(tree->nodes[node]);
-  if (nodeStruct->edges[0] == oldEdge)
-    nodeStruct->edges[0] = newEdge;
-  else if (nodeStruct->edges[1] == oldEdge)
-    nodeStruct->edges[1] = newEdge;
-  else if (nodeStruct->edges[2] == oldEdge)
-    nodeStruct->edges[2] = newEdge;
-}
-
-// Check if two nodes contain the same edges. Assumes no repetitions.
-uint8_t areEqualNodes(node_t *t1, node_t *t2) {
-  uint8_t edge1Present = t1->edges[0] == t2->edges[0] ||
-                         t1->edges[0] == t2->edges[1] ||
-                         t1->edges[0] == t2->edges[2];
-  uint8_t edge2Present = t1->edges[1] == t2->edges[0] ||
-                         t1->edges[1] == t2->edges[1] ||
-                         t1->edges[1] == t2->edges[2];
-  uint8_t edge3Present = t1->edges[2] == t2->edges[0] ||
-                         t1->edges[2] == t2->edges[1] ||
-                         t1->edges[2] == t2->edges[2];
-  return edge1Present && edge2Present && edge3Present;
-}
-
-// Return TRUE if all internal nodes of both trees have the same edges. FALSE
+// Return true if all nodes of both trees have the same edges, false
 // otherwise. IMPORTANT: It is not an accurate comparison of equality between
 // trees
-uint8_t areEqual(tree_t *t1, tree_t *t2) {
+bool areEqual(tree_t *t1, tree_t *t2) {
   if (t1 == t2)
     return 1;
 
-  if (t1->size != t2->size)
+  if (t1->alignment != t2->alignment)
     return 0;
 
-  for (int i = 0; i < t1->leaves - 2; i++)
-    if (!areEqualNodes(&(t1->internal[i]), &(t2->internal[i])))
-      return 0;
-  return 1;
+  for (int i = 1; i < treeNodes(t1); i++)
+    if (t1->parent[i] != t2->parent[i])
+      return false;
+  return true;
 }
 
 // Search a node by its label.
 int searchNodeByLabel(tree_t *tree, const char *label) {
-  for (int i = 0; i < tree->size; i++)
-    if (!strncmp(tree->nodes[i].label, label, LABEL_SIZE))
-      return i;
-  return -1;
+  for (int i = 0; i < treeLeaves(tree); i++)
+    if (!strncmp(tree->alignment->labels[i], label, LABEL_SIZE))
+      return firstLeaf(tree) + i;
+  return NULL_EDGE;
 }
 
-// Create the smallest possible tree (3 OTUs + 1 root HTU) from an alignment
-tree_t *smallestTree(alignment_t *alignment) {
-  // Create new tree from alignment with root as the first HTU
-  tree_t *t = newTreeFromAlignment(alignment);
-  t->root = alignment->taxa;
+// Arrange the tree as the smallest possible tree (3 OTUs + 1 internal HTU +
+// root) from an alignment
+tree_t *smallestTree(tree_t *tree) {
+  // Set edge between the first taxon and the "root"
+  tree->parent[firstLeaf(tree)] = 0;
+  tree->left[0] = firstLeaf(tree);
 
-  // Set parent of three OTUs as the root
-  t->nodes[0].edges[0] = t->root;
-  t->nodes[1].edges[0] = t->root;
-  t->nodes[2].edges[0] = t->root;
+  // Set left edge of the HTU to the second taxon
+  tree->parent[firstLeaf(tree) + 1] = 1;
+  tree->left[1] = firstLeaf(tree) + 1;
 
-  // Set the children of the root as the OTUs
-  t->nodes[t->root].edges[0] = 0;
-  t->nodes[t->root].edges[1] = 1;
-  t->nodes[t->root].edges[2] = 2;
+  // Set right edge of the HTU to the third taxon
+  tree->parent[firstLeaf(tree) + 2] = 1;
+  tree->right[1] = firstLeaf(tree) + 2;
 
-  return t;
+  // Create an edge between nodes 0 and 1
+  tree->parent[1] = 0;
+  tree->right[0] = 1;
+
+  // Set all other edges to be invalid
+  tree->parent[0] = NULL_EDGE;
+  for (int i = 2; i < firstLeaf(tree); i++)
+    tree->parent[i] = NULL_EDGE;
+  for (int i = firstLeaf(tree) + 3; i < treeNodes(tree); i++)
+    tree->parent[i] = NULL_EDGE;
+  for (int i = 2; i < treeNodes(tree); i++) {
+    tree->left[i] = NULL_EDGE;
+    tree->right[i] = NULL_EDGE;
+  }
+
+  return tree;
 }
 
 // Print tree internal structure.
 void printTree(tree_t *tree) {
-  printf("Size: %d\nLeaves: %d\nRoot: %d\nNodes array at %p\nInternal nodes "
-         "array at %p\nNodes:\n",
-         tree->size, tree->leaves, tree->root, tree->nodes, tree->internal);
-  for (int i = 0; i < tree->size; i++) {
-    printf("\t%d (%s): [%d %d %d]\t", i, tree->nodes[i].label,
-           tree->nodes[i].edges[0], tree->nodes[i].edges[1],
-           tree->nodes[i].edges[2]);
-    printSequence(tree->nodes[i].sequence);
+  char newickBuffer[LABEL_SIZE * LABEL_SIZE];
+  printNewick(tree, newickBuffer, LABEL_SIZE * LABEL_SIZE);
+  printf("Newick: %s;\n", newickBuffer);
+
+  printf("Parent array:");
+  for (int i = 0; i < treeNodes(tree); i++)
+    printf("\t%d", tree->parent[i]);
+  printf("\t]\n");
+
+  printf("Left array:");
+  for (int i = 0; i < treeNodes(tree); i++)
+    printf("\t%d", tree->left[i]);
+  printf("\t]\n");
+
+  printf("Right array:");
+  for (int i = 0; i < treeNodes(tree); i++)
+    printf("\t%d", tree->left[i]);
+  printf("\t]\n");
+
+  printf("Internal Sequences:\n");
+  for (int i = 0; i < firstLeaf(tree); i++) {
+    printf("%d :", i);
+    printSequence(tree->internalSequences[i], tree->alignment->characters,
+                  tree->alignment->states);
   }
 }
 
 // Print a node in Newick format, keeping track of origin of call.
-void printNewickNode(tree_t *tree, int node, int from, FILE *fp) {
-  if (!tree || node < 0)
+void printNewickNode(tree_t *tree, uint32_t node, char *buffer, size_t size) {
+  if (node == NULL_EDGE)
     return;
 
-  node_t *nodeStruct = &(tree->nodes[node]);
-
-  if (nodeStruct->label)
-    fprintf(fp, "%s", nodeStruct->label);
-
-  if (isLeaf(tree, node))
-    return;
-
-  fprintf(fp, "(");
-  if (from == nodeStruct->edges[0]) {
-    printNewickNode(tree, nodeStruct->edges[1], node, fp);
-    fprintf(fp, ",");
-    printNewickNode(tree, nodeStruct->edges[2], node, fp);
-  } else if (from == nodeStruct->edges[1]) {
-    printNewickNode(tree, nodeStruct->edges[0], node, fp);
-    fprintf(fp, ",");
-    printNewickNode(tree, nodeStruct->edges[2], node, fp);
-  } else if (from == nodeStruct->edges[2]) {
-    printNewickNode(tree, nodeStruct->edges[0], node, fp);
-    fprintf(fp, ",");
-    printNewickNode(tree, nodeStruct->edges[1], node, fp);
+  if (isLeaf(tree, node)) {
+    sprintf(buffer, "%s", tree->alignment->labels[node - firstLeaf(tree)]);
   }
-  fprintf(fp, ")");
+
+  sprintf(buffer, "(");
+  printNewickNode(tree, tree->left[node], buffer, size);
+  sprintf(buffer, ",");
+  printNewickNode(tree, tree->right[node], buffer, size);
+  sprintf(buffer, ")");
 }
 
 // Print tree in Newick format as rooted and without final ";".
-void printNewick(tree_t *tree, FILE *fp) {
-  FILE *finalFile = fp;
-  if (!fp)
-    finalFile = stdout;
-
-  if (!tree || tree->root < 0)
+void printNewick(tree_t *tree, char *buffer, size_t size) {
+  if (!tree)
     return;
 
-  node_t *rootStruct = &(tree->nodes[tree->root]);
-
-  if (rootStruct->label)
-    fprintf(finalFile, "%s", rootStruct->label);
-
-  if (isLeaf(tree, tree->root))
-    return;
-
-  fprintf(finalFile, "(");
-  printNewickNode(tree, tree->root, rootStruct->edges[0], finalFile);
-  fprintf(finalFile, ",");
-  printNewickNode(tree, rootStruct->edges[0], tree->root, finalFile);
-  fprintf(finalFile, ")");
+  printNewickNode(tree, 0, buffer, size);
 }
 
-// Returns a copy of the tree.
-tree_t *copyTree(const tree_t *tree) {
-  tree_t *copy = newTree(tree->leaves);
-  copy->root = tree->root;
-
-  sequence_t *copySequenceArray = newSequenceArray(tree->leaves - 2);
-  for (int i = 0; i < tree->leaves - 2; i++) {
-    for (int j = 0; j < CHAR_STATES; j++) {
-      for (int k = 0; k < allowedArraySize(); k++)
-        copySequenceArray[i].stateAllowedMask[j][k] =
-            tree->internal[i].sequence->stateAllowedMask[j][k];
-    }
-  }
-
-  for (int i = 0; i < tree->leaves; i++)
-    copy->nodes[i].sequence = tree->nodes[i].sequence;
-  for (int i = 0; i < tree->leaves - 2; i++)
-    copy->internal[i].sequence = &(copySequenceArray[i]);
-
-  for (int i = 0; i < tree->size; i++) {
-    copy->nodes[i].edges[0] = tree->nodes[i].edges[0];
-    copy->nodes[i].edges[1] = tree->nodes[i].edges[1];
-    copy->nodes[i].edges[2] = tree->nodes[i].edges[2];
-    copy->nodes[i].label = tree->nodes[i].label;
-  }
-
-  return copy;
+// Copy treeSrc to treeDst inplace
+void copyTree(tree_t *treeSrc, tree_t *treeDst) {
+  treeDst->alignment = treeSrc->alignment;
+  memcpy(treeDst->parent, treeSrc->parent,
+         3 * treeLeaves(treeSrc) * sizeof(uint32_t));
+  memcpy(**(treeDst->internalSequences), **(treeSrc->internalSequences),
+         treeInternalNodes(treeSrc) * treeSrc->alignment->states *
+             allowedArraySize(treeSrc->alignment->characters));
 }
-
-// Free space of node.
-inline void destroyNode(node_t *node) { free(node); }
 
 // Delete tree.
 void destroyTree(tree_t *tree) {
   if (!tree)
     return;
 
-  free(tree->internal[0].sequence->stateAllowedMask[0]);
-  free(tree->internal[0].sequence);
-  free(tree->nodes);
+  free(tree->internalSequences[0][0]);
+  free(tree->internalSequences[0]);
+  free(tree->internalSequences);
+  free(tree->parent);
   free(tree);
+}
+
+// Delete an array of trees allocated by newTreeArray.
+void destroyTreeArray(tree_t *treeArray) {
+  free(treeArray->internalSequences[0][0]);
+  free(treeArray->internalSequences[0]);
+  free(treeArray->internalSequences);
+  free(treeArray->parent);
+  free(treeArray);
 }
