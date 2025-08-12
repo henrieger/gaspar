@@ -26,7 +26,7 @@ typedef struct alignment {
 #define MIN_SEQ_CHUNK_SIZE sizeof(uint64_t)
 #endif
 
-// Size of an allowed states array
+// Amount of bytes needed to store a mask of characters
 unsigned long allowedArraySize(uint32_t characters);
 
 // Allocate space for a sequence

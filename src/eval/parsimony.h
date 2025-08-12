@@ -1,13 +1,14 @@
 #ifndef __PARSIMONY_H__
 #define __PARSIMONY_H__
 
-#include <tree/tree.h>
 #include <config.h>
+#include <stdint.h>
+#include <tree/tree.h>
 
 // Calculate Wagner parsimony of a tree using Fitch's algorithm (Fitch, 1971).
-int fitchParsimony(tree_t *tree, config_t *config);
+double fitchParsimony(tree_t *tree, config_t *config);
 
-void initializeGlobalAuxSequences();
+void initializeGlobalAuxSequences(uint32_t characters, uint32_t states);
 void destroyGlobalAuxSequences();
 
 void resetParsimonyCalls();

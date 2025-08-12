@@ -3,112 +3,103 @@
 #include <config.h>
 #include <sequence-alignment/mask-operations.h>
 #include <sequence-alignment/sequence-alignment.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <tree/tree.h>
 
-sequence_t *unionSeq;
-sequence_t *interSeq;
+stateAllowedMask_t **unionSeq, **interSeq;
 stateAllowedMask_t *r, *notR, *aux1, *aux2;
 unsigned long parsimonyCalls;
 
-void initializeGlobalAuxSequences() {
-  unionSeq = newSequence();
-  interSeq = newSequence();
-  r = newAllowedStates();
-  notR = newAllowedStates();
-  aux1 = newAllowedStates();
-  aux2 = newAllowedStates();
+void initializeGlobalAuxSequences(uint32_t characters, uint32_t states) {
+  unionSeq = newSequence(characters, states);
+  interSeq = newSequence(characters, states);
+  r = malloc(allowedArraySize(characters));
+  notR = malloc(allowedArraySize(characters));
+  aux1 = malloc(allowedArraySize(characters));
+  aux2 = malloc(allowedArraySize(characters));
 }
 
-int scoreFromInters(stateAllowedMask_t *r) {
-  int score = 0;
-  int seqSizeInBytes = (7 + getSequenceSize()) / 8;
+double characterValue(stateAllowedMask_t *r, int position) {
+  int arrayPos = position / (8 * sizeof(stateAllowedMask_t));
+  int internalPos = position % (8 * sizeof(stateAllowedMask_t));
 
-  char *charR = (char *)r;
+  return (r[arrayPos] >> internalPos) ? 1 : 0;
+}
 
-  for (int i = 0; i < seqSizeInBytes; i++) {
-    score += getCumulativeWeights(i, ~(charR[i]) & 0xff);
+double scoreFromIntersection(stateAllowedMask_t *r, alignment_t *alignment) {
+  double score = 0;
+
+  for (int i = 0; i < alignment->characters; i++) {
+    score += characterValue(r, i);
   }
 
   return score;
 }
 
-int localParsimony(tree_t *tree, int n1, int n2, int node) {
-  stateAllowedMask_t **mask1 = tree->nodes[n1].sequence->stateAllowedMask;
-  stateAllowedMask_t **mask2 = tree->nodes[n2].sequence->stateAllowedMask;
+double localParsimony(tree_t *tree, uint32_t node) {
+  stateAllowedMask_t **maskLeft =
+      tree->alignment->sequenceMasks[tree->left[node]];
+  stateAllowedMask_t **maskRight =
+      tree->alignment->sequenceMasks[tree->right[node]];
 
-  int arraySize = allowedArraySize();
-
-  for (int i = 0; i < arraySize; i++)
-    r[i] = 0;
-
-  for (int i = 0; i < CHAR_STATES; i++) {
+  for (int i = 0; i < tree->alignment->states; i++) {
     // U = n1.sequence | n2.sequence
-    maskUnion(unionSeq->stateAllowedMask[i], mask1[i], mask2[i]);
+    maskUnion(unionSeq[i], maskLeft[i], maskRight[i],
+              tree->alignment->characters);
 
     // I = n1.sequence & n2.sequence
-    maskIntersection(interSeq->stateAllowedMask[i], mask1[i], mask2[i]);
+    maskIntersection(interSeq[i], maskLeft[i], maskRight[i],
+                     tree->alignment->characters);
     // R = U(I)
-    maskUnion(r, r, interSeq->stateAllowedMask[i]);
+    maskUnion(r, r, interSeq[i], tree->alignment->characters);
   }
 
   if (node > 0) {
-    for (int i = 0; i < CHAR_STATES; i++) {
+    for (int i = 0; i < tree->alignment->states; i++) {
       // n.sequence = (I & R) | (U & ~R)
-      maskIntersection(aux1, interSeq->stateAllowedMask[i], r);
-      maskNot(notR, r);
-      maskIntersection(aux2, unionSeq->stateAllowedMask[i], notR);
-      maskUnion(tree->nodes[node].sequence->stateAllowedMask[i], aux1, aux2);
+      maskIntersection(aux1, interSeq[i], r, tree->alignment->characters);
+      maskNot(notR, r, tree->alignment->characters);
+      maskIntersection(aux2, unionSeq[i], notR, tree->alignment->characters);
+      maskUnion(tree->internalSequences[node][i], aux1, aux2,
+                tree->alignment->characters);
     }
   }
 
-  return scoreFromInters(r);
-}
-
-// Calculate parsimony of subtree, keeping track of origin of call.
-int fitchParsimonyRecursive(tree_t *tree, int node, int from) {
-  if (!tree || node < 0)
-    return 0;
-
-  // Leaf result is always equal to 0 (no change within a single node)
-  if (isLeaf(tree, node))
-    return 0;
-
-  // Auxiliary structures
-  int n1, n2;
-  n1 = n2 = -1;
-  node_t *nodeStruct = &(tree->nodes[node]);
-
-  // Select nodes of recursion based on root
-  if (nodeStruct->edges[0] == from) {
-    n1 = nodeStruct->edges[1];
-    n2 = nodeStruct->edges[2];
-  } else if (nodeStruct->edges[1] == from) {
-    n1 = nodeStruct->edges[0];
-    n2 = nodeStruct->edges[2];
-  } else if (nodeStruct->edges[2] == from) {
-    n1 = nodeStruct->edges[0];
-    n2 = nodeStruct->edges[1];
-  }
-
-  return fitchParsimonyRecursive(tree, n1, node) +
-         fitchParsimonyRecursive(tree, n2, node) +
-         localParsimony(tree, n1, n2, node);
+  return scoreFromIntersection(r, tree->alignment);
 }
 
 // Calculate Wagner parsimony of a tree using Fitch's algorithm (Fitch, 1971).
-int fitchParsimony(tree_t *tree, config_t *config) {
+double fitchParsimony(tree_t *tree, config_t *config) {
   if (!tree)
     return 0;
 
   parsimonyCalls++;
 
-  int root1 = tree->root;
-  int root2 = tree->nodes[tree->root].edges[0];
+  // Allocate array with order to calculate the scores
+  uint32_t callOrder[treeNodes(tree)];
+  double scores[treeNodes(tree)];
+  callOrder[0] = 0;
+  int lastPos = 1;
 
-  return fitchParsimonyRecursive(tree, root1, root2) +
-         fitchParsimonyRecursive(tree, root2, root1) +
-         localParsimony(tree, root1, root2, -1);
+  // Perform BFS on internal nodes of the tree
+  for (int i = 0; i < treeInternalNodes(tree); i++) {
+    callOrder[lastPos++] = tree->left[callOrder[i]];
+    callOrder[lastPos++] = tree->right[callOrder[i]];
+  }
+
+  // Set scores of all leaves to 0
+  for (int i = firstLeaf(tree); i < treeNodes(tree); i++) {
+    scores[i] = 0;
+  }
+
+  // Calculate scores for internal nodes in reverse DFS
+  for (int i = treeInternalNodes(tree) - 1; i >= 0; i--) {
+    scores[i] = scores[tree->left[i]] + scores[tree->right[i]] +
+                localParsimony(tree, i);
+  }
+
+  return scores[0];
 }
 
 void destroyGlobalAuxSequences() {
