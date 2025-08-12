@@ -6,7 +6,7 @@
 #include <sequence-alignment/sequence-alignment.h>
 #include <tree/tree.h>
 
-extern int *generationBest; // Array with the best score in each generation
+extern double *generationBest; // Array with the best score in each generation
 
 // Allocate array of generation bests
 void createGenerationBests(config_t *config);

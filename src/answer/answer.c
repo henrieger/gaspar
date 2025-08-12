@@ -1,29 +1,30 @@
 #include "answer.h"
+#include "sequence-alignment/sequence-alignment.h"
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tree/tree.h>
 
 // Initialize answer structure.
-answer_t *initializeAnswer(int numTrees) {
+answer_t *initializeAnswer(uint32_t numTrees, alignment_t *alignment) {
   answer_t *answer = malloc(sizeof(answer_t));
   answer->numTrees = numTrees;
-  answer->trees = calloc(numTrees, sizeof(tree_t *));
+  answer->trees = newTreeArray(numTrees, alignment);
   answer->currTree = 0;
   answer->score = -1;
   return answer;
 }
 
 // Return number of trees currently in the answer.
-inline int getNumberOfTrees(answer_t *answer) {
-  return answer->currTree;
-}
+inline uint32_t getNumberOfTrees(answer_t *answer) { return answer->currTree; }
 
 // Insert a new tree in the answer if there is available space.
 void insertAnswer(answer_t *answer, tree_t *tree) {
   if (answer->currTree < 0 || answer->currTree >= answer->numTrees)
     return;
 
-  answer->trees[answer->currTree] = copyTree(tree);
+  copyTree(tree, answer->trees + answer->currTree);
   answer->currTree++;
 }
 
@@ -31,10 +32,6 @@ void insertAnswer(answer_t *answer, tree_t *tree) {
 void resetAndUpdateScore(answer_t *answer, int newScore) {
   answer->score = newScore;
   answer->currTree = 0;
-  for (int i = 0; i < answer->numTrees; i++) {
-    destroyTree(answer->trees[i]);
-    answer->trees[i] = NULL;
-  }
 }
 
 void updateAnswer(answer_t *answer, tree_t *tree, int score) {
@@ -47,7 +44,7 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score) {
     resetAndUpdateScore(answer, score);
 
   for (int i = 0; i < answer->currTree; i++) {
-    if (areEqual(tree, answer->trees[i]))
+    if (areEqual(tree, answer->trees + i))
       return;
   }
 
@@ -55,31 +52,27 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score) {
 }
 
 // Returns score of answer
-unsigned int getScore(answer_t *answer) { return answer->score; }
+double getScore(answer_t *answer) { return answer->score; }
 
 // Print information of answer
-void printAnswer(answer_t *answer, FILE *fp) {
-  FILE *finalFile = fp;
-  if (!fp)
-    finalFile = stdout;
-
-  fprintf(finalFile, "-- ANSWER --\nMin score: %u\nTrees: %d\n", getScore(answer), answer->currTree);
+void printAnswer(answer_t *answer, char *buffer, size_t size) {
+  sprintf(buffer, "-- ANSWER --\nMin score: %lf\nTrees: %d\n", getScore(answer),
+          answer->currTree);
   if (answer->currTree < 16)
-    for (int i = 0; answer->trees[i] && i < answer->numTrees; i++) {
-      fprintf(finalFile, "\t");
+    for (int i = 0; i < answer->numTrees; i++) {
+      sprintf(buffer, "\t");
 
 #ifdef DEBUG
-    printTree(answer->trees[i]);
+      printTree(answer->trees + i);
 #endif /* ifdef DEBUG */
 
-    printNewick(answer->trees[i], finalFile);
-    fprintf(finalFile, ";\n");
-  }
+      printNewick(answer->trees + i, buffer, size);
+      sprintf(buffer, ";\n");
+    }
 }
 
 // Destroy the answer
 void destroyAnswer(answer_t *answer) {
-  resetAndUpdateScore(answer, 0);
-  free(answer->trees);
+  destroyTreeArray(answer->trees);
   free(answer);
 }

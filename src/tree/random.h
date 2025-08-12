@@ -3,21 +3,22 @@
 
 #include "tree.h"
 #include <sequence-alignment/sequence-alignment.h>
+#include <stdint.h>
 
 // Generate a random unrooted binrary tree from alignment.
-tree_t *randomTree(alignment_t *alignment);
+void randomTree(tree_t *tree);
 
 // Return a random node index on the tree.
-int randomNode(int size);
+uint32_t randomNode(tree_t *tree);
 
 // Return a random internal node index on the tree
-int randomInternalNode(int numLeaves);
+uint32_t randomInternalNode(tree_t *tree);
 
 // Return a random non-null edge of node
-int randomEdge(tree_t *tree, int node);
+uint32_t randomEdge(tree_t *tree, int node);
 
 // Return a random internal edge of node
-int randomInternalEdge(tree_t *tree, int node);
+uint32_t randomInternalEdge(tree_t *tree, uint32_t node);
 
 // Return the edge of a random subtree from the given edge
 void randomSubtree(tree_t *tree, int node, int *subtree1, int *subtree2,

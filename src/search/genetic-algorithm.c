@@ -4,12 +4,12 @@
 #include <config.h>
 #include <math.h>
 #include <sequence-alignment/sequence-alignment.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <tree/random.h>
 #include <tree/tree.h>
 
-int *generationBest; // Array with the best score in each generation
+double *generationBest; // Array with the best score in each generation
 
 // Allocate array of generation bests
 void createGenerationBests(config_t *config) {
@@ -26,31 +26,31 @@ void resetGenerationBests(config_t *config) {
 // Destroy array of generation bests
 void destroyGenerationBests(config_t *config) { free(generationBest); }
 
-double fitnessFunction(int individualScore, int bestScore, double s) {
+double fitnessFunction(double individualScore, double bestScore, double s) {
   return exp(s * (bestScore - individualScore));
 }
 
 double sampleProb() { return (double)rand() / (double)(RAND_MAX); }
 
 // Sample a random tree based on its fitness
-tree_t *sampleRandomTree(tree_t **population, double *probabilities,
+tree_t *sampleRandomTree(tree_t *population, double *probabilities,
                          int populationSize) {
   double sample = sampleProb();
   for (int pos = 0; pos < populationSize; pos++) {
     if (sample < probabilities[pos])
-      return population[pos];
+      return population + pos;
   }
-  return population[populationSize - 1];
+  return population + (populationSize - 1);
 }
 
 // Run a single generation from the genetic algorithm search
-void geneticAlgorithmGeneration(config_t *config, tree_t **population,
-                                tree_t **newPopulation, unsigned int *scores,
+void geneticAlgorithmGeneration(config_t *config, tree_t *population,
+                                tree_t *newPopulation, double *scores,
                                 double *probabilities, answer_t *answer,
-                                unsigned int *noChangeGenerations) {
+                                uint32_t *noChangeGenerations) {
   // Evaluate all individuals
   for (int i = 0; i < config->ga_populationSize; i++) {
-    scores[i] = config->evalFn(population[i], config);
+    scores[i] = config->evalFn(population + i, config);
   }
 
   // Find the best individual
@@ -66,19 +66,18 @@ void geneticAlgorithmGeneration(config_t *config, tree_t **population,
   // Verify generation cutoff and update best answer
   if (bestScore < getScore(answer)) {
     *noChangeGenerations = 0;
-    updateAnswer(answer, population[0], scores[0]);
+    updateAnswer(answer, population, scores[0]);
   } else
     (*noChangeGenerations)++;
 
   // Update answer with relevant results
   for (int i = 1; i < config->ga_populationSize; i++) {
-    updateAnswer(answer, population[i], scores[i]);
+    updateAnswer(answer, population + i, scores[i]);
   }
 
 #ifdef DEBUG
   printf("Best tree: ");
-  printTree(population[bestPosition]);
-  printNewick(population[bestPosition], NULL);
+  printTree(population + bestPosition);
   printf(";\n");
   printf("\tScore: %d\n", bestScore);
 #endif /* ifdef DEBUG */
@@ -94,29 +93,28 @@ void geneticAlgorithmGeneration(config_t *config, tree_t **population,
     probabilities[i] /= probabilities[config->ga_populationSize - 1];
 
   // Preserve best individual
-  newPopulation[0] = copyTree(population[bestPosition]);
+  copyTree(population + bestPosition, newPopulation);
 
   // Select other individuals and apply mutations
   for (int i = 1; i < config->ga_populationSize; i++) {
     tree_t *t =
         sampleRandomTree(population, probabilities, config->ga_populationSize);
-    newPopulation[i] = copyTree(t);
-    config->ga_mutationOperator(newPopulation[i], config);
+    copyTree(t, newPopulation + i);
+    config->ga_mutationOperator(newPopulation + i, config);
   }
 }
 
 // Perform a search using a genetic algorithm.
 answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
-  answer_t *answer = initializeAnswer(config->answer_size);
-  tree_t **population = malloc(config->ga_populationSize * sizeof(tree_t *));
-  tree_t **newPopulation = malloc(config->ga_populationSize * sizeof(tree_t *));
-  unsigned int *scores =
-      malloc(config->ga_populationSize * sizeof(unsigned int));
+  answer_t *answer = initializeAnswer(config->answer_size, alignment);
+  tree_t *population = newTreeArray(config->ga_populationSize, alignment);
+  tree_t *newPopulation = newTreeArray(config->ga_populationSize, alignment);
+  double *scores = malloc(config->ga_populationSize * sizeof(double));
   double *probabilities = malloc(config->ga_populationSize * sizeof(double));
 
   // Generate initial population from random trees
   for (int i = 0; i < config->ga_populationSize; i++) {
-    population[i] = randomTree(alignment);
+    randomTree(population + i);
   }
 
   unsigned int noChangeGenerations = 0;
@@ -130,13 +128,9 @@ answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
     geneticAlgorithmGeneration(config, population, newPopulation, scores,
                                probabilities, answer, &noChangeGenerations);
     // Swap populations
-    tree_t **aux = population;
+    tree_t *aux = population;
     population = newPopulation;
     newPopulation = aux;
-
-    // Clear previous population
-    for (int j = 0; j < config->ga_populationSize; j++)
-      destroyTree(newPopulation[j]);
 
     // Save score in array of best of each generation
     generationBest[i] = scores[0];
@@ -144,18 +138,14 @@ answer_t *geneticAlgorithmSearch(alignment_t *alignment, config_t *config) {
 
   // Calculate scores one last time
   for (int i = 0; i < config->ga_populationSize; i++)
-    scores[i] = config->evalFn(population[i], config);
+    scores[i] = config->evalFn(population + i, config);
 
   // Update answer with relevant results one last time
   for (int i = 0; i < config->ga_populationSize; i++)
-    updateAnswer(answer, population[i], scores[i]);
+    updateAnswer(answer, population + i, scores[i]);
 
-  // Clear all data structures
-  for (int i = 0; i < config->ga_populationSize; i++) {
-    destroyTree(population[i]);
-  }
-  free(population);
-  free(newPopulation);
+  destroyTreeArray(population);
+  destroyTreeArray(newPopulation);
   free(scores);
   free(probabilities);
 

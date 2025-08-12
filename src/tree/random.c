@@ -2,6 +2,7 @@
 
 #include "tree.h"
 #include <sequence-alignment/sequence-alignment.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 // Linked list auxiliary struct
@@ -68,77 +69,46 @@ int removeNodeAtIndex(list_t **list, int i) {
 }
 
 // Generate a random unrooted binary tree from alignment.
-tree_t *randomTree(alignment_t *alignment) {
-  tree_t *tree = newTreeFromAlignment(alignment);
-
+void randomTree(tree_t *tree) {
   // Populate node list with all taxa
   list_t *nodeList = NULL;
-  for (int i = 0; i < tree->leaves; i++) {
+  for (int i = firstLeaf(tree) + 1; i < treeNodes(tree); i++) {
     appendToList(&nodeList, i);
   }
 
-  // Do until there are only 3 nodes left on list
-  for (int i = 0; i < tree->leaves - 2; i++) {
+  // Do until there is only one node left on list
+  for (int i = 1; i < tree->alignment->taxa; i++) {
     // Sample first random node
-    int index1 = rand() % (tree->leaves - i);
-    int node1 = removeNodeAtIndex(&nodeList, index1);
+    uint32_t index1 = rand() % (tree->alignment->taxa - i);
+    uint32_t node1 = removeNodeAtIndex(&nodeList, index1);
 
     // Sample second random node
-    int index2 = rand() % (tree->leaves - i - 1);
-    int node2 = removeNodeAtIndex(&nodeList, index2);
+    uint32_t index2 = rand() % (tree->alignment->taxa - i - 1);
+    uint32_t node2 = removeNodeAtIndex(&nodeList, index2);
 
     // Create the new internal node
-    tree->nodes[node1].edges[0] = alignment->taxa + i;
-    tree->nodes[node2].edges[0] = alignment->taxa + i;
-    tree->internal[i].edges[1] = node1;
-    tree->internal[i].edges[2] = node2;
+    tree->parent[node1] = i;
+    tree->parent[node2] = i;
+    tree->left[i] = node1;
+    tree->right[i] = node2;
 
     // Append new internal node to list
-    appendToList(&nodeList, alignment->taxa + i);
+    appendToList(&nodeList, i);
   }
 
   // Create the last internal node
-  int node1 = removeNodeAtIndex(&nodeList, 1);
-  int node2 = removeNodeAtIndex(&nodeList, 0);
-  tree->nodes[node1].edges[0] = node2;
-  tree->nodes[node2].edges[0] = node1;
-
-  tree->root = tree->size - 1;
-
-  return tree;
+  uint32_t lastNode = removeNodeAtIndex(&nodeList, 0);
+  tree->left[0] = firstLeaf(tree);
+  tree->right[0] = lastNode;
+  tree->parent[0] = NULL_EDGE;
 }
 
 // Return a random node index on the tree.
-inline int randomNode(int size) { return rand() % size; }
+inline uint32_t randomNode(tree_t *tree) { return rand() % treeNodes(tree); }
 
 // Return a random internal node index on the tree
-inline int randomInternalNode(int numLeaves) {
-  return (rand() % (numLeaves - 2)) + numLeaves;
-}
-
-// Return a random non-null edge of node
-int randomEdge(tree_t *tree, int node) {
-  int edge = rand() % 3;
-  int result = tree->nodes[node].edges[2];
-
-  // Only need to check for at most 2 extra edges as at least one will point to
-  // an internal node
-  for (int i = 0; i < 3; i++) {
-    if (edge == 0)
-      result = tree->nodes[node].edges[0];
-    else if (edge == 1)
-      result = tree->nodes[node].edges[1];
-    else
-      result = tree->nodes[node].edges[2];
-
-    // If the node is invalid, try the next edge
-    if (result < 0)
-      edge = (edge + 1) % 3;
-    else
-      break;
-  }
-
-  return result;
+inline uint32_t randomInternalNode(tree_t *tree) {
+  return rand() % treeInternalNodes(tree);
 }
 
 // Return a random internal edge of node
