@@ -9,7 +9,7 @@
 
 // Amount of bytes needed to store a mask of characters
 inline size_t allowedArraySize(uint32_t characters) {
-  return ceilDiv(characters, MIN_SEQ_CHUNK_SIZE) * MIN_SEQ_CHUNK_SIZE / 8;
+  return ceilDiv(characters, MIN_SEQ_CHUNK_SIZE * 8) * MIN_SEQ_CHUNK_SIZE;
 }
 
 // Allocate space for a sequence
@@ -18,8 +18,11 @@ stateAllowedMask_t **newSequence(uint32_t characters, uint32_t states) {
   sequence[0] =
       aligned_alloc(MIN_SEQ_CHUNK_SIZE, states * allowedArraySize(characters));
 
+  for (int i = 0; i < states * allowedArraySize(characters); i++)
+    sequence[0][i] = 0;
+
   for (int i = 1; i < states; i++)
-    sequence[i] = sequence[0] + allowedArraySize(characters);
+    sequence[i] = sequence[0] + i * allowedArraySize(characters);
 
   return sequence;
 }
@@ -33,6 +36,8 @@ stateAllowedMask_t ***newSequenceArray(uint32_t sequences, uint32_t characters,
   sequenceArray[0] = malloc(sequences * states * sizeof(stateAllowedMask_t *));
   sequenceArray[0][0] = aligned_alloc(
       MIN_SEQ_CHUNK_SIZE, sequences * states * allowedArraySize(characters));
+  for (int i = 0; i < sequences * states * allowedArraySize(characters); i++)
+    sequenceArray[0][0][i] = 0;
   for (int i = 0; i < sequences; i++) {
     sequenceArray[i] = sequenceArray[0] + states * i;
     for (int j = 0; j < states; j++) {
@@ -47,7 +52,7 @@ stateAllowedMask_t ***newSequenceArray(uint32_t sequences, uint32_t characters,
 
 // Allocate space for an aligment
 alignment_t *newAlignment(uint32_t taxa, uint32_t characters, uint32_t states,
-                          const char **labels) {
+                          char **labels) {
   alignment_t *a = malloc(sizeof(alignment_t));
   a->taxa = taxa;
   a->characters = characters;
@@ -93,15 +98,13 @@ void printSequence(stateAllowedMask_t **sequence, uint32_t characters,
 #endif /*ifdef DEBUG */
 
   for (int i = 0; i < characters; i++) {
-    unsigned int charMask = i / sizeof(stateAllowedMask_t);
-    stateAllowedMask_t positionInCharMask = 1
-                                            << (i % sizeof(stateAllowedMask_t));
-    unsigned int possibleStates = 0;
+    uint64_t index = i / (8 * sizeof(stateAllowedMask_t));
+    uint64_t shiftAmount = i % (8 * sizeof(stateAllowedMask_t));
 
-    for (int state = 0; state < states; state++)
-      possibleStates += ((sequence[state][charMask] & positionInCharMask) ==
-                         positionInCharMask);
-
+    uint64_t possibleStates = 0;
+    for (int j = 0; j < states; j++) {
+      possibleStates += (sequence[j][index] >> shiftAmount) & 1;
+    }
     if (possibleStates == states) {
       printf("?");
       continue;
@@ -116,8 +119,7 @@ void printSequence(stateAllowedMask_t **sequence, uint32_t characters,
       printf("[");
 
     for (int state = 0; state < states; state++)
-      if ((sequence[state][charMask] & positionInCharMask) ==
-          positionInCharMask)
+      if ((sequence[state][index] >> shiftAmount) & 1)
         printf("%d", state);
 
     if (possibleStates > 1)
@@ -135,7 +137,7 @@ void printAlignment(alignment_t *alignment) {
   printf("Alignment address: %p\n", alignment);
   printf("Sequences address: %p\n", alignment->sequenceMasks);
   for (int i = 0; i < alignment->taxa; i++) {
-    printf("\tSequence %d address: %p\n", i, &(alignment->sequenceMasks[i]));
+    printf("\tSequence %d address: %p\n", i, (alignment->sequenceMasks[i]));
     for (int j = 0; j < alignment->states; j++) {
       printf("\t\tAllowed %ds in sequence %d: %p\n", j, i,
              alignment->sequenceMasks[i][j]);

@@ -6,14 +6,14 @@
 
 #define LABEL_SIZE 1025
 
-#define stateAllowedMask_t uint8_t
+typedef uint8_t stateAllowedMask_t;
 
 typedef struct alignment {
   uint32_t taxa, characters, states;
   double *weights;
   bool *ordered;
   stateAllowedMask_t ***sequenceMasks;
-  const char **labels;
+  char **labels;
 } alignment_t;
 
 #if AVX2_CHARACTERS == 1
@@ -38,7 +38,7 @@ stateAllowedMask_t ***newSequenceArray(uint32_t sequences, uint32_t characters,
 
 // Allocate space for an aligment
 alignment_t *newAlignment(uint32_t taxa, uint32_t characters, uint32_t states,
-                          const char **labels);
+                          char **labels);
 
 // Copy sequenceSrc to sequenceDst inplace
 void copySequence(stateAllowedMask_t **sequenceSrc,

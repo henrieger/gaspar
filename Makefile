@@ -5,7 +5,7 @@ all:
 	cp src/gaspar ${BIN_DIR}/gaspar
 
 test:
-	$(MAKE) test -C src/
+	$(MAKE) -C tests/
 
 optimize:
 	$(MAKE) optimize -C src/
@@ -13,6 +13,10 @@ optimize:
 
 debug:
 	$(MAKE) debug -C src/
+	cp src/gaspar ${BIN_DIR}/gaspar
+
+sanitize:
+	$(MAKE) sanitize -C src/
 	cp src/gaspar ${BIN_DIR}/gaspar
 
 thesis:
