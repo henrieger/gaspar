@@ -77,7 +77,7 @@ void randomTree(tree_t *tree) {
   }
 
   // Do until there is only one node left on list
-  for (int i = 1; i < tree->alignment->taxa; i++) {
+  for (int i = 1; i < tree->alignment->taxa - 1; i++) {
     // Sample first random node
     uint32_t index1 = rand() % (tree->alignment->taxa - i);
     uint32_t node1 = removeNodeAtIndex(&nodeList, index1);
@@ -99,7 +99,9 @@ void randomTree(tree_t *tree) {
   // Create the last internal node
   uint32_t lastNode = removeNodeAtIndex(&nodeList, 0);
   tree->left[0] = firstLeaf(tree);
+  tree->parent[firstLeaf(tree)] = 0;
   tree->right[0] = lastNode;
+  tree->parent[lastNode] = 0;
   tree->parent[0] = NULL_EDGE;
 }
 
@@ -109,74 +111,4 @@ inline uint32_t randomNode(tree_t *tree) { return rand() % treeNodes(tree); }
 // Return a random internal node index on the tree
 inline uint32_t randomInternalNode(tree_t *tree) {
   return rand() % treeInternalNodes(tree);
-}
-
-// Return a random internal edge of node
-int randomInternalEdge(tree_t *tree, int node) {
-  int edge = rand() % 3;
-  int result = tree->nodes[node].edges[2];
-
-  // Only need to check for at most 2 extra edges as at least one will point to
-  // an internal node
-  for (int i = 0; i < 3; i++) {
-    if (edge == 0)
-      result = tree->nodes[node].edges[0];
-    else if (edge == 1)
-      result = tree->nodes[node].edges[1];
-    else
-      result = tree->nodes[node].edges[2];
-
-    // If the node is invalid, try the next edge
-    if (result < 0 || isLeaf(tree, result))
-      edge = (edge + 1) % 3;
-    else
-      break;
-  }
-
-  return result;
-}
-
-void randomSubtreeRecursive(tree_t *tree, int node, int from, int *subtree1,
-                            int *subtree2, double probability) {
-  if (node < 0)
-    return;
-
-  if (*subtree1 >= 0 && *subtree2 >= 0)
-    return;
-
-  if ((double)rand() / (double)RAND_MAX < probability) {
-    *subtree1 = node;
-    *subtree2 = randomEdge(tree, node);
-    return;
-  } else {
-    if (tree->nodes[node].edges[0] != from)
-      randomSubtreeRecursive(tree, tree->nodes[node].edges[0], node, subtree1,
-                             subtree2, probability);
-    if (tree->nodes[node].edges[1] != from)
-      randomSubtreeRecursive(tree, tree->nodes[node].edges[1], node, subtree1,
-                             subtree2, probability);
-    if (tree->nodes[node].edges[1] != from)
-      randomSubtreeRecursive(tree, tree->nodes[node].edges[1], node, subtree1,
-                             subtree2, probability);
-  }
-}
-
-// Return the edge of a random subtree from the given edge
-void randomSubtree(tree_t *tree, int node, int *subtree1, int *subtree2,
-                   double probability) {
-  // Initialize return variables if not yet initialized
-  *subtree1 = *subtree2 = -1;
-
-  randomSubtreeRecursive(tree, node, -1, subtree1, subtree2, probability);
-
-  // If random process didn't retrieve an edge, get the first one
-  if (*subtree1 < 0 || *subtree2 < 0) {
-    *subtree1 = node;
-    if (tree->nodes[node].edges[0] >= 0)
-      *subtree2 = tree->nodes[node].edges[0];
-    else if (tree->nodes[node].edges[1] >= 0)
-      *subtree2 = tree->nodes[node].edges[1];
-    else if (tree->nodes[node].edges[2] >= 0)
-      *subtree2 = tree->nodes[node].edges[2];
-  }
 }

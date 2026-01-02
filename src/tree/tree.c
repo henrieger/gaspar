@@ -13,6 +13,8 @@ tree_t *newTree(alignment_t *alignment) {
 
   // Allocate space for all edge annotations in a single call
   int32_t *arrays = malloc(3 * (2 * alignment->taxa - 1) * sizeof(int32_t));
+  for (int i = 0; i < 3 * (2 * alignment->taxa - 1); i++)
+    arrays[i] = NULL_EDGE;
   t->parent = arrays;
   t->left = arrays + 2 * alignment->taxa - 1;
   t->right = arrays + 2 * (2 * alignment->taxa - 1);
@@ -39,15 +41,16 @@ uint32_t firstLeaf(tree_t *tree) { return tree->alignment->taxa - 1; }
 tree_t *newTreeArray(uint32_t n, alignment_t *alignment) {
   tree_t *trees = malloc(n * sizeof(tree_t));
 
-  // Allocate space for all edge annotations for all trees in a single call
-  int32_t *arrays = malloc(n * 3 * (2 * alignment->taxa - 1) * sizeof(int32_t));
-
   // All trees point to the same alignment
   for (int i = 0; i < n; i++)
     trees[i].alignment = alignment;
 
-  // Set tree annotations for all trees from the sing {
-  // returntree->alignment->taxa - 1}le memory space
+  // Allocate space for all edge annotations for all trees in a single call
+  int32_t *arrays = malloc(n * 3 * treeNodes(&trees[0]) * sizeof(int32_t));
+  for (int i = 0; i < n * 3 * (2 * alignment->taxa - 1); i++)
+    arrays[i] = NULL_EDGE;
+
+  // Set tree annotations for all trees from the single memory space
   for (int i = 0; i < n; i++) {
     trees[i].parent = arrays + (3 * i) * treeNodes(trees);
     trees[i].left = arrays + (3 * i + 1) * treeNodes(trees);
@@ -127,22 +130,22 @@ tree_t *smallestTree(tree_t *tree) {
 // Print tree internal structure.
 void printTree(tree_t *tree) {
   char newickBuffer[LABEL_SIZE * LABEL_SIZE];
-  printNewick(tree, newickBuffer, LABEL_SIZE * LABEL_SIZE);
+  printNewick(tree, newickBuffer);
   printf("Newick: %s;\n", newickBuffer);
 
-  printf("Parent array:");
+  printf("Parent array: [");
   for (int i = 0; i < treeNodes(tree); i++)
     printf("\t%d", tree->parent[i]);
   printf("\t]\n");
 
-  printf("Left array:");
+  printf("Left array: [");
   for (int i = 0; i < treeNodes(tree); i++)
     printf("\t%d", tree->left[i]);
   printf("\t]\n");
 
-  printf("Right array:");
+  printf("Right array: [");
   for (int i = 0; i < treeNodes(tree); i++)
-    printf("\t%d", tree->left[i]);
+    printf("\t%d", tree->right[i]);
   printf("\t]\n");
 
   printf("Internal Sequences:\n");
@@ -154,27 +157,33 @@ void printTree(tree_t *tree) {
 }
 
 // Print a node in Newick format, keeping track of origin of call.
-void printNewickNode(tree_t *tree, uint32_t node, char *buffer, size_t size) {
+uint64_t printNewickNode(tree_t *tree, uint32_t node, char *buffer) {
   if (node == NULL_EDGE)
-    return;
+    return 0;
 
   if (isLeaf(tree, node)) {
-    sprintf(buffer, "%s", tree->alignment->labels[node - firstLeaf(tree)]);
+    return sprintf(buffer, "%s",
+                   tree->alignment->labels[node - firstLeaf(tree)]);
   }
 
-  sprintf(buffer, "(");
-  printNewickNode(tree, tree->left[node], buffer, size);
-  sprintf(buffer, ",");
-  printNewickNode(tree, tree->right[node], buffer, size);
-  sprintf(buffer, ")");
+  uint64_t bytesWritten = 0;
+  bytesWritten += sprintf(buffer, "(");
+  bytesWritten +=
+      printNewickNode(tree, tree->left[node], buffer + bytesWritten);
+  bytesWritten += sprintf(buffer + bytesWritten, ",");
+  bytesWritten +=
+      printNewickNode(tree, tree->right[node], buffer + bytesWritten);
+  bytesWritten += sprintf(buffer + bytesWritten, ")");
+
+  return bytesWritten;
 }
 
 // Print tree in Newick format as rooted and without final ";".
-void printNewick(tree_t *tree, char *buffer, size_t size) {
+void printNewick(tree_t *tree, char *buffer) {
   if (!tree)
     return;
 
-  printNewickNode(tree, 0, buffer, size);
+  printNewickNode(tree, 0, buffer);
 }
 
 // Copy treeSrc to treeDst inplace

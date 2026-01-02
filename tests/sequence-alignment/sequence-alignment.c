@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   printSequence(alignment->sequenceMasks[2], 64, 8);
 
   // Last: half [012], half [67]
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < states; i++) {
     for (int j = 0; j < allowedArraySize(characters); j++) {
       if (i <= 2 && j < allowedArraySize(characters) / 2)
         alignment->sequenceMasks[3][i][j] = 255;
