@@ -2,7 +2,7 @@ CC = gcc
 LDLIBS = 
 OBJECTS = 
 # SUBDIRS = eval/ sequence-alignment/ tree/ answer/ search/ operators/ support/ utils/
-SUBDIRS = sequence-alignment/
+SUBDIRS = sequence-alignment/ tree/ eval
 CFLAGS = -Wall -I../src -march=native
 TARGETS = 
 
