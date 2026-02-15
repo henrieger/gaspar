@@ -5,16 +5,13 @@
 #include "sequence-alignment/sequence-alignment.h"
 #include "tree/tree.h"
 
-enum hcOps {
-  SPR,
-  NNI
-};
+enum hcOps { SPR, NNI };
 
 typedef struct config {
   // General params
   char name[LABEL_SIZE];
   answer_t *(*searchMethod)(alignment_t *alignment, struct config *config);
-  int (*evalFn)(tree_t *, struct config *config);
+  double (*evalFn)(tree_t *, struct config *config);
 
   // Answer params
   int answer_size;

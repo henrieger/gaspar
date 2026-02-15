@@ -20,11 +20,22 @@ void initializeGlobalAuxSequences(uint32_t characters, uint32_t states) {
   aux2 = malloc(allowedArraySize(characters));
 }
 
+void resetGlobalAuxSequences(uint32_t characters, uint32_t states) {
+  for (int i = 0; i < states; i++) {
+    for (int j = 0; j < characters; j++) {
+      unionSeq[i][j] = interSeq[i][j] = 0;
+    }
+  }
+  for (int i = 0; i < characters; i++) {
+    r[i] = notR[i] = aux1[i] = aux2[i] = 0;
+  }
+}
+
 double characterValue(stateAllowedMask_t *r, int position) {
   int arrayPos = position / (8 * sizeof(stateAllowedMask_t));
   int internalPos = position % (8 * sizeof(stateAllowedMask_t));
 
-  return (r[arrayPos] >> internalPos) ? 1 : 0;
+  return 1 - ((r[arrayPos] >> internalPos) & 1);
 }
 
 double scoreFromIntersection(stateAllowedMask_t *r, alignment_t *alignment) {
@@ -38,32 +49,42 @@ double scoreFromIntersection(stateAllowedMask_t *r, alignment_t *alignment) {
 }
 
 double localParsimony(tree_t *tree, uint32_t node) {
-  stateAllowedMask_t **maskLeft =
-      tree->alignment->sequenceMasks[tree->left[node]];
-  stateAllowedMask_t **maskRight =
-      tree->alignment->sequenceMasks[tree->right[node]];
+  if (node < 0)
+    return -1;
 
-  for (int i = 0; i < tree->alignment->states; i++) {
-    // U = n1.sequence | n2.sequence
+  resetGlobalAuxSequences(tree->alignment->characters, tree->alignment->states);
+
+  stateAllowedMask_t **maskLeft =
+      isLeaf(tree, tree->left[node])
+          ? tree->alignment
+                ->sequenceMasks[tree->left[node] - treeInternalNodes(tree)]
+          : tree->internalSequences[tree->left[node]];
+  stateAllowedMask_t **maskRight =
+      isLeaf(tree, tree->right[node])
+          ? tree->alignment
+                ->sequenceMasks[tree->right[node] - treeInternalNodes(tree)]
+          : tree->internalSequences[tree->right[node]];
+
+  // U = n1.sequence | n2.sequence
+  for (int i = 0; i < tree->alignment->states; i++)
     maskUnion(unionSeq[i], maskLeft[i], maskRight[i],
               tree->alignment->characters);
 
-    // I = n1.sequence & n2.sequence
+  // I = n1.sequence & n2.sequence
+  for (int i = 0; i < tree->alignment->states; i++)
     maskIntersection(interSeq[i], maskLeft[i], maskRight[i],
                      tree->alignment->characters);
-    // R = U(I)
+  // R = U(I)
+  for (int i = 0; i < tree->alignment->states; i++)
     maskUnion(r, r, interSeq[i], tree->alignment->characters);
-  }
 
-  if (node > 0) {
-    for (int i = 0; i < tree->alignment->states; i++) {
-      // n.sequence = (I & R) | (U & ~R)
-      maskIntersection(aux1, interSeq[i], r, tree->alignment->characters);
-      maskNot(notR, r, tree->alignment->characters);
-      maskIntersection(aux2, unionSeq[i], notR, tree->alignment->characters);
-      maskUnion(tree->internalSequences[node][i], aux1, aux2,
-                tree->alignment->characters);
-    }
+  // n.sequence = (I & R) | (U & ~R)
+  for (int i = 0; i < tree->alignment->states; i++) {
+    maskIntersection(aux1, interSeq[i], r, tree->alignment->characters);
+    maskNot(notR, r, tree->alignment->characters);
+    maskIntersection(aux2, unionSeq[i], notR, tree->alignment->characters);
+    maskUnion(tree->internalSequences[node][i], aux1, aux2,
+              tree->alignment->characters);
   }
 
   return scoreFromIntersection(r, tree->alignment);
@@ -77,15 +98,17 @@ double fitchParsimony(tree_t *tree, config_t *config) {
   parsimonyCalls++;
 
   // Allocate array with order to calculate the scores
-  uint32_t callOrder[treeNodes(tree)];
+  uint32_t callOrder[treeInternalNodes(tree)];
   double scores[treeNodes(tree)];
   callOrder[0] = 0;
   int lastPos = 1;
 
   // Perform BFS on internal nodes of the tree
   for (int i = 0; i < treeInternalNodes(tree); i++) {
-    callOrder[lastPos++] = tree->left[callOrder[i]];
-    callOrder[lastPos++] = tree->right[callOrder[i]];
+    if (!isLeaf(tree, tree->left[callOrder[i]]))
+      callOrder[lastPos++] = tree->left[callOrder[i]];
+    if (!isLeaf(tree, tree->right[callOrder[i]]))
+      callOrder[lastPos++] = tree->right[callOrder[i]];
   }
 
   // Set scores of all leaves to 0
@@ -95,8 +118,9 @@ double fitchParsimony(tree_t *tree, config_t *config) {
 
   // Calculate scores for internal nodes in reverse DFS
   for (int i = treeInternalNodes(tree) - 1; i >= 0; i--) {
-    scores[i] = scores[tree->left[i]] + scores[tree->right[i]] +
-                localParsimony(tree, i);
+    scores[i] = scores[tree->left[callOrder[i]]] +
+                scores[tree->right[callOrder[i]]] +
+                localParsimony(tree, callOrder[i]);
   }
 
   return scores[0];
