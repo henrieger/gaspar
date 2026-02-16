@@ -1,13 +1,14 @@
 #ifndef __NNI_H__
 #define __NNI_H__
 
-#include <tree/tree.h>
 #include <config.h>
+#include <stdint.h>
+#include <tree/tree.h>
 
 // Create a Nearest Neighbor Interchange operation in the out edge connected to
 // node. Select the new joint by integer index (2 possible). Assumes unrooted
 // binary tree. Leaves not accepted as input.
-void nni(tree_t *tree, int n1, int n2, int joint);
+void nni(tree_t *tree, int32_t n1, int32_t n2, int joint);
 
 // Do a random NNI operation on the tree
 void randomNNI(tree_t *tree, config_t *config);

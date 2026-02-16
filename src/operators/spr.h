@@ -1,16 +1,14 @@
 #ifndef __SPR_H__
 
-#include <tree/tree.h>
 #include <config.h>
+#include <tree/tree.h>
 
-// Performs the pruning step of SPR, separating a subtree rooted in pruneRoot.
-// Returns a "root" to the leftover tree.
-int subtreePrune(tree_t *tree, int pruneRoot, int subtree);
+// Prune subtree rooted in (p1, p2).
+void subtreePrune(tree_t *tree, uint32_t p1, uint32_t p2);
 
-// Performs the grafting step of SPR, attaching pruneRoot to the edge defined by
-// graftNode1 and graftNode2.
-void subtreeRegraft(tree_t *tree, int pruneRoot, int graftNode1,
-                    int graftNode2);
+// Graft subtree rooted in (p1, p2) to edge (g1, g2).
+void subtreeGraft(tree_t *tree, uint32_t p1, uint32_t p2, uint32_t g1,
+                  uint32_t g2);
 
 // Performs a random SPR operation on the tree.
 void randomSPR(tree_t *tree, config_t *config);

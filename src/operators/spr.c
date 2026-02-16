@@ -1,80 +1,91 @@
 #include "spr.h"
+#include "tree/iterator.h"
 
 #include <config.h>
-#include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <tree/random.h>
 #include <tree/tree.h>
 
-// Determine node to the "left" of subtree
-int findLeft(tree_t *tree, int pruneNode, int pruneEdge) {
-  if (pruneEdge == tree->nodes[pruneNode].edges[0])
-    return tree->nodes[pruneNode].edges[1];
-  return tree->nodes[pruneNode].edges[0];
+void subtreePrune(tree_t *tree, uint32_t p1, uint32_t p2) {
+  // Find out whether p1 is at the left or right of its parent
+  uint32_t p1Parent = tree->parent[p1];
+  bool p1ToLeft = tree->left[p1Parent] == p1;
+
+  // Find out whether p2 is at the left or right of p1
+  bool p2ToLeft = tree->left[p1] == p2;
+
+  // Cut the subtree at p2 and then erase p1 from the tree
+  if (p1ToLeft && p2ToLeft) {
+    tree->left[p1Parent] = tree->right[p1];
+    tree->parent[tree->right[p1]] = p1Parent;
+  } else if (p1ToLeft && !p2ToLeft) {
+    tree->left[p1Parent] = tree->left[p1];
+    tree->parent[tree->left[p1]] = p1Parent;
+  } else if (!p1ToLeft && p2ToLeft) {
+    tree->right[p1Parent] = tree->right[p1];
+    tree->parent[tree->right[p1]] = p1Parent;
+  } else {
+    tree->right[p1Parent] = tree->left[p1];
+    tree->parent[tree->left[p1]] = p1Parent;
+  }
 }
 
-// Determine node to the "right" of subtree
-int findRight(tree_t *tree, int pruneNode, int pruneEdge) {
-  if (pruneEdge == tree->nodes[pruneNode].edges[2])
-    return tree->nodes[pruneNode].edges[1];
-  return tree->nodes[pruneNode].edges[2];
-}
+void subtreeGraft(tree_t *tree, uint32_t p1, uint32_t p2, uint32_t g1,
+                  uint32_t g2) {
+  // Find out whether p2 is at the left or right of p1
+  bool p2ToLeft = tree->left[p1] == p2;
 
-// Performs the pruning step of SPR, separating the subtree rooted in pruneRoot.
-// Returns a "root" to the leftover tree.
-int subtreePrune(tree_t *tree, int pruneRoot, int subtree) {
-  if (!tree || pruneRoot < 0 || isLeaf(tree, pruneRoot))
-    return tree->root;
+  // Find out whether p2 is at the left or right of p1
+  bool g2ToLeft = tree->left[g1] == g2;
 
-  int leftNode = findLeft(tree, pruneRoot, subtree);
-  int rightNode = findRight(tree, pruneRoot, subtree);
-
-  changeEdge(tree, leftNode, pruneRoot, rightNode);
-  changeEdge(tree, rightNode, pruneRoot, leftNode);
-  changeEdge(tree, pruneRoot, leftNode, -1);
-  changeEdge(tree, pruneRoot, rightNode, -1);
-
-  if (isLeaf(tree, leftNode))
-    return rightNode;
-  return leftNode;
-}
-
-// Performs the grafting step of SPR, attaching pruneRoot to the edge defined by
-// graftNode1 and graftNode2.
-void subtreeRegraft(tree_t *tree, int pruneRoot, int graftNode1,
-                    int graftNode2) {
-  if (!tree || pruneRoot < 0)
-    return;
-
-  changeEdge(tree, graftNode1, graftNode2, pruneRoot);
-  changeEdge(tree, graftNode2, graftNode1, pruneRoot);
-  changeEdge(tree, pruneRoot, -1, graftNode1);
-  changeEdge(tree, pruneRoot, -1, graftNode2);
+  // Put p1 in between g1 and g2
+  tree->parent[p1] = g1;
+  tree->parent[g2] = p1;
+  if (p2ToLeft && g2ToLeft) {
+    tree->left[g1] = p1;
+    tree->right[p1] = g2;
+  } else if (p2ToLeft && !g2ToLeft) {
+    tree->right[g1] = p1;
+    tree->right[p1] = g2;
+  } else if (!p2ToLeft && g2ToLeft) {
+    tree->left[g1] = p1;
+    tree->left[p1] = g2;
+  } else {
+    tree->right[g1] = p1;
+    tree->left[p1] = g2;
+  }
 }
 
 // Performs a random SPR operation on the tree.
 void randomSPR(tree_t *tree, config_t *config) {
-  // Select a random internal node to be the cut point
-  int pruneRoot = randomInternalNode(tree->leaves);
+  // Select a random pruning edge
+  int32_t p1 = 0, p2 = 0;
+  while (p1 == 0 || p2 == 0) {
+    p2 = randomInternalNode(tree);
+    p1 = tree->parent[p2];
+  }
 
-  // Select a random edge from the root to be the pruned subtree
-  int subtree = randomEdge(tree, pruneRoot);
+  // Prune subtree and guarantee an iterable base tree
+  subtreePrune(tree, p1, p2);
 
-#ifdef DEBUG
-  printf("Pruning subtree (%d %d)\n", pruneRoot, subtree);
-#endif /* ifdef DEBUG */
+  // Travel base tree and select a random node for grafting
+  treeIterator *it = newTreeIterator(tree);
+  for (uint32_t g2 = nextTreeIterator(it); g2 != NULL_EDGE;
+       g2 = nextTreeIterator(it)) {
+    if (g2 == 0 || g2 == firstLeaf(tree))
+      continue;
 
-  // Prune subtree and get a starting place in remaining subtree
-  int remainingTree = subtreePrune(tree, pruneRoot, subtree);
+    if ((double)rand() / (double)RAND_MAX < config->spr_probability) {
+      int32_t g1 = tree->parent[g2];
+      subtreeGraft(tree, p1, p2, g1, g2);
+      destroyIterator(it);
+      return;
+    }
+  }
 
-  // Select a random edge to graft
-  int graftNode1, graftNode2;
-  randomSubtree(tree, remainingTree, &graftNode1, &graftNode2,
-                config->spr_probability);
-
-#ifdef DEBUG
-  printf("Regrafting at (%d %d)\n", graftNode1, graftNode2);
-#endif /* ifdef DEBUG */
-
-  // Graft subtree into new edge
-  subtreeRegraft(tree, pruneRoot, graftNode1, graftNode2);
+  // If didn't find a regraft point, regraft at root (for simplicity, for now)
+  subtreeGraft(tree, p1, p2, 0, tree->right[0]);
+  destroyIterator(it);
 }

@@ -2,47 +2,52 @@
 
 #include <config.h>
 #include <sequence-alignment/sequence-alignment.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <tree/random.h>
 #include <tree/tree.h>
 
-// Find the node in n1 to be swapped
-int findN1Swapper(tree_t *tree, int n1, int n2) {
-  if (tree->nodes[n1].edges[2] == n2)
-    return tree->nodes[n1].edges[1];
-  return tree->nodes[n1].edges[2];
-}
-
-// Find the node in n2 to be swapped
-int findN2Swapper(tree_t *tree, int n1, int n2, int joint) {
-  if (joint == 1 && tree->nodes[n2].edges[0] != n1)
-    return tree->nodes[n2].edges[0];
-  if (tree->nodes[n2].edges[2] != n1)
-    return tree->nodes[n2].edges[2];
-  return tree->nodes[n2].edges[1];
-}
-
 // Create a Nearest Neighbor Interchange operation in the out edge connected to
 // node. Select the new joint by integer index (2 possible). Assumes unrooted
 // binary tree. Leaves not accepted as input.
-void nni(tree_t *tree, int n1, int n2, int joint) {
-  int n1Swapper = findN1Swapper(tree, n1, n2);
-  int n2Swapper = findN2Swapper(tree, n1, n2, joint);
+void nni(tree_t *tree, int32_t n1, int32_t n2, int joint) {
+  // If direction is from leaf to root, call with parameters inverted
+  if (tree->parent[n1] == n2)
+    return nni(tree, n2, n1, joint);
 
-  changeEdge(tree, n1, n1Swapper, n2Swapper);
-  changeEdge(tree, n2, n2Swapper, n1Swapper);
-  changeEdge(tree, n1Swapper, n1, n2);
-  changeEdge(tree, n2Swapper, n2, n1);
+  // Determine if n2 is at the left or right of n1
+  // so that the correct node is interchanged
+  int32_t n1InterchangedNode = tree->left[n1];
+  if (tree->left[n1] == n2) {
+    n1InterchangedNode = tree->right[n1];
+  }
+
+  // Determine which child node of n2 to interchange
+  int32_t n2InterchangedNode = tree->left[n2];
+  if (joint)
+    n2InterchangedNode = tree->right[n2];
+
+  // Do the interchange
+  tree->parent[n1InterchangedNode] = n2;
+  tree->parent[n2InterchangedNode] = n1;
+  if (tree->left[n1] == n2)
+    tree->right[n1] = n2InterchangedNode;
+  else
+    tree->left[n1] = n2InterchangedNode;
+  if (joint)
+    tree->right[n2] = n1InterchangedNode;
+  else
+    tree->left[n2] = n1InterchangedNode;
 }
 
 // Do a random NNI operation on the tree
 void randomNNI(tree_t *tree, config_t *config) {
   // Select the index of a random internal node
-  int n1 = randomInternalNode(tree->leaves);
-
-  // Select the edge in which the NNI will occur
-  int n2 = randomInternalEdge(tree, n1);
+  uint32_t n2 = 0, n1 = 0;
+  while (n2 == 0 || n1 == 0) {
+    n2 = randomInternalNode(tree);
+    n1 = tree->parent[n2];
+  }
 
   // Select the joint for the NNi
   int joint = rand() % 2;
