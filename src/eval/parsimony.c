@@ -118,9 +118,9 @@ double fitchParsimony(tree_t *tree, config_t *config) {
 
   // Calculate scores for internal nodes in reverse DFS
   for (int i = treeInternalNodes(tree) - 1; i >= 0; i--) {
-    scores[i] = scores[tree->left[callOrder[i]]] +
-                scores[tree->right[callOrder[i]]] +
-                localParsimony(tree, callOrder[i]);
+    scores[callOrder[i]] = scores[tree->left[callOrder[i]]] +
+                           scores[tree->right[callOrder[i]]] +
+                           localParsimony(tree, callOrder[i]);
   }
 
   return scores[0];
