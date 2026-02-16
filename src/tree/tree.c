@@ -179,18 +179,18 @@ uint64_t printNewickNode(tree_t *tree, uint32_t node, char *buffer) {
 }
 
 // Print tree in Newick format as rooted and without final ";".
-void printNewick(tree_t *tree, char *buffer) {
+uint64_t printNewick(tree_t *tree, char *buffer) {
   if (!tree)
-    return;
+    return 0;
 
-  printNewickNode(tree, 0, buffer);
+  return printNewickNode(tree, 0, buffer);
 }
 
 // Copy treeSrc to treeDst inplace
 void copyTree(tree_t *treeSrc, tree_t *treeDst) {
   treeDst->alignment = treeSrc->alignment;
   memcpy(treeDst->parent, treeSrc->parent,
-         3 * treeLeaves(treeSrc) * sizeof(uint32_t));
+         3 * treeNodes(treeSrc) * sizeof(uint32_t));
   memcpy(**(treeDst->internalSequences), **(treeSrc->internalSequences),
          treeInternalNodes(treeSrc) * treeSrc->alignment->states *
              allowedArraySize(treeSrc->alignment->characters));

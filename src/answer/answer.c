@@ -55,20 +55,23 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score) {
 double getScore(answer_t *answer) { return answer->score; }
 
 // Print information of answer
-void printAnswer(answer_t *answer, char *buffer, size_t size) {
-  sprintf(buffer, "-- ANSWER --\nMin score: %lf\nTrees: %d\n", getScore(answer),
-          answer->currTree);
-  if (answer->currTree < 16)
-    for (int i = 0; i < answer->numTrees; i++) {
-      sprintf(buffer, "\t");
+uint64_t printAnswer(answer_t *answer, char *buffer, size_t size) {
+  uint64_t bytesWritten =
+      sprintf(buffer, "-- ANSWER --\nMin score: %lf\nTrees: %d\n",
+              getScore(answer), getNumberOfTrees(answer));
+
+  for (int i = 0; i < answer->currTree; i++) {
+    bytesWritten += sprintf(buffer + bytesWritten, "\t");
 
 #ifdef DEBUG
-      printTree(answer->trees + i);
+    printTree(answer->trees + i);
 #endif /* ifdef DEBUG */
 
-      printNewick(answer->trees + i, buffer, size);
-      sprintf(buffer, ";\n");
-    }
+    bytesWritten += printNewick(answer->trees + i, buffer + bytesWritten);
+    bytesWritten += sprintf(buffer + bytesWritten, ";\n");
+  }
+
+  return bytesWritten;
 }
 
 // Destroy the answer

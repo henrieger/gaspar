@@ -51,7 +51,7 @@ tree_t *smallestTree(tree_t *tree);
 void printTree(tree_t *tree);
 
 // Print tree in Newick format as rooted and without final ";".
-void printNewick(tree_t *tree, char *buffer);
+uint64_t printNewick(tree_t *tree, char *buffer);
 
 // Copy treeSrc to treeDst inplace
 void copyTree(tree_t *treeSrc, tree_t *treeDst);

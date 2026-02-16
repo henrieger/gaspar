@@ -27,7 +27,7 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score);
 double getScore(answer_t *answer);
 
 // Print information of answer.
-void printAnswer(answer_t *answer, char *buffer, size_t size);
+uint64_t printAnswer(answer_t *answer, char *buffer, size_t size);
 
 // Destroy the answer.
 void destroyAnswer(answer_t *answer);
