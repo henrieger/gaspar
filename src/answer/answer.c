@@ -1,5 +1,6 @@
 #include "answer.h"
 #include "sequence-alignment/sequence-alignment.h"
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -12,7 +13,7 @@ answer_t *initializeAnswer(uint32_t numTrees, alignment_t *alignment) {
   answer->numTrees = numTrees;
   answer->trees = newTreeArray(numTrees, alignment);
   answer->currTree = 0;
-  answer->score = -1;
+  answer->score = INFINITY;
   return answer;
 }
 

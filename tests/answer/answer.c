@@ -1,5 +1,6 @@
 #include <answer/answer.h>
 #include <assert.h>
+#include <math.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
 #include <tree/tree.h>
@@ -21,7 +22,7 @@ int main() {
   assert(answer->numTrees == nTrees);
   assert(answer->currTree == 0);
   assert(answer->trees != NULL);
-  assert(answer->score == -1);
+  assert(answer->score == INFINITY);
 
   // No trees should be in this answer
   assert(getNumberOfTrees(answer) == 0);
@@ -38,7 +39,6 @@ int main() {
   }
 
   // Simulate insertion of the first tree
-  answer->score = 10;
   updateAnswer(answer, tree, 9);
   assert(answer->currTree == 1);
   assert(areEqual(tree, answer->trees));

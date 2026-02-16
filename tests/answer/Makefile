@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -Wall -I../../src -march=native
-LDLIBS =
+LDLIBS = -lm
 OBJECTS = *.o
 
 all: run clean
