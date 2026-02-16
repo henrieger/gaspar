@@ -13,7 +13,7 @@ double *generationBest; // Array with the best score in each generation
 
 // Allocate array of generation bests
 void createGenerationBests(config_t *config) {
-  generationBest = malloc(config->ga_generations * sizeof(int));
+  generationBest = malloc(config->ga_generations * sizeof(double));
   resetGenerationBests(config);
 }
 
