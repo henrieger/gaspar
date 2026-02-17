@@ -84,7 +84,7 @@ void bootstrap(alignment_t *alignment, config_t *config) {
     destroyAnswer(answer);
     bootstrapCharWeights(alignment);
     answer = config->searchMethod(alignment, config);
-    treeWeight = (double)1 / (getNumberOfTrees(answer));
+    treeWeight = 1.0 / (getNumberOfTrees(answer));
     printReplicate(answer, treeWeight, treeFp);
   }
 

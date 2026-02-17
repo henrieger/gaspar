@@ -38,9 +38,13 @@ $(TESTS):
 optimize: TARGETS += optimize
 optimize: all
 
-debug: CFLAGS += -g -DDEBUG -fsanitize=address
+debug: CFLAGS += -g -DDEBUG
 debug: TARGETS += debug
 debug: all
+
+sanitize: CFLAGS += -fsanitize=address
+sanitize: debug
+sanitize: TARGETS += sanitize
 
 profile: CFLAGS += -pg -O0
 profile: TARGETS += profile

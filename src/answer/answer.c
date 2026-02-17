@@ -39,7 +39,7 @@ void updateAnswer(answer_t *answer, tree_t *tree, int score) {
   if (score > getScore(answer))
     return;
 #ifdef DEBUG
-  printf("New score : %d - Curr score: %d\n", score, getScore(answer));
+  printf("New score : %d - Curr score: %lf\n", score, getScore(answer));
 #endif
   if (score < getScore(answer))
     resetAndUpdateScore(answer, score);
