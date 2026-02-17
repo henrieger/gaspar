@@ -10,34 +10,36 @@
 #include <string.h>
 
 // Generate a new set of random weights by bootstrapping.
-void bootstrapCharWeights() {
-  for (int i = 0; i < getSequenceSize(); i++)
-    setCharacterWeight(i, 0);
-  for (int i = 0; i < getSequenceSize(); i++) {
-    int randomPos = rand() % getSequenceSize();
-    incrementCharacterWeight(randomPos);
+void bootstrapCharWeights(alignment_t *alignment) {
+  for (int i = 0; i < alignment->characters; i++)
+    alignment->weights[i] = 0;
+  for (int i = 0; i < alignment->characters; i++) {
+    int randomPos = rand() % alignment->characters;
+    alignment->weights[randomPos]++;
   }
-  calculateCumulativeWeights();
 }
 
 // Print the trees generated in the replicate with their respective weights.
 void printReplicate(answer_t *answer, double treeWeight, FILE *fp) {
+  char newickBuffer[LABEL_SIZE * LABEL_SIZE];
   for (int i = 0; i < getNumberOfTrees(answer); i++) {
-    printNewick(answer->trees[i], fp);
-    fprintf(fp, "[%lf];\n", treeWeight);
+    printNewick(answer->trees + i, newickBuffer);
+    fprintf(fp, "%s[%lf];\n", newickBuffer, treeWeight);
   }
 }
 
 // Print best score of each GA generation
 void printGenerationBests(FILE *fp, config_t *config) {
   for (int i = 0; i < config->ga_generations && generationBest[i] > 0; i++)
-    fprintf(fp, "%d\n", generationBest[i]);
+    fprintf(fp, "%lf\n", generationBest[i]);
 }
 
 // Perform bootstrap analysis by the giving method and number of replicates.
 void bootstrap(alignment_t *alignment, config_t *config) {
   // Ensure characters begin set to 1
-  resetCharacterWeights();
+  for (int i = 0; i < alignment->characters; i++) {
+    alignment->weights[i] = 1;
+  }
 
   // Generate name of output files
   char treeFilename[LABEL_SIZE], datFilename[LABEL_SIZE];
@@ -62,8 +64,10 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   double treeWeight = (double)1 / (getNumberOfTrees(answer));
   printReplicate(answer, treeWeight, treeFp);
   printf("\nOriginal Analysis:\n\n");
-  printAnswer(answer, NULL);
-  fprintf(datFp, "%d\n", getScore(answer));
+  char answerBuffer[LABEL_SIZE * LABEL_SIZE];
+  printAnswer(answer, answerBuffer, LABEL_SIZE * LABEL_SIZE);
+  printf("%s\n", answerBuffer);
+  fprintf(datFp, "%lf\n", getScore(answer));
   printf("\nGenerating %d more bootstrap replicates...\n",
          config->bs_replicates - 1);
 
@@ -78,7 +82,7 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   for (int i = 1; i < config->bs_replicates; i++) {
     printf("- Replicate %d\n", i);
     destroyAnswer(answer);
-    bootstrapCharWeights();
+    bootstrapCharWeights(alignment);
     answer = config->searchMethod(alignment, config);
     treeWeight = (double)1 / (getNumberOfTrees(answer));
     printReplicate(answer, treeWeight, treeFp);
