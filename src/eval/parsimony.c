@@ -5,6 +5,7 @@
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <tree/tree.h>
 
 stateAllowedMask_t **unionSeq, **interSeq;
@@ -12,23 +13,23 @@ stateAllowedMask_t *r, *notR, *aux1, *aux2;
 unsigned long parsimonyCalls;
 
 void initializeGlobalAuxSequences(uint32_t characters, uint32_t states) {
+  uint64_t sequenceSize = allowedArraySize(characters);
   unionSeq = newSequence(characters, states);
   interSeq = newSequence(characters, states);
-  r = malloc(allowedArraySize(characters));
-  notR = malloc(allowedArraySize(characters));
-  aux1 = malloc(allowedArraySize(characters));
-  aux2 = malloc(allowedArraySize(characters));
+  r = malloc(sequenceSize);
+  notR = malloc(sequenceSize);
+  aux1 = malloc(sequenceSize);
+  aux2 = malloc(sequenceSize);
 }
 
 void resetGlobalAuxSequences(uint32_t characters, uint32_t states) {
-  for (int i = 0; i < states; i++) {
-    for (int j = 0; j < characters; j++) {
-      unionSeq[i][j] = interSeq[i][j] = 0;
-    }
-  }
-  for (int i = 0; i < characters; i++) {
-    r[i] = notR[i] = aux1[i] = aux2[i] = 0;
-  }
+  uint64_t sequenceSize = allowedArraySize(characters);
+  memset(unionSeq[0], 0, states * sequenceSize);
+  memset(interSeq[0], 0, states * sequenceSize);
+  memset(r, 0, sequenceSize);
+  memset(notR, 0, sequenceSize);
+  memset(aux1, 0, sequenceSize);
+  memset(aux2, 0, sequenceSize);
 }
 
 double characterValue(stateAllowedMask_t *r, int position) {
