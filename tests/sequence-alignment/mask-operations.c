@@ -19,28 +19,32 @@ int main(int argc, char *argv[]) {
     mask2[i] = 255 - i % 256;
   }
 
+  // test calculateSize
+  uint32_t size = calculateSize(CHARACTERS);
+  assert(size == 16);
+
   // test maskUnion
   resetMask(result);
-  maskUnion(result, mask1, mask2, CHARACTERS);
+  maskUnion(result, mask1, mask2, size);
   for (int i = 0; i < allowedArraySize(CHARACTERS); i++) {
     assert(result[i] == (mask1[i] | mask2[i]));
   }
 
   // test maskIntersection
   resetMask(result);
-  maskIntersection(result, mask1, mask2, CHARACTERS);
+  maskIntersection(result, mask1, mask2, size);
   for (int i = 0; i < allowedArraySize(CHARACTERS); i++) {
     assert(result[i] == (mask1[i] & mask2[i]));
   }
 
   // test maskNot
   resetMask(result);
-  maskNot(result, mask1, CHARACTERS);
+  maskNot(result, mask1, size);
   for (int i = 0; i < allowedArraySize(CHARACTERS); i++) {
     assert(result[i] == (stateAllowedMask_t)~mask1[i]);
   }
   resetMask(result);
-  maskNot(result, mask2, CHARACTERS);
+  maskNot(result, mask2, size);
   for (int i = 0; i < allowedArraySize(CHARACTERS); i++) {
     assert(result[i] == (stateAllowedMask_t)~mask2[i]);
   }

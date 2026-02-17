@@ -10,10 +10,12 @@
 
 stateAllowedMask_t **unionSeq, **interSeq;
 stateAllowedMask_t *r, *notR, *aux1, *aux2;
+uint64_t maskSize;
 unsigned long parsimonyCalls;
 
 void initializeGlobalAuxSequences(uint32_t characters, uint32_t states) {
   uint64_t sequenceSize = allowedArraySize(characters);
+  maskSize = calculateSize(characters);
   unionSeq = newSequence(characters, states);
   interSeq = newSequence(characters, states);
   r = malloc(sequenceSize);
@@ -68,24 +70,21 @@ double localParsimony(tree_t *tree, uint32_t node) {
 
   // U = n1.sequence | n2.sequence
   for (int i = 0; i < tree->alignment->states; i++)
-    maskUnion(unionSeq[i], maskLeft[i], maskRight[i],
-              tree->alignment->characters);
+    maskUnion(unionSeq[i], maskLeft[i], maskRight[i], maskSize);
 
   // I = n1.sequence & n2.sequence
   for (int i = 0; i < tree->alignment->states; i++)
-    maskIntersection(interSeq[i], maskLeft[i], maskRight[i],
-                     tree->alignment->characters);
+    maskIntersection(interSeq[i], maskLeft[i], maskRight[i], maskSize);
   // R = U(I)
   for (int i = 0; i < tree->alignment->states; i++)
-    maskUnion(r, r, interSeq[i], tree->alignment->characters);
+    maskUnion(r, r, interSeq[i], maskSize);
 
   // n.sequence = (I & R) | (U & ~R)
   for (int i = 0; i < tree->alignment->states; i++) {
-    maskIntersection(aux1, interSeq[i], r, tree->alignment->characters);
-    maskNot(notR, r, tree->alignment->characters);
-    maskIntersection(aux2, unionSeq[i], notR, tree->alignment->characters);
-    maskUnion(tree->internalSequences[node][i], aux1, aux2,
-              tree->alignment->characters);
+    maskIntersection(aux1, interSeq[i], r, maskSize);
+    maskNot(notR, r, maskSize);
+    maskIntersection(aux2, unionSeq[i], notR, maskSize);
+    maskUnion(tree->internalSequences[node][i], aux1, aux2, maskSize);
   }
 
   return scoreFromIntersection(r, tree->alignment);

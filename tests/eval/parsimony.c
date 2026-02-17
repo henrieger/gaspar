@@ -1,4 +1,3 @@
-#include "config.h"
 #include <assert.h>
 #include <eval/parsimony.h>
 #include <sequence-alignment/sequence-alignment.h>
