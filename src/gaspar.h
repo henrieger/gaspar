@@ -1,8 +1,8 @@
 #ifndef __GASPAR_H__
 #define __GASPAR_H__
 
-#include "sequence-alignment/sequence-alignment.h"
 #include "config.h"
+#include "sequence-alignment/sequence-alignment.h"
 #include <stdio.h>
 
 #define TOKEN_SIZE LABEL_SIZE
@@ -10,6 +10,7 @@
 
 extern char token[TOKEN_SIZE];
 extern int lineNumber;
+extern int globalTaxa, globalCharacters;
 extern alignment_t *alignment;
 extern config_t config;
 extern int taxon;

@@ -39,7 +39,7 @@ file:
   MIMETYPE alignment_sizes { initializeAlignment(); }
   alignment { checkNumberOfTaxa(); printAlignment(alignment); }
   { setConfigsToDefault(&config); }
-  { initializeGlobalAuxSequences(); }
+  { initializeGlobalAuxSequences(alignment->taxa, alignment->states); }
   opt_analyses
 ;
 
@@ -49,11 +49,11 @@ alignment_sizes:
 ;
 
 taxa:
-  TAXA_TOKEN COLON NUMBER { setAlignmentSize(atoi(token)); }
+  TAXA_TOKEN COLON NUMBER { globalTaxa = atoi(token); }
 ;
 
 characters:
-  CHAR_TOKEN COLON NUMBER { setSequenceSize(atoi(token)); }
+  CHAR_TOKEN COLON NUMBER { globalCharacters = atoi(token); }
 ;
 
 alignment:
@@ -126,8 +126,8 @@ searchMethod:
 ;
 
 method:
-  BRANCH_AND_BOUND { config.searchMethod = branchAndBoundSearch; }
-  | HILL_CLIMBING { config.searchMethod = hillClimbingSearch; }
+  BRANCH_AND_BOUND { config.searchMethod = geneticAlgorithmSearch; }
+  | HILL_CLIMBING { config.searchMethod = geneticAlgorithmSearch; }
   | GENETIC_ALGORITHM { config.searchMethod = geneticAlgorithmSearch; }
 ;
 
@@ -224,8 +224,8 @@ int main(int argc, char **argv) {
     fclose(fp);
 
 #ifdef DEBUG
-  printf("Alignment size: %d\nSequence size: %d\n", getAlignmentSize(), getSequenceSize());
-  printf("Allowed states size: %ld\n", allowedArraySize());
+  printf("Alignment size: %d\nSequence size: %d\n", alignment->taxa, alignment->characters);
+  printf("Allowed states size: %ld\n", allowedArraySize(alignment->characters));
 # endif
 
 
@@ -237,9 +237,6 @@ int main(int argc, char **argv) {
 
   if (alignment)
     destroyAlignment(alignment);
-
-  if (weights)
-    destroyCharacterWeights();
 
   if (labels) {
     free(labels[0]);
