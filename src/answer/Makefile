@@ -12,8 +12,8 @@ optimize: all
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
-sanitize: CFLAGS += -fsanitize=address
-sanitize: debug
+sanitize: CFLAGS += -g -fsanitize=address
+sanitize: all
 
 profile: CFLAGS += -pg -O0
 profile: all
