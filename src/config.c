@@ -1,12 +1,12 @@
 #include "config.h"
 
-#include <string.h>
-#include "search/genetic-algorithm.h"
 #include "eval/parsimony.h"
 #include "operators/spr.h"
+#include "search/genetic-algorithm.h"
 #include "sequence-alignment/sequence-alignment.h"
+#include <string.h>
 
-// Set all configurations to a pre-estabilished default 
+// Set all configurations to a pre-estabilished default
 void setConfigsToDefault(config_t *config) {
   config->name[0] = (char)0;
   config->searchMethod = geneticAlgorithmSearch;
