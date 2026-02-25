@@ -3,7 +3,7 @@ CFLAGS = -Wall -I.. -march=native
 LDLIBS = 
 OBJECTS = *.o
 
-all: sequence-alignment.o mask-operations.o
+all: sequence-alignment.o
 sequence-alignment.o: sequence-alignment.c sequence-alignment.h
 
 optimize: CFLAGS += -O3
