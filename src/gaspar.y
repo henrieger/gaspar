@@ -39,7 +39,6 @@ file:
   MIMETYPE alignment_sizes { initializeAlignment(); }
   alignment { checkNumberOfTaxa(); printAlignment(alignment); }
   { setConfigsToDefault(&config); }
-  { initializeGlobalAuxSequences(alignment->taxa, alignment->states); }
   opt_analyses
 ;
 
@@ -232,8 +231,6 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
   printf("Taxa parsed: %d\nCharacters parsed in last taxon: %d\n", taxon, character);
 #endif
-
-  destroyGlobalAuxSequences();
 
   if (alignment)
     destroyAlignment(alignment);

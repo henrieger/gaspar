@@ -5,7 +5,6 @@ OBJECTS = *.o
 
 all: sequence-alignment.o mask-operations.o
 sequence-alignment.o: sequence-alignment.c sequence-alignment.h
-mask-operations.o: mask-operations.c mask-operations.h sequence-alignment.o
 
 optimize: CFLAGS += -O3
 optimize: all

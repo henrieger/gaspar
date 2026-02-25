@@ -1,38 +1,12 @@
 #include "parsimony.h"
 
 #include <config.h>
-#include <sequence-alignment/mask-operations.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 #include <tree/tree.h>
+#include <utils/math.h>
 
-stateAllowedMask_t **unionSeq, **interSeq;
-stateAllowedMask_t *r, *notR, *aux1, *aux2;
-uint64_t maskSize;
-unsigned long parsimonyCalls;
-
-void initializeGlobalAuxSequences(uint32_t characters, uint32_t states) {
-  uint64_t sequenceSize = allowedArraySize(characters);
-  maskSize = calculateSize(characters);
-  unionSeq = newSequence(characters, states);
-  interSeq = newSequence(characters, states);
-  r = malloc(sequenceSize);
-  notR = malloc(sequenceSize);
-  aux1 = malloc(sequenceSize);
-  aux2 = malloc(sequenceSize);
-}
-
-void resetGlobalAuxSequences(uint32_t characters, uint32_t states) {
-  uint64_t sequenceSize = allowedArraySize(characters);
-  memset(unionSeq[0], 0, states * sequenceSize);
-  memset(interSeq[0], 0, states * sequenceSize);
-  memset(r, 0, sequenceSize);
-  memset(notR, 0, sequenceSize);
-  memset(aux1, 0, sequenceSize);
-  memset(aux2, 0, sequenceSize);
-}
+uint64_t parsimonyCalls;
 
 double characterValue(stateAllowedMask_t *r, int position) {
   int arrayPos = position / (8 * sizeof(stateAllowedMask_t));
@@ -55,39 +29,45 @@ double localParsimony(tree_t *tree, uint32_t node) {
   if (node < 0)
     return -1;
 
-  resetGlobalAuxSequences(tree->alignment->characters, tree->alignment->states);
-
-  stateAllowedMask_t **maskLeft =
+  uint64_t **maskLeft =
       isLeaf(tree, tree->left[node])
-          ? tree->alignment
-                ->sequenceMasks[tree->left[node] - treeInternalNodes(tree)]
-          : tree->internalSequences[tree->left[node]];
-  stateAllowedMask_t **maskRight =
+          ? (uint64_t **)(tree->alignment
+                              ->sequenceMasks[tree->left[node] -
+                                              treeInternalNodes(tree)])
+          : (uint64_t **)(tree->internalSequences[tree->left[node]]);
+  uint64_t **maskRight =
       isLeaf(tree, tree->right[node])
-          ? tree->alignment
-                ->sequenceMasks[tree->right[node] - treeInternalNodes(tree)]
-          : tree->internalSequences[tree->right[node]];
+          ? (uint64_t **)(tree->alignment
+                              ->sequenceMasks[tree->right[node] -
+                                              treeInternalNodes(tree)])
+          : (uint64_t **)(tree->internalSequences[tree->right[node]]);
 
   // U = n1.sequence | n2.sequence
-  for (int i = 0; i < tree->alignment->states; i++)
-    maskUnion(unionSeq[i], maskLeft[i], maskRight[i], maskSize);
-
   // I = n1.sequence & n2.sequence
-  for (int i = 0; i < tree->alignment->states; i++)
-    maskIntersection(interSeq[i], maskLeft[i], maskRight[i], maskSize);
-  // R = U(I)
-  for (int i = 0; i < tree->alignment->states; i++)
-    maskUnion(r, r, interSeq[i], maskSize);
 
-  // n.sequence = (I & R) | (U & ~R)
+  // R = Uniorium(I)
+  uint64_t maskSize =
+      ceilDiv(allowedArraySize(tree->alignment->characters), sizeof(uint64_t));
+  uint64_t r[maskSize];
+  for (int j = 0; j < maskSize; j++) {
+    r[j] = 0;
+  }
   for (int i = 0; i < tree->alignment->states; i++) {
-    maskIntersection(aux1, interSeq[i], r, maskSize);
-    maskNot(notR, r, maskSize);
-    maskIntersection(aux2, unionSeq[i], notR, maskSize);
-    maskUnion(tree->internalSequences[node][i], aux1, aux2, maskSize);
+    for (int j = 0; j < maskSize; j++) {
+      r[j] |= (maskLeft[i][j] & maskRight[i][j]);
+    }
   }
 
-  return scoreFromIntersection(r, tree->alignment);
+  // n.sequence = (I & R) | (U & ~R)
+  uint64_t **treeSeq64 = (uint64_t **)tree->internalSequences[node];
+  for (int i = 0; i < tree->alignment->states; i++) {
+    for (int j = 0; j < maskSize; j++) {
+      treeSeq64[i][j] = (maskLeft[i][j] & maskRight[i][j] & r[j]) |
+                        ((maskLeft[i][j] | maskRight[i][j]) & ~r[j]);
+    }
+  }
+
+  return scoreFromIntersection((stateAllowedMask_t *)r, tree->alignment);
 }
 
 // Calculate Wagner parsimony of a tree using Fitch's algorithm (Fitch, 1971).
@@ -126,15 +106,6 @@ double fitchParsimony(tree_t *tree, config_t *config) {
   return scores[0];
 }
 
-void destroyGlobalAuxSequences() {
-  destroySequence(unionSeq);
-  destroySequence(interSeq);
-  free(r);
-  free(notR);
-  free(aux1);
-  free(aux2);
-}
-
 inline void resetParsimonyCalls() { parsimonyCalls = 0; }
 
-inline unsigned long getParsimonyCalls() { return parsimonyCalls; }
+inline uint64_t getParsimonyCalls() { return parsimonyCalls; }

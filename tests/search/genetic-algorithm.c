@@ -91,7 +91,6 @@ int main() {
   assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
   destroyAnswer(answer);
 
-  destroyGlobalAuxSequences();
   destroyGenerationBests(&config);
   destroyAlignment(alignment);
 
