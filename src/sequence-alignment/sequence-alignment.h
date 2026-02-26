@@ -9,11 +9,12 @@
 typedef uint8_t stateAllowedMask_t;
 
 typedef struct alignment {
-  uint32_t taxa, characters, states;
   double *weights;
-  bool *ordered;
+  double **cumulativeWeights;
   stateAllowedMask_t ***sequenceMasks;
+  bool *ordered;
   char **labels;
+  uint32_t taxa, characters, states;
 } alignment_t;
 
 #if AVX2_CHARACTERS == 1
@@ -39,6 +40,10 @@ stateAllowedMask_t ***newSequenceArray(uint32_t sequences, uint32_t characters,
 // Allocate space for an aligment
 alignment_t *newAlignment(uint32_t taxa, uint32_t characters, uint32_t states,
                           char **labels);
+
+// Calculate accumulated weights for alignment based on all possible byte
+// configurations
+void calculateCumulativeWeights(alignment_t *alignment);
 
 // Copy sequenceSrc to sequenceDst inplace
 void copySequence(stateAllowedMask_t **sequenceSrc,

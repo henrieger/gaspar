@@ -18,8 +18,9 @@ double characterValue(stateAllowedMask_t *r, int position) {
 double scoreFromIntersection(stateAllowedMask_t *r, alignment_t *alignment) {
   double score = 0;
 
-  for (int i = 0; i < alignment->characters; i++) {
-    score += characterValue(r, i);
+  int64_t bytesInMask = ceilDiv(alignment->characters, 8);
+  for (int i = 0; i < bytesInMask; i++) {
+    score += alignment->cumulativeWeights[i][(uint8_t)~r[i]];
   }
 
   return score;

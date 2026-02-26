@@ -40,6 +40,7 @@ void bootstrap(alignment_t *alignment, config_t *config) {
   for (int i = 0; i < alignment->characters; i++) {
     alignment->weights[i] = 1;
   }
+  calculateCumulativeWeights(alignment);
 
   // Generate name of output files
   char treeFilename[LABEL_SIZE], datFilename[LABEL_SIZE];
@@ -83,6 +84,7 @@ void bootstrap(alignment_t *alignment, config_t *config) {
     printf("- Replicate %d\n", i);
     destroyAnswer(answer);
     bootstrapCharWeights(alignment);
+    calculateCumulativeWeights(alignment);
     answer = config->searchMethod(alignment, config);
     treeWeight = 1.0 / (getNumberOfTrees(answer));
     printReplicate(answer, treeWeight, treeFp);

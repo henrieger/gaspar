@@ -2,6 +2,7 @@
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <utils/math.h>
 
 int main(int argc, char *argv[]) {
   // Test allowedArraySize
@@ -66,6 +67,21 @@ int main(int argc, char *argv[]) {
   assert(alignment->weights != NULL);
   assert(alignment->ordered != NULL);
   assert(alignment->sequenceMasks != NULL);
+  assert(alignment->cumulativeWeights != NULL);
+  assert(alignment->cumulativeWeights[0] != NULL);
+
+  // Test calculateCumulativeWeights
+  calculateCumulativeWeights(alignment);
+  for (int i = 0; i < ceilDiv(alignment->characters, 8); i++) {
+    for (int j = 0; j < 256; j++) {
+      assert(alignment->cumulativeWeights[i][j] ==
+             ((((8 * i + 1) * ((j >> 0) & 1))) +
+              ((8 * i + 2) * ((j >> 1) & 1)) + ((8 * i + 3) * ((j >> 2) & 1)) +
+              ((8 * i + 4) * ((j >> 3) & 1)) + ((8 * i + 5) * ((j >> 4) & 1)) +
+              ((8 * i + 6) * ((j >> 5) & 1)) + ((8 * i + 7) * ((j >> 6) & 1)) +
+              ((8 * i + 8) * ((j >> 7) & 1))));
+    }
+  }
 
   // Test copySequence
   stateAllowedMask_t **sequenceCopy = newSequence(characters, states);

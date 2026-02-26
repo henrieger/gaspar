@@ -54,13 +54,17 @@ int main() {
                      .evalFn = fitchParsimony,
                      .answer_size = 100};
 
+  for (int i = 0; i < alignment->characters; i++) {
+    alignment->weights[i] = 1;
+  }
+  calculateCumulativeWeights(alignment);
+
   // test createGenerationBests and resetGenerationBests
   createGenerationBests(&config);
   for (int i = 0; i < config.ga_generations; i++) {
     assert(generationBest[i] == -1);
   }
 
-  initializeGlobalAuxSequences(characters, states);
   char buffer[1024];
 
   // Test genetic algorithm search using NNI as mutation

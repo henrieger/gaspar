@@ -21,6 +21,10 @@ int main(int argc, char *argv[]) {
 
   char *labels[] = {"Alpha", "Beta", "Gamma", "Delta", "Epsilon"};
   alignment_t *alignment = newAlignment(taxa, characters, states, labels);
+  for (int i = 0; i < characters; i++) {
+    alignment->weights[i] = 1;
+  }
+  calculateCumulativeWeights(alignment);
 
   for (int i = 0; i < allowedArraySize(characters); i++) {
     // Alpha

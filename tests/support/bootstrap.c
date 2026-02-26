@@ -45,21 +45,16 @@ int main() {
   alignment->sequenceMasks[4][0][0] = 0x23;
   alignment->sequenceMasks[4][1][0] = 0x1c;
 
-  config_t config = {.ga_generations = 1000,
-                     .ga_generationCuttof = 100,
-                     .ga_mutationOperator = randomSPR,
-                     .ga_populationSize = 8,
-                     .searchMethod = geneticAlgorithmSearch,
-                     .evalFn = fitchParsimony,
-                     .answer_size = 100,
-                     .bs_replicates = 10};
-
-  initializeGlobalAuxSequences(characters, states);
+  config_t config;
+  setConfigsToDefault(&config);
+  config.ga_generations = 1000;
+  config.ga_generationCuttof = 100;
+  config.answer_size = 100;
+  config.bs_replicates = 10;
 
   // Test genetic algorithm search using NNI as mutation
   bootstrap(alignment, &config);
 
-  destroyGlobalAuxSequences();
   destroyAlignment(alignment);
 
   return 0;

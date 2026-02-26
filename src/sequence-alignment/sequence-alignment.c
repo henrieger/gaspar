@@ -60,8 +60,43 @@ alignment_t *newAlignment(uint32_t taxa, uint32_t characters, uint32_t states,
   a->sequenceMasks = newSequenceArray(taxa, characters, states);
   a->labels = labels;
   a->weights = malloc(characters * sizeof(double));
+
+  int64_t bytesInMask = ceilDiv(characters, 8);
+  a->cumulativeWeights = malloc(bytesInMask * sizeof(double *));
+  a->cumulativeWeights[0] = malloc(bytesInMask * 256 * sizeof(double));
+  for (int i = 1; i < bytesInMask; i++) {
+    a->cumulativeWeights[i] = a->cumulativeWeights[0] + i * 256;
+  }
   a->ordered = malloc(characters * sizeof(bool));
   return a;
+}
+
+// Calculate accumulated weights for alignment based on all possible byte
+// configurations
+void calculateCumulativeWeights(alignment_t *alignment) {
+  int64_t bytesInMask = alignment->characters / 8;
+  for (int i = 0; i < bytesInMask; i++) {
+    for (int j = 0; j < 256; j++) {
+      alignment->cumulativeWeights[i][j] =
+          (alignment->weights[8 * i] * (j & 1) +
+           alignment->weights[8 * i + 1] * ((j >> 1) & 1) +
+           alignment->weights[8 * i + 2] * ((j >> 2) & 1) +
+           alignment->weights[8 * i + 3] * ((j >> 3) & 1) +
+           alignment->weights[8 * i + 4] * ((j >> 4) & 1) +
+           alignment->weights[8 * i + 5] * ((j >> 5) & 1) +
+           alignment->weights[8 * i + 6] * ((j >> 6) & 1) +
+           alignment->weights[8 * i + 7] * ((j >> 7) & 1));
+    }
+  }
+
+  if (alignment->characters % 8 != 0) {
+    for (int i = 0; i < alignment->characters - 8 * bytesInMask; i++) {
+      for (int j = 0; j < 256; j++) {
+        alignment->cumulativeWeights[bytesInMask][j] +=
+            alignment->weights[8 * bytesInMask + i] * ((j >> i) & 1);
+      }
+    }
+  }
 }
 
 // Copy sequenceSrc to sequenceDst inplace
@@ -179,6 +214,8 @@ void destroyAlignment(alignment_t *alignment) {
   free(alignment->sequenceMasks[0][0]);
   free(alignment->sequenceMasks[0]);
   free(alignment->sequenceMasks);
+  free(alignment->cumulativeWeights[0]);
+  free(alignment->cumulativeWeights);
   free(alignment->weights);
   free(alignment->ordered);
   free(alignment);
