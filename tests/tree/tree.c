@@ -28,19 +28,6 @@ void unbalancedTree(tree_t *tree) {
   tree->parent[treeNodes(tree) - 1] = treeNodes(tree) - firstLeaf(tree) - 2;
 }
 
-void balancedTree(tree_t *tree) {
-  tree->parent[0] = NULL_EDGE;
-  tree->left[0] = firstLeaf(tree);
-  tree->right[0] = 1;
-
-  for (int i = 0; i < treeNodes(tree); i++) {
-    tree->left[i] = 2 * i < firstLeaf(tree) ? 2 * i : 2 * i + 1;
-    tree->right[i] = 2 * i + 1 < firstLeaf(tree) ? 2 * i + 1 : 2 * i + 2;
-  }
-  for (int i = 0; i < treeNodes(tree); i++) {
-  }
-}
-
 int main(int argc, char *argv[]) {
   const uint64_t trees = 5;
   const uint64_t taxa = 6;
@@ -131,6 +118,14 @@ int main(int argc, char *argv[]) {
   treeArray[3].right = otherBalancedRight;
   treeArray[3].parent = otherBalancedParent;
   assert(!areEqual(&treeArray[2], &treeArray[3]));
+
+  // test isAncestor
+  for (int i = 1; i < treeNodes(&treeArray[0]); i++) {
+    assert(isAncestor(&treeArray[0], 0, i) == true);
+  }
+  for (int i = 2; i < treeNodes(&treeArray[0]); i++) {
+    assert(isAncestor(&treeArray[0], 1, i) == (i != firstLeaf(&treeArray[0])));
+  }
 
   // test searchNodeByLabel
   int32_t successfulSearch = searchNodeByLabel(&treeArray[0], "test_1");

@@ -70,6 +70,15 @@ tree_t *newTreeArray(uint32_t n, alignment_t *alignment) {
 // Return true if node is leaf, false otherwise.
 bool isLeaf(tree_t *tree, int node) { return node >= firstLeaf(tree); }
 
+// Return true if node 1 is ancestor of node 2.
+bool isAncestor(tree_t *tree, int32_t n1, int32_t n2) {
+  for (int32_t i = tree->parent[n2]; i != NULL_EDGE; i = tree->parent[i]) {
+    if (i == n1)
+      return true;
+  }
+  return false;
+}
+
 // Return true if all nodes of both trees have the same edges, false
 // otherwise. IMPORTANT: It is not an accurate comparison of equality between
 // trees
