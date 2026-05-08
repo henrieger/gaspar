@@ -70,22 +70,13 @@ void randomSPR(tree_t *tree, config_t *config) {
   // Prune subtree and guarantee an iterable base tree
   subtreePrune(tree, p1, p2);
 
-  // Travel base tree and select a random node for grafting
-  treeIterator *it = newTreeIterator(tree);
-  for (uint32_t g2 = nextTreeIterator(it); g2 != NULL_EDGE;
-       g2 = nextTreeIterator(it)) {
-    if (g2 == 0 || g2 == firstLeaf(tree))
-      continue;
-
-    if ((double)rand() / (double)RAND_MAX < config->spr_probability) {
-      int32_t g1 = tree->parent[g2];
-      subtreeGraft(tree, p1, p2, g1, g2);
-      destroyIterator(it);
-      return;
-    }
+  // Select a grafting edge not on pruned subtree
+  uint32_t g1, g2 = 0;
+  while (g2 == 0 || isAncestor(tree, p1, g2)) {
+    g2 = randomNode(tree);
+    g1 = tree->parent[g2];
   }
 
-  // If didn't find a regraft point, regraft at root (for simplicity, for now)
-  subtreeGraft(tree, p1, p2, 0, tree->right[0]);
-  destroyIterator(it);
+  // Regraft subtree at selected edge
+  subtreeGraft(tree, p1, p2, g1, g2);
 }
