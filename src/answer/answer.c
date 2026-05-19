@@ -30,16 +30,16 @@ void insertAnswer(answer_t *answer, tree_t *tree) {
 }
 
 // Delete all trees in answer and sets new score of answer.
-void resetAndUpdateScore(answer_t *answer, int newScore) {
+void resetAndUpdateScore(answer_t *answer, double newScore) {
   answer->score = newScore;
   answer->currTree = 0;
 }
 
-void updateAnswer(answer_t *answer, tree_t *tree, int score) {
+void updateAnswer(answer_t *answer, tree_t *tree, double score) {
   if (score > getScore(answer))
     return;
 #ifdef DEBUG
-  printf("New score : %d - Curr score: %lf\n", score, getScore(answer));
+  printf("New score : %lf - Curr score: %lf\n", score, getScore(answer));
 #endif
   if (score < getScore(answer))
     resetAndUpdateScore(answer, score);

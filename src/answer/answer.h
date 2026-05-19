@@ -21,7 +21,7 @@ answer_t *initializeAnswer(uint32_t numTrees, alignment_t *alignment);
 uint32_t getNumberOfTrees(answer_t *answer);
 
 // Update the answer based on tree and score provided.
-void updateAnswer(answer_t *answer, tree_t *tree, int score);
+void updateAnswer(answer_t *answer, tree_t *tree, double score);
 
 // Returns score of answer.
 double getScore(answer_t *answer);
