@@ -1,267 +1,170 @@
 #include "hill-climbing.h"
-#include "operators/spr.h"
 
 #include <answer/answer.h>
 #include <config.h>
 #include <operators/nni.h>
+#include <operators/spr.h>
 #include <sequence-alignment/sequence-alignment.h>
-#include <stdlib.h>
+#include <stdint.h>
+#include <tree/iterator.h>
 #include <tree/random.h>
 #include <tree/tree.h>
 
-void evaluateNNI(tree_t *tree, config_t *config, int n1, int n2, int joint,
-                 int *bestN1, int *bestN2, int *bestJoint, int *bestScore) {
-  nni(tree, n1, n2, joint);
-  int score = config->evalFn(tree, config);
+void nniCycle(tree_t *tree, double score, config_t *config, answer_t *answer) {
+  double bestScore = score;
+  uint32_t bestN1 = NULL_EDGE;
+  uint32_t bestN2 = NULL_EDGE;
+  int bestJoint = 0;
 
-#ifdef DEBUG
-  printf("NNI between %d and %d (joint %d) - Score %d\n", n1, n2, joint, score);
-#endif /* ifdef DEBUG */
-
-  if (score < *bestScore) {
-    *bestScore = score;
-    *bestN1 = n1;
-    *bestN2 = n2;
-    *bestJoint = joint;
-  }
-  nni(tree, n1, n2, joint);
-}
-
-int wasEvaluated(int *evaluated, int size, int leaf) {
-  for (int i = 0; i < size; i++) {
-    if (evaluated[i] == leaf)
-      return 1;
-  }
-  return 0;
-}
-
-void nniCicle(tree_t *tree, int score, config_t *config, answer_t *answer) {
-  int bestScore = score;
-  int bestN1 = -1;
-  int bestN2 = -1;
-  int bestJoint = -1;
-
-  int internalNodes = tree->leaves - 2;
-  int *evaluated = malloc(internalNodes * sizeof(int));
-
+  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
   do {
     score = bestScore;
-    bestN1 = -1;
+    bestN1 = bestN2 = NULL_EDGE;
 
 #ifdef DEBUG
-    printf("Best score: %d\n", score);
+    printf("Best score: %lf\n", score);
 #endif /* ifdef DEBUG */
 
-    for (int i = 0; i < internalNodes; i++)
-      evaluated[i] = -1;
+    for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
+         node = nextTreeIterator(it)) {
+      if (node >= treeLeaves(tree))
+        continue;
 
-    for (int i = 0; i < internalNodes; i++) {
-      if (tree->internal[i].edges[0] >= tree->leaves &&
-          !wasEvaluated(evaluated, internalNodes, tree->internal[i].edges[0])) {
-        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edges[0],
-                    0, &bestN1, &bestN2, &bestJoint, &bestScore);
-        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edges[0],
-                    1, &bestN1, &bestN2, &bestJoint, &bestScore);
-      }
-      if (tree->internal[i].edges[1] >= tree->leaves &&
-          !wasEvaluated(evaluated, internalNodes, tree->internal[i].edges[1])) {
-        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edges[1],
-                    0, &bestN1, &bestN2, &bestJoint, &bestScore);
-        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edges[1],
-                    1, &bestN1, &bestN2, &bestJoint, &bestScore);
-      }
-      if (tree->internal[i].edges[2] >= tree->leaves &&
-          !wasEvaluated(evaluated, internalNodes, tree->internal[i].edges[2])) {
-        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edges[2],
-                    0, &bestN1, &bestN2, &bestJoint, &bestScore);
-        evaluateNNI(tree, config, tree->leaves + i, tree->internal[i].edges[2],
-                    1, &bestN1, &bestN2, &bestJoint, &bestScore);
-      }
+      double treeScore;
+      uint32_t n1 = tree->parent[node];
+      uint32_t n2 = node;
 
-      evaluated[i] = tree->leaves + i;
+      nni(tree, n1, n2, 0);
+      treeScore = config->evalFn(tree, config);
+      if (treeScore < getScore(answer)) {
+        bestN1 = n1;
+        bestN2 = n2;
+        bestJoint = 0;
+        bestScore = treeScore;
+        updateAnswer(answer, tree, treeScore);
+      }
+      nni(tree, n1, n2, 0);
+
+      nni(tree, n1, n2, 1);
+      treeScore = config->evalFn(tree, config);
+      if (treeScore < bestScore) {
+        bestN1 = n1;
+        bestN2 = n2;
+        bestJoint = 1;
+        bestScore = treeScore;
+        updateAnswer(answer, tree, treeScore);
+      }
+      nni(tree, n1, n2, 1);
     }
 
-    if (bestN1 >= 0) {
+    if (bestScore < score) {
       nni(tree, bestN1, bestN2, bestJoint);
-      updateAnswer(answer, tree, bestScore);
     }
-
+    resetTreeIterator(it);
   } while (bestScore < score);
-
-  free(evaluated);
+  destroyIterator(it);
 }
 
-void graftRecursive(tree_t *tree, int pruneRoot, int subtree, int left,
-                    int right, int *bestScore, int *bestPruneRoot,
-                    int *bestSubtree, int *bestGraftNode1, int *bestGraftNode2,
-                    config_t *config) {
-  int edges[3];
-  edges[0] = tree->nodes[right].edges[0];
-  edges[1] = tree->nodes[right].edges[1];
-  edges[2] = tree->nodes[right].edges[2];
-
-  if (edges[0] > 0 && edges[0] != left) {
-    subtreeRegraft(tree, pruneRoot, right, edges[0]);
-    int score = config->evalFn(tree, config);
-
+void graftRecursive(tree_t *tree, config_t *config, uint32_t p1, uint32_t p2,
+                    double *bestScore, int32_t *bestP1, int32_t *bestP2,
+                    int32_t *bestG1, int32_t *bestG2) {
+  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
+  nextTreeIterator(it);
+  for (int32_t g2 = nextTreeIterator(it); g2 != NULL_EDGE;
+       g2 = nextTreeIterator(it)) {
+    int32_t g1 = tree->parent[g2];
+    subtreeGraft(tree, p1, p2, g1, g2);
+    double score = config->evalFn(tree, config);
 #ifdef DEBUG
-    printf("\tGrafting onto %d - %d: Score %d\n", right, edges[0], score);
-#endif /* ifdef DEBUG */
-
+    printf("\tgrafting onto %d - %d: score %lf\n", g1, g2, score);
+#endif /* ifdef DEBUG*/
     if (score < *bestScore) {
       *bestScore = score;
-      *bestPruneRoot = pruneRoot;
-      *bestSubtree = subtree;
-      *bestGraftNode1 = right;
-      *bestGraftNode2 = edges[0];
+      *bestP1 = p1;
+      *bestP2 = p2;
+      *bestG1 = g1;
+      *bestG2 = g2;
     }
-    subtreePrune(tree, pruneRoot, subtree);
-    graftRecursive(tree, pruneRoot, subtree, right, edges[0], bestScore,
-                   bestPruneRoot, bestSubtree, bestGraftNode1, bestGraftNode2,
-                   config);
+    subtreePrune(tree, p1, p2);
   }
-  if (edges[1] > 0 && edges[1] != left) {
-    subtreeRegraft(tree, pruneRoot, right, edges[1]);
-    int score = config->evalFn(tree, config);
-
-#ifdef DEBUG
-    printf("\tGrafting onto %d - %d: Score %d\n", right, edges[1], score);
-#endif /* ifdef DEBUG */
-
-    if (score < *bestScore) {
-      *bestScore = score;
-      *bestPruneRoot = pruneRoot;
-      *bestSubtree = subtree;
-      *bestGraftNode1 = right;
-      *bestGraftNode2 = edges[1];
-    }
-    subtreePrune(tree, pruneRoot, subtree);
-    graftRecursive(tree, pruneRoot, subtree, right, edges[1], bestScore,
-                   bestPruneRoot, bestSubtree, bestGraftNode1, bestGraftNode2,
-                   config);
-  }
-  if (edges[2] > 0 && edges[2] != left) {
-    subtreeRegraft(tree, pruneRoot, right, edges[2]);
-    int score = config->evalFn(tree, config);
-
-#ifdef DEBUG
-    printf("\tGrafting onto %d - %d: Score %d\n", right, edges[2], score);
-#endif /* ifdef DEBUG */
-
-    if (score < *bestScore) {
-      *bestScore = score;
-      *bestPruneRoot = pruneRoot;
-      *bestSubtree = subtree;
-      *bestGraftNode1 = right;
-      *bestGraftNode2 = edges[2];
-    }
-    subtreePrune(tree, pruneRoot, subtree);
-    graftRecursive(tree, pruneRoot, subtree, right, edges[2], bestScore,
-                   bestPruneRoot, bestSubtree, bestGraftNode1, bestGraftNode2,
-                   config);
-  }
+  destroyIterator(it);
 }
 
-void sprCicle(tree_t *tree, int score, config_t *config, answer_t *answer) {
-  int bestScore = score;
-  int bestPruneRoot = -1;
-  int bestSubtree = -1;
-  int bestGraftNode1 = -1;
-  int bestGraftNode2 = -1;
+void sprCycle(tree_t *tree, double score, config_t *config, answer_t *answer) {
+  double bestScore = score;
+  int32_t bestP1, bestP2, bestG1, bestG2;
+  bestP1 = bestP2 = bestG1 = bestG2 = NULL_EDGE;
 
-  int internalNodes = tree->leaves - 2;
-  int pruneRoot;
-  int edges[3];
+  uint32_t internalNodes = treeInternalNodes(tree);
+  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
+  uint32_t p1, p2, oldG1, oldG2;
 
   do {
+#ifdef DEBUG
+    printTree(tree);
+#endif /* ifdef DEBUG */
     score = bestScore;
 
-    for (int i = 0; i < internalNodes; i++) {
-      pruneRoot = i + tree->leaves;
-      edges[0] = tree->internal[i].edges[0];
-      edges[1] = tree->internal[i].edges[1];
-      edges[2] = tree->internal[i].edges[2];
+    for (p2 = nextTreeIterator(it); p2 != NULL_EDGE;
+         p2 = nextTreeIterator(it)) {
+      p1 = tree->parent[p2];
 
-      // Prune and regraft edges[0]
-      if (!isLeaf(tree, edges[1]) || !isLeaf(tree, edges[2])) {
-#ifdef DEBUG
-        printf("Pruning subtree %d - %d\n", pruneRoot, edges[0]);
-#endif /* ifdef DEBUG */
-        subtreePrune(tree, pruneRoot, edges[0]);
-        graftRecursive(tree, pruneRoot, edges[0], edges[1], edges[2],
-                       &bestScore, &bestPruneRoot, &bestSubtree,
-                       &bestGraftNode1, &bestGraftNode2, config);
-        graftRecursive(tree, pruneRoot, edges[0], edges[2], edges[1],
-                       &bestScore, &bestPruneRoot, &bestSubtree,
-                       &bestGraftNode1, &bestGraftNode2, config);
-        subtreeRegraft(tree, pruneRoot, edges[1], edges[2]);
+      if (p1 == tree->right[0] || p2 == tree->right[0]) {
+        continue;
       }
 
-      // Prune and regraft edges[1]
-      if (!isLeaf(tree, edges[0]) || !isLeaf(tree, edges[2])) {
-#ifdef DEBUG
-        printf("Pruning subtree %d - %d\n", pruneRoot, edges[1]);
-#endif /* ifdef DEBUG */
-        subtreePrune(tree, pruneRoot, edges[1]);
-        graftRecursive(tree, pruneRoot, edges[1], edges[0], edges[2],
-                       &bestScore, &bestPruneRoot, &bestSubtree,
-                       &bestGraftNode1, &bestGraftNode2, config);
-        graftRecursive(tree, pruneRoot, edges[1], edges[2], edges[0],
-                       &bestScore, &bestPruneRoot, &bestSubtree,
-                       &bestGraftNode1, &bestGraftNode2, config);
-        subtreeRegraft(tree, pruneRoot, edges[0], edges[2]);
+      oldG1 = tree->parent[p1];
+      if (tree->left[p1] == p2) {
+        oldG2 = tree->right[p1];
+      } else {
+        oldG2 = tree->left[p1];
       }
 
-      // Prune and regraft edges[2]
-      if (!isLeaf(tree, edges[0]) || !isLeaf(tree, edges[1])) {
 #ifdef DEBUG
-        printf("Pruning subtree %d - %d\n", pruneRoot, edges[2]);
+      printf("Pruning subtree %d - %d\n", p1, p2);
 #endif /* ifdef DEBUG */
-        subtreePrune(tree, pruneRoot, edges[2]);
-        graftRecursive(tree, pruneRoot, edges[2], edges[0], edges[1],
-                       &bestScore, &bestPruneRoot, &bestSubtree,
-                       &bestGraftNode1, &bestGraftNode2, config);
-        graftRecursive(tree, pruneRoot, edges[2], edges[1], edges[0],
-                       &bestScore, &bestPruneRoot, &bestSubtree,
-                       &bestGraftNode1, &bestGraftNode2, config);
-        subtreeRegraft(tree, pruneRoot, edges[0], edges[1]);
-      }
+      subtreePrune(tree, p1, p2);
+      graftRecursive(tree, config, p1, p2, &bestScore, &bestP1, &bestP2,
+                     &bestG1, &bestG2);
+      subtreeGraft(tree, p1, p2, oldG1, oldG2);
     }
 
-    if (bestPruneRoot >= 0) {
-      subtreePrune(tree, bestPruneRoot, bestSubtree);
-      subtreeRegraft(tree, bestPruneRoot, bestGraftNode1, bestGraftNode2);
+    if (bestScore < score) {
+      subtreePrune(tree, bestP1, bestP2);
+      subtreeGraft(tree, bestP1, bestP2, bestG1, bestG2);
       updateAnswer(answer, tree, bestScore);
     }
 
 #ifdef DEBUG
-    printf("New tree: ");
-    printNewick(tree, stdout);
-    printf(" - Score %d\n", bestScore);
+    char buffer[LABEL_SIZE * LABEL_SIZE];
+    printNewick(tree, buffer);
+    printf("New tree: %s - Score %lf\n", buffer, bestScore);
 #endif /* ifdef DEBUG */
+
+    resetTreeIterator(it);
   } while (bestScore < score);
+  destroyIterator(it);
 }
 
 // Single replicate of hill climbing search returning one optimal tree
 tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config,
                               answer_t *answer) {
   // Initialize a random tree
-  tree_t *tree = randomTree(alignment);
+  tree_t *tree = newTree(alignment);
+  randomTree(tree);
   int score = config->evalFn(tree, config);
 
 #ifdef DEBUG
   printf("Starting with tree:\n");
   printTree(tree);
-  printNewick(tree, stdout);
-  printf(";\n");
 #endif /* ifdef DEBUG */
 
   switch (config->hc_operator) {
   case NNI:
-    nniCicle(tree, score, config, answer);
+    nniCycle(tree, score, config, answer);
     break;
   case SPR:
-    sprCicle(tree, score, config, answer);
+    sprCycle(tree, score, config, answer);
     break;
   }
 
@@ -270,7 +173,7 @@ tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config,
 
 // Perform a search using a hill climbing optimization algorithm
 answer_t *hillClimbingSearch(alignment_t *alignment, config_t *config) {
-  answer_t *answer = initializeAnswer(config->answer_size);
+  answer_t *answer = initializeAnswer(config->answer_size, alignment);
 
   for (int i = 0; i < config->hc_replicates; i++) {
 #ifdef DEBUG
