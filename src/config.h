@@ -28,9 +28,6 @@ typedef struct config {
   unsigned int ga_generationCuttof;
   double ga_selectionStrength;
 
-  // SPR params
-  double spr_probability;
-
   // Hybrid operator params
   double hybrid_nniProb;
 

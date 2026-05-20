@@ -115,7 +115,6 @@ option:
   | hcParams
   | gaParams
   | bsParams
-  | sprParams
   | hybridParams
   | maxTrees
 ;
@@ -125,8 +124,8 @@ searchMethod:
 ;
 
 method:
-  BRANCH_AND_BOUND { config.searchMethod = geneticAlgorithmSearch; }
-  | HILL_CLIMBING { config.searchMethod = geneticAlgorithmSearch; }
+  BRANCH_AND_BOUND { config.searchMethod = branchAndBoundSearch; }
+  | HILL_CLIMBING { config.searchMethod = hillClimbingSearch; }
   | GENETIC_ALGORITHM { config.searchMethod = geneticAlgorithmSearch; }
 ;
 
@@ -174,10 +173,6 @@ gaGenerationCuttof:
 
 bsParams:
   BS_PARAMS NUMBER { config.bs_replicates = atoi(token); }
-;
-
-sprParams:
-  SPR_PARAMS NUMBER { config.spr_probability = atof(token) / 100; } PERCENT
 ;
 
 hybridParams:

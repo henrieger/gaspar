@@ -99,7 +99,7 @@ branchAndBoundSearch {
 
 hillClimbingSearch {
   searchMethod hillClimbing
-  hcParams SPR 20% 8
+  hcParams SPR 8
 }
 ```
 
@@ -159,16 +159,6 @@ bsParams (replicates)
 ```
 
 Configures how many bootstrap replicates will be performed for that analysis. For n replicates, the software always performs 1 replicate with the matrix untouched + (n-1) replicates with resampled characters. Default is 100. To disable bootstrapping, set `replicates` to 0 or 1.
-
-##### `sprParams`
-
-Usage:
-
-```gaspar
-sprParams (strength)%
-```
-
-Sets how localized is SPR branch swapping in the genetic algorithm. If 100%, swapping always occur at the same branch. If 0%, branches are never swapped. Default is 5%.
 
 ##### `hybridParams`
 

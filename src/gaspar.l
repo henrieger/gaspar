@@ -152,11 +152,6 @@ bsParams {
   return BS_PARAMS;
 }
 
-sprParams {
-  assignToken("sprParams");
-  return SPR_PARAMS;
-}
-
 hybridParams {
   assignToken("hybridParams");
   return HYBRID_PARAMS;
