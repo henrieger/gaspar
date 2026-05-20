@@ -99,7 +99,7 @@ branchAndBoundSearch {
 
 hillClimbingSearch {
   searchMethod hillClimbing
-  hcParams SPR 8
+  hcParams spr 8
 }
 ```
 
@@ -126,12 +126,12 @@ Used to select the search method used by the software. Can be one of `branchAndB
 Usage:
 
 ```gaspar
-gaParams [{SPR}|NNI|hybrid] (selection strength)% (pop. size) (max. generations) (generation cutoff)
+gaParams [{spr}|nni|hybrid] (selection strength)% (pop. size) (max. generations) (generation cutoff)
 ```
 
 Configures the specific parameters of the genetic algorithm-driven search. The parameters are:
 
-- **The branch swapping algorithm:** either `SPR` (default - most intensive), `NNI` (least intensive) or `hybrid` (user-defined mixture of the two).
+- **The branch swapping algorithm:** either `spr` (default - most intensive), `nni` (least intensive) or `hybrid` (user-defined mixture of the two).
 - **Selection strength:** how strong should the parsimony score influence selection for the next generation. Default is 50% (0.5). Despite percentage, the value can be greater than 100%.
 - **Population size:** the amount of individuals in the population. Default is 8.
 - **Maximum number of generations:** the maximum amount of iterations the algorithm will run. Default is 1,000,000.
@@ -142,12 +142,12 @@ Configures the specific parameters of the genetic algorithm-driven search. The p
 Usage:
 
 ```gaspar
-hcParams [{NNI}|SPR] (replicates)
+hcParams [{nni}|spr] (replicates)
 ```
 
 Configures the specific parameters of the hill climbing algorithm-driven search. The parameters are:
 
-- **The branch swapping algorithm:** either `NNI` (default - faster but less precise) or `SPR` (slower but more precise).
+- **The branch swapping algorithm:** either `nni` (default - faster but less precise) or `spr` (slower but more precise).
 - **The number of replicates:** How many times the search will be performed. Essential to avoid getting trapped in local optima of the search space. Default value is 8.
 
 ##### `bsParams`
