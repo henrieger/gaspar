@@ -3,85 +3,67 @@
 #include <answer/answer.h>
 #include <config.h>
 #include <sequence-alignment/sequence-alignment.h>
-#include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <tree/iterator.h>
 #include <tree/tree.h>
 
 // Recursive branch and bound search, keeping track of origin of call.
-void branchAndBoundRecursive(tree_t *tree, int node, alignment_t *alignment,
-                             config_t *config, int taxon, int from,
-                             answer_t *answer);
-
-// Performs a DFS in the edge of n1 and n2, then proceed with the search in the
-// same level
-void addNodeAndProceed(tree_t *tree, int n1, int n2, alignment_t *alignment,
-                       config_t *config, int taxon, answer_t *answer) {
-  // Determine internal node to be used in operation
-  int baseNode = tree->leaves + taxon - 2;
-
-  // Change pointers in the edge to new internal node
-  changeEdge(tree, n1, n2, baseNode);
-  changeEdge(tree, n2, n1, baseNode);
-
-  // Associate edges of internal node
-  tree->nodes[baseNode].edges[0] = n1;
-  tree->nodes[baseNode].edges[1] = n2;
-  tree->nodes[baseNode].edges[2] = taxon;
-
-  // Associate "root" of new taxon
-  tree->nodes[taxon].edges[0] = baseNode;
-
-  // Search next taxon with new node in place
-  branchAndBoundRecursive(tree, n1, alignment, config, taxon + 1, n1, answer);
-
-  // Undo changes
-  changeEdge(tree, n1, baseNode, n2);
-  changeEdge(tree, n2, baseNode, n1);
-
-  // Search current taxon in next node of edge
-  branchAndBoundRecursive(tree, n2, alignment, config, taxon, n1, answer);
-}
-
-void branchAndBoundRecursive(tree_t *tree, int node, alignment_t *alignment,
-                             config_t *config, int taxon, int from,
+void branchAndBoundRecursive(tree_t *tree, config_t *config, uint32_t taxon,
                              answer_t *answer) {
   int score = config->evalFn(tree, config);
   if (score > getScore(answer))
     return;
 
-  if (isLeaf(tree, node))
-    return;
-
-  if (taxon >= alignment->taxa) {
+  if (taxon >= tree->alignment->taxa) {
     updateAnswer(answer, tree, score);
     return;
   }
 
-  int oldedges[3];
-  oldedges[0] = tree->nodes[node].edges[0];
-  oldedges[1] = tree->nodes[node].edges[1];
-  oldedges[2] = tree->nodes[node].edges[2];
+  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
 
-  if (oldedges[0] >= 0 && oldedges[0] != from)
-    addNodeAndProceed(tree, node, oldedges[0], alignment, config, taxon,
-                      answer);
-  if (oldedges[1] >= 0 && oldedges[1] != from)
-    addNodeAndProceed(tree, node, oldedges[1], alignment, config, taxon,
-                      answer);
-  if (oldedges[2] >= 0 && oldedges[2] != from)
-    addNodeAndProceed(tree, node, oldedges[2], alignment, config, taxon,
-                      answer);
+  uint32_t internalNode = taxon - 1;
+  uint32_t leafNode = treeInternalNodes(tree) + taxon;
+  tree->parent[leafNode] = internalNode;
+  tree->left[internalNode] = leafNode;
+
+  for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
+       node = nextTreeIterator(it)) {
+    int32_t nodeParent = tree->parent[node];
+    bool nodeToLeft = tree->left[nodeParent] == node;
+    if (nodeToLeft) {
+      tree->left[nodeParent] = internalNode;
+    } else {
+      tree->right[nodeParent] = internalNode;
+    }
+
+    tree->parent[node] = internalNode;
+    tree->parent[internalNode] = nodeParent;
+    tree->right[internalNode] = node;
+    branchAndBoundRecursive(tree, config, taxon + 1, answer);
+
+    tree->parent[node] = nodeParent;
+    tree->parent[internalNode] = NULL_EDGE;
+    if (nodeToLeft) {
+      tree->left[nodeParent] = node;
+    } else {
+      tree->right[nodeParent] = node;
+    }
+  }
 }
 
 // Performs a branch and bound search with given alignment and eval function.
 answer_t *branchAndBoundSearch(alignment_t *alignment, config_t *config) {
-  if (getAlignmentSize() < 3)
+  if (alignment->taxa < 3)
     return NULL;
 
-  tree_t *tree = smallestTree(alignment);
-  answer_t *answer = initializeAnswer(config->answer_size);
-  branchAndBoundRecursive(tree, tree->root, alignment, config, 3, -1, answer);
+  answer_t *answer = initializeAnswer(config->answer_size, alignment);
+
+  tree_t *tree = newTree(alignment);
+  smallestTree(tree);
+  branchAndBoundRecursive(tree, config, 3, answer);
 
   destroyTree(tree);
   return answer;

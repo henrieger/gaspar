@@ -26,9 +26,9 @@ double scoreFromIntersection(stateAllowedMask_t *r, alignment_t *alignment) {
   return score;
 }
 
-double localParsimony(tree_t *tree, uint32_t node) {
+double localParsimony(tree_t *tree, int32_t node) {
   if (node < 0)
-    return -1;
+    return 0;
 
   uint64_t **maskLeft =
       isLeaf(tree, tree->left[node])
@@ -79,9 +79,12 @@ double fitchParsimony(tree_t *tree, config_t *config) {
   parsimonyCalls++;
 
   // Allocate array with order to calculate the scores
-  uint32_t callOrder[treeInternalNodes(tree)];
   double scores[treeNodes(tree)];
+  int32_t callOrder[treeInternalNodes(tree)];
   callOrder[0] = 0;
+  for (int i = 1; i < treeInternalNodes(tree); i++) {
+    callOrder[i] = -1;
+  }
   int lastPos = 1;
 
   // Perform BFS on internal nodes of the tree
