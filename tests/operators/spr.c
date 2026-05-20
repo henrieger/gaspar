@@ -76,7 +76,7 @@ int main() {
   assert(tree->right[2] == 3);
 
   // Now do some random ones!
-  config_t config = {.spr_probability = 0.4};
+  config_t config;
   for (int i = 0; i < 100; i++) {
     resetTreeIterator(it);
     randomSPR(tree, &config);

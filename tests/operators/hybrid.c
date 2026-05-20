@@ -33,7 +33,7 @@ int main() {
 
   // Repeat various random hybrid operations
   treeIterator *it = newTreeIterator(tree);
-  config_t config = {.spr_probability = 0.4, .hybrid_nniProb = 0.5};
+  config_t config = {.hybrid_nniProb = 0.5};
   for (int i = 0; i < 100; i++) {
     resetTreeIterator(it);
     hybridOp(tree, &config);
