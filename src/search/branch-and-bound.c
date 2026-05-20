@@ -52,6 +52,8 @@ void branchAndBoundRecursive(tree_t *tree, config_t *config, uint32_t taxon,
       tree->right[nodeParent] = node;
     }
   }
+
+  destroyIterator(it);
 }
 
 // Performs a branch and bound search with given alignment and eval function.
