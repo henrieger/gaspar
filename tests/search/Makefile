@@ -20,4 +20,4 @@ run: genetic-algorithm hill-climbing branch-and-bound
 	valgrind ./branch-and-bound
 
 clean:
-	rm -f genetic-algorithm hill-climbing $(OBJECTS)
+	rm -f genetic-algorithm hill-climbing branch-and-bound $(OBJECTS)
