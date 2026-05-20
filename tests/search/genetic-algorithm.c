@@ -5,6 +5,7 @@
 #include <operators/hybrid.h>
 #include <operators/nni.h>
 #include <operators/spr.h>
+#include <operators/subtree-swap.h>
 #include <search/genetic-algorithm.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
@@ -88,6 +89,16 @@ int main() {
   // Test genetic algorithm search using hybrid mutation
   resetGenerationBests(&config);
   config.ga_mutationOperator = hybridOp;
+  answer = geneticAlgorithmSearch(alignment, &config);
+  printAnswer(answer, buffer, 1024);
+  printf("%s\n", buffer);
+  assert(answer->score == 8);
+  // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
+  destroyAnswer(answer);
+
+  // Test genetic algorithm search using Subtree-Swap as mutation
+  resetGenerationBests(&config);
+  config.ga_mutationOperator = randomSubtreeSwap;
   answer = geneticAlgorithmSearch(alignment, &config);
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);

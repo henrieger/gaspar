@@ -4,6 +4,7 @@
 #include <config.h>
 #include <operators/nni.h>
 #include <operators/spr.h>
+#include <operators/subtree-swap.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
 #include <tree/iterator.h>
@@ -95,7 +96,6 @@ void sprCycle(tree_t *tree, double score, config_t *config, answer_t *answer) {
   int32_t bestP1, bestP2, bestG1, bestG2;
   bestP1 = bestP2 = bestG1 = bestG2 = NULL_EDGE;
 
-  uint32_t internalNodes = treeInternalNodes(tree);
   treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
   uint32_t p1, p2, oldG1, oldG2;
 
@@ -146,6 +146,58 @@ void sprCycle(tree_t *tree, double score, config_t *config, answer_t *answer) {
   destroyIterator(it);
 }
 
+void subtreeSwapCycle(tree_t *tree, double score, config_t *config,
+                      answer_t *answer) {
+  double bestScore = score;
+  int32_t bestN1 = NULL_EDGE;
+  int32_t bestN2 = NULL_EDGE;
+
+  treeIterator *externalIt = newSubtreeIterator(tree, tree->right[0]);
+  treeIterator *internalIt = newSubtreeIterator(tree, tree->right[0]);
+  do {
+    score = bestScore;
+    bestN1 = bestN2 = NULL_EDGE;
+
+#ifdef DEBUG
+    printf("Best score: %lf\n", score);
+#endif /* ifdef DEBUG */
+
+    resetTreeIterator(externalIt);
+    for (int32_t n1 = nextTreeIterator(externalIt); n1 != NULL_EDGE;
+         n1 = nextTreeIterator(externalIt)) {
+      if (n1 == tree->right[0] || n1 == 0)
+        continue;
+
+      double treeScore;
+
+      resetTreeIterator(internalIt);
+      for (int32_t n2 = nextTreeIterator(internalIt); n2 != NULL_EDGE;
+           n2 = nextTreeIterator(internalIt)) {
+        if (n2 == 0 || n2 == tree->right[0] || isAncestor(tree, n1, n2) ||
+            isAncestor(tree, n2, n1)) {
+          continue;
+        }
+
+        subtreeSwap(tree, n1, n2);
+        treeScore = config->evalFn(tree, config);
+        if (treeScore < getScore(answer)) {
+          bestN1 = n1;
+          bestN2 = n1;
+          bestScore = treeScore;
+          updateAnswer(answer, tree, treeScore);
+        }
+        subtreeSwap(tree, n1, n2);
+      }
+    }
+
+    if (bestScore < score) {
+      subtreeSwap(tree, bestN1, bestN2);
+    }
+  } while (bestScore < score);
+  destroyIterator(externalIt);
+  destroyIterator(internalIt);
+}
+
 // Single replicate of hill climbing search returning one optimal tree
 tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config,
                               answer_t *answer) {
@@ -165,6 +217,9 @@ tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config,
     break;
   case SPR:
     sprCycle(tree, score, config, answer);
+    break;
+  case SUBTREE_SWAP:
+    subtreeSwapCycle(tree, score, config, answer);
     break;
   }
 

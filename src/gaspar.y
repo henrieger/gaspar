@@ -16,6 +16,7 @@
 #include "tree/random.h"
 #include "operators/nni.h"
 #include "operators/spr.h"
+#include "operators/subtree-swap.h"
 #include "operators/hybrid.h"
 #include "support/bootstrap.h"
 
@@ -28,7 +29,7 @@
 %token ANALYSES
 %token TAXA_TOKEN CHAR_TOKEN
 %token SEARCH_METHOD BRANCH_AND_BOUND HILL_CLIMBING GENETIC_ALGORITHM
-%token TOKEN_NNI TOKEN_SPR TOKEN_HYBRID TOKEN_TBR TOKEN_PDG
+%token TOKEN_NNI TOKEN_SPR TOKEN_SUBTREE_SWAP TOKEN_HYBRID TOKEN_TBR TOKEN_PDG
 %token EVALUATION EWMP
 %token HC_PARAMS GA_PARAMS BS_PARAMS SPR_PARAMS HYBRID_PARAMS
 %token MAX_TREES PERCENT SEED
@@ -140,6 +141,7 @@ hcParams:
 hcOperator:
   TOKEN_SPR { config.hc_operator = SPR; }
   | TOKEN_NNI { config.hc_operator = NNI; }
+  | TOKEN_SUBTREE_SWAP { config.hc_operator = SUBTREE_SWAP; }
 ;
 
 hcReplicates:
@@ -153,6 +155,7 @@ gaParams:
 gaMutationOperator:
   TOKEN_SPR { config.ga_mutationOperator = randomSPR; }
   | TOKEN_NNI { config.ga_mutationOperator = randomNNI; }
+  | TOKEN_SUBTREE_SWAP { config.ga_mutationOperator = randomSubtreeSwap; }
   | TOKEN_HYBRID { config.ga_mutationOperator = hybridOp; }
 ;
 

@@ -127,6 +127,11 @@ hybrid {
   return TOKEN_HYBRID;
 }
 
+subtreeSwap {
+  assignToken("subtreeSwap");
+  return TOKEN_SUBTREE_SWAP;
+}
+
 tbr {
   assignToken("tbr");
   return TOKEN_TBR;

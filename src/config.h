@@ -5,7 +5,7 @@
 #include "sequence-alignment/sequence-alignment.h"
 #include "tree/tree.h"
 
-enum hcOps { SPR, NNI };
+enum hcOps { SPR, NNI, SUBTREE_SWAP };
 
 typedef struct config {
   // General params

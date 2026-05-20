@@ -57,7 +57,7 @@ int main() {
   calculateCumulativeWeights(alignment);
   char buffer[1024];
 
-  // Test genetic algorithm search using NNI as mutation
+  // Test hill climbing search using NNI as operator
   answer_t *answer = hillClimbingSearch(alignment, &config);
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);
@@ -65,7 +65,16 @@ int main() {
   // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
   destroyAnswer(answer);
 
-  // Test genetic algorithm search using SPR as mutation
+  // Test hill climbing search using Subtree-Swap as operator
+  config.hc_operator = SUBTREE_SWAP;
+  answer = hillClimbingSearch(alignment, &config);
+  printAnswer(answer, buffer, 1024);
+  printf("%s\n", buffer);
+  assert(answer->score == 8);
+  // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
+  destroyAnswer(answer);
+
+  // Test hill climbing search using SPR as operator
   config.hc_operator = SPR;
   answer = hillClimbingSearch(alignment, &config);
   printAnswer(answer, buffer, 1024);

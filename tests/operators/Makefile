@@ -14,10 +14,14 @@ spr.o: spr.c
 hybrid: hybrid.o ../../src/operators/hybrid.o ../../src/operators/nni.o ../../src/operators/spr.o ../../src/tree/tree.o ../../src/tree/iterator.o ../../src/tree/random.o ../../src/sequence-alignment/sequence-alignment.o ../../src/utils/math.o
 hybrid.o: hybrid.c
 
-run: nni spr hybrid
+subtree-swap: subtree-swap.o ../../src/operators/subtree-swap.o ../../src/tree/tree.o ../../src/tree/iterator.o ../../src/tree/random.o ../../src/sequence-alignment/sequence-alignment.o ../../src/utils/math.o
+subtree-swap.o: subtree-swap.c
+
+run: nni spr hybrid subtree-swap
 	valgrind ./nni
 	valgrind ./spr
 	valgrind ./hybrid
+	valgrind ./subtree-swap
 
 clean:
-	rm -f nni spr $(OBJECTS)
+	rm -f nni spr hybrid subtree-swap $(OBJECTS)
