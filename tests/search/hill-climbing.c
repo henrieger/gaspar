@@ -2,10 +2,9 @@
 #include <assert.h>
 #include <config.h>
 #include <eval/parsimony.h>
-#include <operators/hybrid.h>
 #include <operators/nni.h>
 #include <operators/spr.h>
-#include <search/genetic-algorithm.h>
+#include <search/hill-climbing.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
 
@@ -46,11 +45,9 @@ int main() {
   alignment->sequenceMasks[4][0][0] = 0x23;
   alignment->sequenceMasks[4][1][0] = 0x1c;
 
-  config_t config = {.ga_generations = 1000,
-                     .ga_generationCuttof = 100,
-                     .ga_mutationOperator = randomNNI,
-                     .ga_populationSize = 8,
-                     .searchMethod = geneticAlgorithmSearch,
+  config_t config = {.hc_operator = NNI,
+                     .hc_replicates = 8,
+                     .searchMethod = hillClimbingSearch,
                      .evalFn = fitchParsimony,
                      .answer_size = 100};
 
@@ -58,17 +55,10 @@ int main() {
     alignment->weights[i] = 1;
   }
   calculateCumulativeWeights(alignment);
-
-  // test createGenerationBests and resetGenerationBests
-  createGenerationBests(&config);
-  for (int i = 0; i < config.ga_generations; i++) {
-    assert(generationBest[i] == -1);
-  }
-
   char buffer[1024];
 
   // Test genetic algorithm search using NNI as mutation
-  answer_t *answer = geneticAlgorithmSearch(alignment, &config);
+  answer_t *answer = hillClimbingSearch(alignment, &config);
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);
   assert(answer->score == 8);
@@ -76,26 +66,14 @@ int main() {
   destroyAnswer(answer);
 
   // Test genetic algorithm search using SPR as mutation
-  resetGenerationBests(&config);
-  config.ga_mutationOperator = randomSPR;
-  answer = geneticAlgorithmSearch(alignment, &config);
+  config.hc_operator = SPR;
+  answer = hillClimbingSearch(alignment, &config);
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);
   assert(answer->score == 8);
   // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
   destroyAnswer(answer);
 
-  // Test genetic algorithm search using hybrid mutation
-  resetGenerationBests(&config);
-  config.ga_mutationOperator = hybridOp;
-  answer = geneticAlgorithmSearch(alignment, &config);
-  printAnswer(answer, buffer, 1024);
-  printf("%s\n", buffer);
-  assert(answer->score == 8);
-  // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
-  destroyAnswer(answer);
-
-  destroyGenerationBests(&config);
   destroyAlignment(alignment);
 
   return 0;
