@@ -2,6 +2,7 @@
 
 #include <answer/answer.h>
 #include <config.h>
+#include <math.h>
 #include <operators/nni.h>
 #include <operators/spr.h>
 #include <operators/subtree-swap.h>
@@ -11,232 +12,234 @@
 #include <tree/random.h>
 #include <tree/tree.h>
 
-void nniCycle(tree_t *tree, double score, config_t *config, answer_t *answer) {
-  double bestScore = score;
-  uint32_t bestN1 = NULL_EDGE;
-  uint32_t bestN2 = NULL_EDGE;
-  int bestJoint = 0;
+struct bestNNI {
+  uint32_t n1, n2, joint;
+};
 
+struct bestSPR {
+  uint32_t p1, p2, g1, g2;
+};
+
+struct bestSubtreeSwap {
+  uint32_t n1, n2;
+};
+
+union bestMove {
+  struct bestNNI NNI;
+  struct bestSPR SPR;
+  struct bestSubtreeSwap subtreeSwap;
+};
+
+double nniLocalSearch(tree_t *tree, config_t *config, struct bestNNI *best) {
+  best->n1 = NULL_EDGE;
+  best->n2 = NULL_EDGE;
+  best->joint = 0;
+
+  double bestLocalScore = INFINITY;
   treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
-  do {
-    score = bestScore;
-    bestN1 = bestN2 = NULL_EDGE;
 
-#ifdef DEBUG
-    printf("Best score: %lf\n", score);
-#endif /* ifdef DEBUG */
+  nextTreeIterator(it);
+  for (int32_t n2 = nextTreeIterator(it); n2 != NULL_EDGE;
+       n2 = nextTreeIterator(it)) {
+    if (n2 >= treeLeaves(tree))
+      continue;
 
-    for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
-         node = nextTreeIterator(it)) {
-      if (node >= treeLeaves(tree))
-        continue;
+    double treeScore;
+    uint32_t n1 = tree->parent[n2];
 
-      double treeScore;
-      uint32_t n1 = tree->parent[node];
-      uint32_t n2 = node;
-
-      nni(tree, n1, n2, 0);
-      treeScore = config->evalFn(tree, config);
-      if (treeScore < getScore(answer)) {
-        bestN1 = n1;
-        bestN2 = n2;
-        bestJoint = 0;
-        bestScore = treeScore;
-        updateAnswer(answer, tree, treeScore);
-      }
-      nni(tree, n1, n2, 0);
-
-      nni(tree, n1, n2, 1);
-      treeScore = config->evalFn(tree, config);
-      if (treeScore < bestScore) {
-        bestN1 = n1;
-        bestN2 = n2;
-        bestJoint = 1;
-        bestScore = treeScore;
-        updateAnswer(answer, tree, treeScore);
-      }
-      nni(tree, n1, n2, 1);
+    nni(tree, n1, n2, 0);
+    treeScore = config->evalFn(tree, config);
+    if (treeScore < bestLocalScore) {
+      bestLocalScore = treeScore;
+      best->n1 = n1;
+      best->n2 = n2;
+      best->joint = 0;
     }
+    nni(tree, n1, n2, 0);
 
-    if (bestScore < score) {
-      nni(tree, bestN1, bestN2, bestJoint);
+    nni(tree, n1, n2, 1);
+    treeScore = config->evalFn(tree, config);
+    if (treeScore < bestLocalScore) {
+      bestLocalScore = treeScore;
+      best->n1 = n1;
+      best->n2 = n2;
+      best->joint = 1;
     }
-    resetTreeIterator(it);
-  } while (bestScore < score);
+    nni(tree, n1, n2, 1);
+  }
+
   destroyIterator(it);
+  return bestLocalScore;
 }
 
-void graftRecursive(tree_t *tree, config_t *config, uint32_t p1, uint32_t p2,
-                    double *bestScore, int32_t *bestP1, int32_t *bestP2,
-                    int32_t *bestG1, int32_t *bestG2) {
+double graftIterative(tree_t *tree, config_t *config, uint32_t p1, uint32_t p2,
+                      struct bestSPR *best) {
+  double graftScore = INFINITY;
+
   treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
-  nextTreeIterator(it);
+
   for (int32_t g2 = nextTreeIterator(it); g2 != NULL_EDGE;
        g2 = nextTreeIterator(it)) {
     int32_t g1 = tree->parent[g2];
     subtreeGraft(tree, p1, p2, g1, g2);
     double score = config->evalFn(tree, config);
-#ifdef DEBUG
-    printf("\tgrafting onto %d - %d: score %lf\n", g1, g2, score);
-#endif /* ifdef DEBUG*/
-    if (score < *bestScore) {
-      *bestScore = score;
-      *bestP1 = p1;
-      *bestP2 = p2;
-      *bestG1 = g1;
-      *bestG2 = g2;
+    if (score < graftScore) {
+      graftScore = score;
+      best->p1 = p1;
+      best->p2 = p2;
+      best->g1 = g1;
+      best->g2 = g2;
     }
+
     subtreePrune(tree, p1, p2);
   }
+
   destroyIterator(it);
+  return graftScore;
 }
 
-void sprCycle(tree_t *tree, double score, config_t *config, answer_t *answer) {
-  double bestScore = score;
-  int32_t bestP1, bestP2, bestG1, bestG2;
-  bestP1 = bestP2 = bestG1 = bestG2 = NULL_EDGE;
+double sprLocalSearch(tree_t *tree, config_t *config, struct bestSPR *best) {
+  best->p1 = best->p2 = best->g1 = best->g2 = NULL_EDGE;
 
+  double bestLocalScore;
   treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
   uint32_t p1, p2, oldG1, oldG2;
 
-  do {
-#ifdef DEBUG
-    printTree(tree);
-#endif /* ifdef DEBUG */
-    score = bestScore;
+  nextTreeIterator(it);
+  for (p2 = nextTreeIterator(it); p2 != NULL_EDGE; p2 = nextTreeIterator(it)) {
+    p1 = tree->parent[p2];
 
-    for (p2 = nextTreeIterator(it); p2 != NULL_EDGE;
-         p2 = nextTreeIterator(it)) {
-      p1 = tree->parent[p2];
-
-      if (p1 == tree->right[0] || p2 == tree->right[0]) {
-        continue;
-      }
-
-      oldG1 = tree->parent[p1];
-      if (tree->left[p1] == p2) {
-        oldG2 = tree->right[p1];
-      } else {
-        oldG2 = tree->left[p1];
-      }
-
-#ifdef DEBUG
-      printf("Pruning subtree %d - %d\n", p1, p2);
-#endif /* ifdef DEBUG */
-      subtreePrune(tree, p1, p2);
-      graftRecursive(tree, config, p1, p2, &bestScore, &bestP1, &bestP2,
-                     &bestG1, &bestG2);
-      subtreeGraft(tree, p1, p2, oldG1, oldG2);
+    oldG1 = tree->parent[p1];
+    if (tree->left[p1] == p2) {
+      oldG2 = tree->right[p1];
+    } else {
+      oldG2 = tree->left[p1];
     }
 
-    if (bestScore < score) {
-      subtreePrune(tree, bestP1, bestP2);
-      subtreeGraft(tree, bestP1, bestP2, bestG1, bestG2);
-      updateAnswer(answer, tree, bestScore);
+    subtreePrune(tree, p1, p2);
+    double graftScore = graftIterative(tree, config, p1, p2, best);
+    if (graftScore < bestLocalScore) {
+      bestLocalScore = graftScore;
     }
+    subtreeGraft(tree, p1, p2, oldG1, oldG2);
+  }
 
-#ifdef DEBUG
-    char buffer[LABEL_SIZE * LABEL_SIZE];
-    printNewick(tree, buffer);
-    printf("New tree: %s - Score %lf\n", buffer, bestScore);
-#endif /* ifdef DEBUG */
-
-    resetTreeIterator(it);
-  } while (bestScore < score);
   destroyIterator(it);
+  return bestLocalScore;
 }
 
-void subtreeSwapCycle(tree_t *tree, double score, config_t *config,
-                      answer_t *answer) {
-  double bestScore = score;
-  int32_t bestN1 = NULL_EDGE;
-  int32_t bestN2 = NULL_EDGE;
+double subtreeSwapLocalSearch(tree_t *tree, config_t *config,
+                              struct bestSubtreeSwap *best) {
+  best->n1 = NULL_EDGE;
+  best->n2 = NULL_EDGE;
+  double bestLocalScore = INFINITY;
 
   treeIterator *externalIt = newSubtreeIterator(tree, tree->right[0]);
   treeIterator *internalIt = newSubtreeIterator(tree, tree->right[0]);
-  do {
-    score = bestScore;
-    bestN1 = bestN2 = NULL_EDGE;
 
-#ifdef DEBUG
-    printf("Best score: %lf\n", score);
-#endif /* ifdef DEBUG */
+  nextTreeIterator(externalIt);
+  for (int32_t n1 = nextTreeIterator(externalIt); n1 != NULL_EDGE;
+       n1 = nextTreeIterator(externalIt)) {
+    resetTreeIterator(internalIt);
 
-    resetTreeIterator(externalIt);
-    for (int32_t n1 = nextTreeIterator(externalIt); n1 != NULL_EDGE;
-         n1 = nextTreeIterator(externalIt)) {
-      if (n1 == tree->right[0] || n1 == 0)
+    nextTreeIterator(internalIt);
+    for (int32_t n2 = nextTreeIterator(internalIt); n2 != NULL_EDGE;
+         n2 = nextTreeIterator(internalIt)) {
+      if (isAncestor(tree, n1, n2) || isAncestor(tree, n2, n1)) {
         continue;
-
-      double treeScore;
-
-      resetTreeIterator(internalIt);
-      for (int32_t n2 = nextTreeIterator(internalIt); n2 != NULL_EDGE;
-           n2 = nextTreeIterator(internalIt)) {
-        if (n2 == 0 || n2 == tree->right[0] || isAncestor(tree, n1, n2) ||
-            isAncestor(tree, n2, n1)) {
-          continue;
-        }
-
-        subtreeSwap(tree, n1, n2);
-        treeScore = config->evalFn(tree, config);
-        if (treeScore < getScore(answer)) {
-          bestN1 = n1;
-          bestN2 = n1;
-          bestScore = treeScore;
-          updateAnswer(answer, tree, treeScore);
-        }
-        subtreeSwap(tree, n1, n2);
       }
-    }
 
-    if (bestScore < score) {
-      subtreeSwap(tree, bestN1, bestN2);
+      subtreeSwap(tree, n1, n2);
+      double treeScore = config->evalFn(tree, config);
+      if (treeScore < bestLocalScore) {
+        best->n1 = n1;
+        best->n2 = n1;
+        bestLocalScore = treeScore;
+      }
+      subtreeSwap(tree, n1, n2);
     }
-  } while (bestScore < score);
+  }
+
   destroyIterator(externalIt);
   destroyIterator(internalIt);
+
+  return bestLocalScore;
 }
 
-// Single replicate of hill climbing search returning one optimal tree
-tree_t *hillClimbingReplicate(alignment_t *alignment, config_t *config,
-                              answer_t *answer) {
-  // Initialize a random tree
-  tree_t *tree = newTree(alignment);
-  randomTree(tree);
-  int score = config->evalFn(tree, config);
-
+// Choose adequate search loop based on the defined operator
+double localSearch(tree_t *tree, config_t *config, union bestMove *bestMove) {
 #ifdef DEBUG
   printf("Starting with tree:\n");
   printTree(tree);
 #endif /* ifdef DEBUG */
 
+  double score = 0;
   switch (config->hc_operator) {
   case NNI:
-    nniCycle(tree, score, config, answer);
+    score = nniLocalSearch(tree, config, &bestMove->NNI);
     break;
   case SPR:
-    sprCycle(tree, score, config, answer);
+    score = sprLocalSearch(tree, config, &bestMove->SPR);
     break;
   case SUBTREE_SWAP:
-    subtreeSwapCycle(tree, score, config, answer);
+    score = subtreeSwapLocalSearch(tree, config, &bestMove->subtreeSwap);
     break;
   }
+  return score;
+}
 
-  return tree;
+// Perform the best move found by local search, depending on operator
+void makeBestMove(tree_t *tree, config_t *config, union bestMove bestMove) {
+  switch (config->hc_operator) {
+  case NNI:
+    nni(tree, bestMove.NNI.n1, bestMove.NNI.n2, bestMove.NNI.joint);
+    break;
+  case SPR:
+    subtreePrune(tree, bestMove.SPR.p1, bestMove.SPR.p2);
+    subtreeGraft(tree, bestMove.SPR.p1, bestMove.SPR.p2, bestMove.SPR.g1,
+                 bestMove.SPR.g2);
+    break;
+  case SUBTREE_SWAP:
+    subtreeSwap(tree, bestMove.subtreeSwap.n1, bestMove.subtreeSwap.n2);
+    break;
+  }
 }
 
 // Perform a search using a hill climbing optimization algorithm
 answer_t *hillClimbingSearch(alignment_t *alignment, config_t *config) {
   answer_t *answer = initializeAnswer(config->answer_size, alignment);
+  tree_t *tree = newTree(alignment);
+  union bestMove bestMove;
 
-  for (int i = 0; i < config->hc_replicates; i++) {
+  for (int replicate = 0; replicate < config->hc_replicates; replicate++) {
 #ifdef DEBUG
-    printf("-- HC Replicate %d --\n", i + 1);
+    printf("-- HC Replicate %d --\n", replicate + 1);
 #endif /* ifdef DEBUG */
-    tree_t *tree = hillClimbingReplicate(alignment, config, answer);
-    destroyTree(tree);
+
+    // Initialize a random tree
+    randomTree(tree);
+
+    for (
+#ifdef DEBUG
+        int round = 0;; round++
+#else
+        ;;
+#endif /* ifdef DEBUG */
+    ) {
+
+#ifdef DEBUG
+      printf("Search round %d\n", round + 1);
+#endif /* ifdef DEBUG */
+      double score = localSearch(tree, config, &bestMove);
+
+      if (score >= getScore(answer))
+        break;
+
+      makeBestMove(tree, config, bestMove);
+      updateAnswer(answer, tree, score);
+    }
   }
 
+  destroyTree(tree);
   return answer;
 }

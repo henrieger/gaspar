@@ -13,3 +13,4 @@ infile
 outtree
 outfile
 *.outfile
+vgcore.*

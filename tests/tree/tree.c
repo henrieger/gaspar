@@ -126,6 +126,9 @@ int main(int argc, char *argv[]) {
   for (int i = 2; i < treeNodes(&treeArray[0]); i++) {
     assert(isAncestor(&treeArray[0], 1, i) == (i != firstLeaf(&treeArray[0])));
   }
+  for (int i = 0; i < treeNodes(tree); i++) {
+    assert(isAncestor(&treeArray[0], i, i));
+  }
 
   // test searchNodeByLabel
   int32_t successfulSearch = searchNodeByLabel(&treeArray[0], "test_1");

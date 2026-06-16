@@ -33,6 +33,9 @@ int32_t nextTreeIterator(treeIterator *it) {
   // Retrieve the next node as the current node
   int32_t current = it->next;
 
+  if (current == it->root && it->visited[it->root == 3])
+    return NULL_EDGE;
+
   // Search depth-first, pre-order for the next node
   bool foundNext = false;
   while (!foundNext) {
@@ -51,7 +54,7 @@ int32_t nextTreeIterator(treeIterator *it) {
     case 2:
       it->next = it->tree->right[current];
       break;
-    // Thid visit, last one: go back to parent, or stop if root
+    // Third visit, last one: go back to parent, or stop if root
     case 3:
       if (current == it->root) {
         it->next = NULL_EDGE;
