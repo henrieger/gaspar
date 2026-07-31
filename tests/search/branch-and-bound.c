@@ -1,3 +1,4 @@
+#include "correct-tree.h"
 #include <answer/answer.h>
 #include <assert.h>
 #include <config.h>
@@ -59,6 +60,7 @@ int main() {
   printf("%s\n", buffer);
   assert(answer->score == 8);
   assert(getNumberOfTrees(answer) == 1);
+  assertTreeCorrectness(answer->trees);
   destroyAnswer(answer);
 
   destroyAlignment(alignment);

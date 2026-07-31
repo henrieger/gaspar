@@ -79,6 +79,11 @@ bool isAncestor(tree_t *tree, int32_t n1, int32_t n2) {
   return false;
 }
 
+// Return true if node 1 and node 2 are sister nodes.
+bool isSisterNode(tree_t *tree, int32_t n1, int32_t n2) {
+  return tree->parent[n1] == tree->parent[n2];
+}
+
 // Return true if all nodes of both trees have the same edges, false
 // otherwise. IMPORTANT: It is not an accurate comparison of equality between
 // trees

@@ -1,3 +1,4 @@
+#include "correct-tree.h"
 #include <answer/answer.h>
 #include <assert.h>
 #include <config.h>
@@ -62,7 +63,9 @@ int main() {
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);
   assert(answer->score == 8);
-  // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
+  for (int i = 0; i < answer->currTree; i++) {
+    assertTreeCorrectness(answer->trees + i);
+  }
   destroyAnswer(answer);
 
   // Test hill climbing search using Subtree-Swap as operator
@@ -71,7 +74,9 @@ int main() {
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);
   assert(answer->score == 8);
-  // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
+  for (int i = 0; i < answer->currTree; i++) {
+    assertTreeCorrectness(answer->trees + i);
+  }
   destroyAnswer(answer);
 
   // Test hill climbing search using SPR as operator
@@ -80,7 +85,9 @@ int main() {
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);
   assert(answer->score == 8);
-  // assert(getNumberOfTrees(answer) == 1 || getNumberOfTrees(answer) == 2);
+  for (int i = 0; i < answer->currTree; i++) {
+    assertTreeCorrectness(answer->trees + i);
+  }
   destroyAnswer(answer);
 
   destroyAlignment(alignment);

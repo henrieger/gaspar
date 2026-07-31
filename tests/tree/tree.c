@@ -95,11 +95,13 @@ int main(int argc, char *argv[]) {
 
   // test areEqual
   // t1 == t2
+  // t1 = t2 = (test_1,(test_2,(test_3,(test_4,(test_5,test_6)))));
   unbalancedTree(&treeArray[0]);
   unbalancedTree(&treeArray[1]);
   assert(areEqual(&treeArray[0], &treeArray[1]));
 
   // t1,t2 != t3
+  // t3 = (test_1,(((test_5,test_6),test_2),(test_3,test_4)));
   int32_t balancedLeft[] = {5, 2, 4, 7, 9, -1, -1, -1, -1, -1, -1};
   int32_t balancedRight[] = {1, 3, 6, 8, 10, -1, -1, -1, -1, -1, -1};
   int32_t balancedParent[] = {-1, 0, 1, 1, 2, 0, 2, 3, 3, 4, 4};
@@ -110,6 +112,7 @@ int main(int argc, char *argv[]) {
   assert(!areEqual(&treeArray[1], &treeArray[2]));
 
   // t3 != t4 (semantically equal, undetected by current algorithm)
+  // t4 = (test_1,(test_2,((test_6,test_5),(test_4,test_3))));
   // TODO: improve this comparison algorithm such that t3 == t4
   int32_t otherBalancedLeft[] = {5, 3, 8, 6, 10, -1, -1, -1, -1, -1, -1};
   int32_t otherBalancedRight[] = {1, 2, 7, 4, 9, -1, -1, -1, -1, -1, -1};
@@ -137,6 +140,7 @@ int main(int argc, char *argv[]) {
   assert(failedSearch == NULL_EDGE);
 
   // test smallestTree
+  // t5 = (test_1,(test_2,test_3));
   smallestTree(&treeArray[4]);
   int32_t smallestTreeParent[11] = {-1, 0, -1, -1, -1, 0, 1, 1, -1, -1, -1};
   int32_t smallestTreeLeft[11] = {5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1};
