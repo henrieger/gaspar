@@ -101,7 +101,7 @@ double graftIterative(tree_t *tree, config_t *config, uint32_t p1, uint32_t p2,
 double sprLocalSearch(tree_t *tree, config_t *config, struct bestSPR *best) {
   best->p1 = best->p2 = best->g1 = best->g2 = NULL_EDGE;
 
-  double bestLocalScore;
+  double bestLocalScore = INFINITY;
   treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
   uint32_t p1, p2, oldG1, oldG2;
 
