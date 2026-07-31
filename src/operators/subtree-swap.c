@@ -35,7 +35,6 @@ void randomSubtreeSwap(tree_t *tree, config_t *config) {
   while (n1 == 0 || n1 == firstLeafNode || n1 == tree->right[0]) {
     n1 = randomNode(tree);
   }
-  int32_t n1Parent = tree->parent[n1];
 
   uint32_t n2 = 0;
   while (n2 == 0 || n2 == firstLeafNode || n2 == n1 ||
