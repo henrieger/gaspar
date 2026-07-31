@@ -30,6 +30,11 @@ union bestMove {
   struct bestSubtreeSwap subtreeSwap;
 };
 
+struct bestGraft {
+  uint32_t g1, g2;
+  double score;
+};
+
 double nniLocalSearch(tree_t *tree, config_t *config, struct bestNNI *best) {
   best->n1 = NULL_EDGE;
   best->n2 = NULL_EDGE;
@@ -72,9 +77,9 @@ double nniLocalSearch(tree_t *tree, config_t *config, struct bestNNI *best) {
   return bestLocalScore;
 }
 
-double graftIterative(tree_t *tree, config_t *config, uint32_t p1, uint32_t p2,
-                      struct bestSPR *best) {
-  double graftScore = INFINITY;
+struct bestGraft graftIterative(tree_t *tree, config_t *config, uint32_t p1,
+                                uint32_t p2, struct bestSPR *best) {
+  struct bestGraft bestGraft = {.score = INFINITY};
 
   treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
 
@@ -83,19 +88,17 @@ double graftIterative(tree_t *tree, config_t *config, uint32_t p1, uint32_t p2,
     int32_t g1 = tree->parent[g2];
     subtreeGraft(tree, p1, p2, g1, g2);
     double score = config->evalFn(tree, config);
-    if (score < graftScore) {
-      graftScore = score;
-      best->p1 = p1;
-      best->p2 = p2;
-      best->g1 = g1;
-      best->g2 = g2;
+    if (score < bestGraft.score) {
+      bestGraft.score = score;
+      bestGraft.g1 = g1;
+      bestGraft.g2 = g2;
     }
 
     subtreePrune(tree, p1, p2);
   }
 
   destroyIterator(it);
-  return graftScore;
+  return bestGraft;
 }
 
 double sprLocalSearch(tree_t *tree, config_t *config, struct bestSPR *best) {
@@ -117,9 +120,13 @@ double sprLocalSearch(tree_t *tree, config_t *config, struct bestSPR *best) {
     }
 
     subtreePrune(tree, p1, p2);
-    double graftScore = graftIterative(tree, config, p1, p2, best);
-    if (graftScore < bestLocalScore) {
-      bestLocalScore = graftScore;
+    struct bestGraft bestGraft = graftIterative(tree, config, p1, p2, best);
+    if (bestGraft.score < bestLocalScore) {
+      bestLocalScore = bestGraft.score;
+      best->p1 = p1;
+      best->p2 = p2;
+      best->g1 = bestGraft.g1;
+      best->g2 = bestGraft.g2;
     }
     subtreeGraft(tree, p1, p2, oldG1, oldG2);
   }
@@ -153,7 +160,7 @@ double subtreeSwapLocalSearch(tree_t *tree, config_t *config,
       double treeScore = config->evalFn(tree, config);
       if (treeScore < bestLocalScore) {
         best->n1 = n1;
-        best->n2 = n1;
+        best->n2 = n2;
         bestLocalScore = treeScore;
       }
       subtreeSwap(tree, n1, n2);
@@ -219,24 +226,22 @@ answer_t *hillClimbingSearch(alignment_t *alignment, config_t *config) {
     // Initialize a random tree
     randomTree(tree);
 
-    for (
 #ifdef DEBUG
-        int round = 0;; round++
-#else
-        ;;
+    int round = 1;
 #endif /* ifdef DEBUG */
-    ) {
+    for (double score = localSearch(tree, config, &bestMove);
+         score < getScore(answer);
+         score = localSearch(tree, config, &bestMove)) {
 
 #ifdef DEBUG
-      printf("Search round %d\n", round + 1);
+      printf("Search round %d\n", round);
 #endif /* ifdef DEBUG */
-      double score = localSearch(tree, config, &bestMove);
-
-      if (score >= getScore(answer))
-        break;
 
       makeBestMove(tree, config, bestMove);
       updateAnswer(answer, tree, score);
+#ifdef DEBUG
+      round++;
+#endif /* ifdef DEBUG */
     }
   }
 
