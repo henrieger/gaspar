@@ -38,22 +38,23 @@ int main() {
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;
-  assert(tree->parent[5] == 2);
-  assert(tree->parent[6] == 3);
-  assert(tree->left[3] == 6);
+  assert(isSisterNode(tree, 6, 8));
+  assert(isSisterNode(tree, 7, 5));
+  assert(isSisterNode(tree, tree->parent[6], tree->parent[7]));
+  assert(isSisterNode(tree, 4, tree->parent[tree->parent[6]]));
 
   // Swap (D,B) and (C,E)
   // Should result in the same tree
   // (A,((D,B),(C,E)))
-  subtreeSwap(tree, 5, 6);
+  subtreeSwap(tree, 5, 7);
   resetTreeIterator(it);
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;
-  assert(tree->parent[2] == 1);
-  assert(tree->parent[3] == 1);
-  assert(tree->left[1] == 2);
-  assert(tree->right[1] == 3);
+  assert(isSisterNode(tree, 6, 8));
+  assert(isSisterNode(tree, 7, 5));
+  assert(isSisterNode(tree, tree->parent[6], tree->parent[7]));
+  assert(isSisterNode(tree, 4, tree->parent[tree->parent[6]]));
 
   // Now do some random ones!
   config_t config = {};

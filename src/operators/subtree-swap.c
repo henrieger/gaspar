@@ -31,13 +31,12 @@ void subtreeSwap(tree_t *tree, uint32_t n1, uint32_t n2) {
 
 void randomSubtreeSwap(tree_t *tree, config_t *config) {
   uint32_t n1 = 0;
-  uint32_t firstLeafNode = firstLeaf(tree);
-  while (n1 == 0 || n1 == firstLeafNode || n1 == tree->right[0]) {
+  while (n1 == 0 || n1 == tree->left[0] || n1 == tree->right[0]) {
     n1 = randomNode(tree);
   }
 
   uint32_t n2 = 0;
-  while (n2 == 0 || n2 == firstLeafNode || n2 == n1 ||
+  while (n2 == 0 || n2 == tree->left[0] || n2 == tree->right[0] ||
          isAncestor(tree, n1, n2) || isAncestor(tree, n2, n1)) {
     n2 = randomNode(tree);
   }

@@ -10,6 +10,7 @@
 #include <search/genetic-algorithm.h>
 #include <sequence-alignment/sequence-alignment.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 int main() {
   // Alignment data for this test is taken from the book
@@ -56,6 +57,8 @@ int main() {
                      .evalFn = fitchParsimony,
                      .answer_size = 100};
 
+  srand(2001);
+
   for (int i = 0; i < alignment->characters; i++) {
     alignment->weights[i] = 1;
   }
@@ -94,6 +97,7 @@ int main() {
   // Test genetic algorithm search using hybrid mutation
   resetGenerationBests(&config);
   config.ga_mutationOperator = hybridOp;
+  config.hybrid_nniProb = 0.8;
   answer = geneticAlgorithmSearch(alignment, &config);
   printAnswer(answer, buffer, 1024);
   printf("%s\n", buffer);

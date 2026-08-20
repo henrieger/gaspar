@@ -37,6 +37,9 @@ int main() {
   for (int i = 0; i < 100; i++) {
     resetTreeIterator(it);
     hybridOp(tree, &config);
+    assert(tree->parent[0] == NULL_EDGE);
+    assert(tree->left[0] == 4);
+    assert(tree->right[0] < 4);
     for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
          node = nextTreeIterator(it))
       ;

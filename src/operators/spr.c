@@ -62,7 +62,7 @@ void subtreeGraft(tree_t *tree, uint32_t p1, uint32_t p2, uint32_t g1,
 void randomSPR(tree_t *tree, config_t *config) {
   // Select a random pruning edge
   int32_t p1 = 0, p2 = 0;
-  while (p1 == 0 || p2 == 0) {
+  while (p1 == 0 || p2 == 0 || p2 == firstLeaf(tree)) {
     p2 = randomInternalNode(tree);
     p1 = tree->parent[p2];
   }
@@ -72,7 +72,7 @@ void randomSPR(tree_t *tree, config_t *config) {
 
   // Select a grafting edge not on pruned subtree
   uint32_t g1, g2 = 0;
-  while (g2 == 0 || isAncestor(tree, p1, g2)) {
+  while (g2 == 0 || g2 == firstLeaf(tree) || isAncestor(tree, p1, g2)) {
     g2 = randomNode(tree);
     g1 = tree->parent[g2];
   }

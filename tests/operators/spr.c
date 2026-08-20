@@ -39,12 +39,10 @@ int main() {
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;
-  assert(tree->parent[2] == 3);
-  assert(tree->parent[6] == 1);
-  assert(tree->parent[8] == 2);
-  assert(tree->left[1] == 6);
-  assert(tree->right[2] == 8);
-  assert(tree->right[3] == 2);
+  assert(isSisterNode(tree, 7, 8));
+  assert(isSisterNode(tree, 5, tree->parent[7]));
+  assert(isSisterNode(tree, 6, tree->parent[5]));
+  assert(isSisterNode(tree, 4, tree->parent[6]));
 
   // Prune D and graft it on B
   // (A,(C,((D,B),E)))
@@ -54,11 +52,10 @@ int main() {
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;
-  assert(tree->parent[5] == 2);
-  assert(tree->parent[8] == 3);
-  assert(tree->left[3] == 2);
-  assert(tree->right[2] == 5);
-  assert(tree->right[3] == 8);
+  assert(isSisterNode(tree, 7, 5));
+  assert(isSisterNode(tree, 8, tree->parent[5]));
+  assert(isSisterNode(tree, 6, tree->parent[8]));
+  assert(isSisterNode(tree, 4, tree->parent[6]));
 
   // Prune E, regraft onto B
   // (A,(C,(D,(B,E))))
@@ -68,18 +65,19 @@ int main() {
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;
-  assert(tree->parent[2] == 1);
-  assert(tree->parent[3] == 2);
-  assert(tree->parent[5] == 3);
-  assert(tree->left[3] == 5);
-  assert(tree->right[1] == 2);
-  assert(tree->right[2] == 3);
+  assert(isSisterNode(tree, 5, 8));
+  assert(isSisterNode(tree, 7, tree->parent[5]));
+  assert(isSisterNode(tree, 6, tree->parent[7]));
+  assert(isSisterNode(tree, 4, tree->parent[6]));
 
   // Now do some random ones!
   config_t config;
   for (int i = 0; i < 100; i++) {
     resetTreeIterator(it);
     randomSPR(tree, &config);
+    assert(tree->parent[0] == NULL_EDGE);
+    assert(tree->left[0] == 4);
+    assert(tree->right[0] < 4);
     for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
          node = nextTreeIterator(it))
       ;
