@@ -22,7 +22,7 @@ void branchAndBoundRecursive(tree_t *tree, config_t *config, uint32_t taxon,
     return;
   }
 
-  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
+  treeIterator_t *it = newSubtreeIterator(tree, tree->right[0]);
 
   uint32_t internalNode = taxon - 1;
   uint32_t leafNode = treeInternalNodes(tree) + taxon;

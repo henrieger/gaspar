@@ -35,7 +35,7 @@ int main() {
   // (A,(C,(B,(D,E))))
   subtreePrune(tree, 2, 7);
   subtreeGraft(tree, 2, 7, 3, 8);
-  treeIterator *it = newTreeIterator(tree);
+  treeIterator_t *it = newTreeIterator(tree);
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;

@@ -34,7 +34,7 @@ int main() {
   // nodes that should have changed
   // (A, (C, (B, D)));
   nni(tree, 1, 2, 0);
-  treeIterator *it = newTreeIterator(tree);
+  treeIterator_t *it = newTreeIterator(tree);
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;

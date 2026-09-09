@@ -41,7 +41,7 @@ double nniLocalSearch(tree_t *tree, config_t *config, struct bestNNI *best) {
   best->joint = 0;
 
   double bestLocalScore = INFINITY;
-  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
+  treeIterator_t *it = newSubtreeIterator(tree, tree->right[0]);
 
   nextTreeIterator(it);
   for (int32_t n2 = nextTreeIterator(it); n2 != NULL_EDGE;
@@ -81,7 +81,7 @@ struct bestGraft graftIterative(tree_t *tree, config_t *config, uint32_t p1,
                                 uint32_t p2, struct bestSPR *best) {
   struct bestGraft bestGraft = {.score = INFINITY};
 
-  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
+  treeIterator_t *it = newSubtreeIterator(tree, tree->right[0]);
 
   for (int32_t g2 = nextTreeIterator(it); g2 != NULL_EDGE;
        g2 = nextTreeIterator(it)) {
@@ -105,7 +105,7 @@ double sprLocalSearch(tree_t *tree, config_t *config, struct bestSPR *best) {
   best->p1 = best->p2 = best->g1 = best->g2 = NULL_EDGE;
 
   double bestLocalScore = INFINITY;
-  treeIterator *it = newSubtreeIterator(tree, tree->right[0]);
+  treeIterator_t *it = newSubtreeIterator(tree, tree->right[0]);
   uint32_t p1, p2, oldG1, oldG2;
 
   nextTreeIterator(it);
@@ -141,8 +141,8 @@ double subtreeSwapLocalSearch(tree_t *tree, config_t *config,
   best->n2 = NULL_EDGE;
   double bestLocalScore = INFINITY;
 
-  treeIterator *externalIt = newSubtreeIterator(tree, tree->right[0]);
-  treeIterator *internalIt = newSubtreeIterator(tree, tree->right[0]);
+  treeIterator_t *externalIt = newSubtreeIterator(tree, tree->right[0]);
+  treeIterator_t *internalIt = newSubtreeIterator(tree, tree->right[0]);
 
   nextTreeIterator(externalIt);
   for (int32_t n1 = nextTreeIterator(externalIt); n1 != NULL_EDGE;

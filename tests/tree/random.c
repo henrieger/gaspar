@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   // Test randomTree
   for (int i = 0; i < 5; i++) {
     randomTree(tree);
-    treeIterator *it = newTreeIterator(tree);
+    treeIterator_t *it = newTreeIterator(tree);
     uint64_t j = 0;
     for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
          j++, node = nextTreeIterator(it))

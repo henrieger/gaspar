@@ -32,7 +32,7 @@ int main() {
   tree->right = treeRight;
 
   // Repeat various random hybrid operations
-  treeIterator *it = newTreeIterator(tree);
+  treeIterator_t *it = newTreeIterator(tree);
   config_t config = {.hybrid_nniProb = 0.5};
   for (int i = 0; i < 100; i++) {
     resetTreeIterator(it);

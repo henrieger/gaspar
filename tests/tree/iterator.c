@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   memcpy(tree->right, right, sizeof right);
 
   // test newSubtreeIterator
-  treeIterator *it = newSubtreeIterator(tree, 1);
+  treeIterator_t *it = newSubtreeIterator(tree, 1);
   assert(it->tree == tree);
   assert(it->root == 1);
   assert(it->next == it->root);
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   }
 
   // test newTreeIterator
-  treeIterator *it2 = newTreeIterator(tree);
+  treeIterator_t *it2 = newTreeIterator(tree);
   assert(it2->tree == tree);
   assert(it2->root == 0);
   assert(it2->next == it2->root);

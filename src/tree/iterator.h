@@ -8,21 +8,21 @@ typedef struct {
   int32_t root;
   int32_t next;
   int32_t *visited;
-} treeIterator;
+} treeIterator_t;
 
 // Creates a new iterator for a substree rooted in given node.
-treeIterator *newSubtreeIterator(tree_t *tree, uint32_t root);
+treeIterator_t *newSubtreeIterator(tree_t *tree, uint32_t root);
 
 // Creates a new iterator for the whole tree.
-treeIterator *newTreeIterator(tree_t *tree);
+treeIterator_t *newTreeIterator(tree_t *tree);
 
 // Resets the iterator to its root.
-void resetTreeIterator(treeIterator *it);
+void resetTreeIterator(treeIterator_t *it);
 
 // Returns next node of the subtree.
-int32_t nextTreeIterator(treeIterator *it);
+int32_t nextTreeIterator(treeIterator_t *it);
 
 // Destroy the iterator.
-void destroyIterator(treeIterator *it);
+void destroyIterator(treeIterator_t *it);
 
 #endif // !__ITERATOR_H__

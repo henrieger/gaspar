@@ -5,8 +5,8 @@
 #include <tree/tree.h>
 
 // Creates a new iterator for a substree rooted in given node.
-treeIterator *newSubtreeIterator(tree_t *tree, uint32_t root) {
-  treeIterator *it = malloc(sizeof(treeIterator));
+treeIterator_t *newSubtreeIterator(tree_t *tree, uint32_t root) {
+  treeIterator_t *it = malloc(sizeof(treeIterator));
   it->tree = tree;
   it->root = root;
   it->next = root;
@@ -16,12 +16,12 @@ treeIterator *newSubtreeIterator(tree_t *tree, uint32_t root) {
 }
 
 // Creates a new iterator for the whole tree.
-treeIterator *newTreeIterator(tree_t *tree) {
+treeIterator_t *newTreeIterator(tree_t *tree) {
   return newSubtreeIterator(tree, 0);
 }
 
 // Resets the iterator to its root.
-void resetTreeIterator(treeIterator *it) {
+void resetTreeIterator(treeIterator_t *it) {
   it->next = it->root;
   for (int i = 0; i < treeNodes(it->tree); i++) {
     it->visited[i] = 0;
@@ -29,7 +29,7 @@ void resetTreeIterator(treeIterator *it) {
 }
 
 // Returns next node of the subtree.
-int32_t nextTreeIterator(treeIterator *it) {
+int32_t nextTreeIterator(treeIterator_t *it) {
   // Retrieve the next node as the current node
   int32_t current = it->next;
 
@@ -82,7 +82,7 @@ int32_t nextTreeIterator(treeIterator *it) {
 }
 
 // Destroy the iterator.
-void destroyIterator(treeIterator *it) {
+void destroyIterator(treeIterator_t *it) {
   free(it->visited);
   free(it);
 }

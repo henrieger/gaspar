@@ -34,7 +34,7 @@ int main() {
   // Swap B and C
   // (A,((D,B),(C,E)))
   subtreeSwap(tree, 5, 6);
-  treeIterator *it = newTreeIterator(tree);
+  treeIterator_t *it = newTreeIterator(tree);
   for (int32_t node = nextTreeIterator(it); node != NULL_EDGE;
        node = nextTreeIterator(it))
     ;
