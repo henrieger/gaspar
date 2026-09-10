@@ -6,7 +6,7 @@
 
 // Creates a new iterator for a substree rooted in given node.
 treeIterator_t *newSubtreeIterator(tree_t *tree, uint32_t root) {
-  treeIterator_t *it = malloc(sizeof(treeIterator));
+  treeIterator_t *it = malloc(sizeof(treeIterator_t));
   it->tree = tree;
   it->root = root;
   it->next = root;
