@@ -1,6 +1,0 @@
-python-nexus
-numpy
-six
-ete3
-matplotlib
-scipy
