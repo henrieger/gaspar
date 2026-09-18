@@ -18,24 +18,37 @@ branchAndBoundTest {
 
 hillClimbingSpr {
   searchMethod hillClimbing
-  hcParams spr 50% 8
+  hcParams spr 8
   bsParams 5
 }
 
 hillClimbingNni {
   searchMethod hillClimbing
-  hcParams nni 50% 8
+  hcParams nni 8
   bsParams 5
 }
 
 gaSpr {
   searchMethod geneticAlgorithm
-  gaParams spr 8 100
+  gaParams spr 50% 8 100 20
   bsParams 5
 }
 
 gaNni {
   searchMethod geneticAlgorithm
-  gaParams nni 8 200
+  gaParams nni 50% 8 200 20
+  bsParams 5
+}
+
+gaSswap {
+  searchMethod geneticAlgorithm
+  gaParams subtreeSwap 50% 8 100 20
+  bsParams 5
+}
+
+gaHybrid {
+  searchMethod geneticAlgorithm
+  gaParams hybrid 50% 8 200 20
+  hybridParams 80%
   bsParams 5
 }
