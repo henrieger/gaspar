@@ -1,4 +1,5 @@
 #ifndef __SPR_H__
+#define __SPR_H__
 
 #include "base/config.h"
 #include "tree/tree.h"
