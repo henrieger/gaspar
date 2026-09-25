@@ -1,0 +1,18 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libgaspar
+URL: https://henrieger.dev/gaspar
+Description: Library for phylogenetic inference of parsimony trees using genetic algorithms
+License: GPL-3
+Maintainter: Henrique Rieger <henriquerieger2001 at gmail dot com>
+Version: @VERSION@
+Source: https://github.com/henrieger/gaspar/releases/gaspar-@VERSION@.tar.gz
+Requires:
+Requires.private:
+Libs: -L${libdir} -lgaspar
+Libs.private:
+Cflags: -I${includedir}
+Cflags.private:
