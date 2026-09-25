@@ -32,7 +32,7 @@ SEQUENCE_ALIGNMENT_FILES = \
 	sequence-alignment/sequence-alignment.c \
 	sequence-alignment/sequence-alignment.h
 
-SUPPORT_FILES = support/bootstrap.c suppport/bootstrap.h
+SUPPORT_FILES = support/bootstrap.c support/bootstrap.h
 
 TREE_CFILES = \
 	tree/iterator.c \
