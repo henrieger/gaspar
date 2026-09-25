@@ -12,10 +12,4 @@ double fitchParsimony(tree_t *tree, config_t *config);
 // Calculate Wagner parsimony at a particular node of the tree
 double localParsimony(tree_t *tree, int32_t node);
 
-void initializeGlobalAuxSequences(uint32_t characters, uint32_t states);
-void destroyGlobalAuxSequences();
-
-void resetParsimonyCalls();
-unsigned long getParsimonyCalls();
-
 #endif // !__LIBGASPAR_PARSIMONY_H__
