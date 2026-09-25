@@ -1,11 +1,11 @@
-#include <gaspar/search/hill-climbing.h>
+#include "search/hill-climbing.h"
 
-#include <gaspar/answer/answer.h>
-#include <gaspar/base/config.h>
-#include <gaspar/eval/parsimony.h>
-#include <gaspar/operators/nni.h>
-#include <gaspar/operators/spr.h>
-#include <gaspar/sequence-alignment/sequence-alignment.h>
+#include "answer/answer.h"
+#include "base/config.h"
+#include "eval/parsimony.h"
+#include "operators/nni.h"
+#include "operators/spr.h"
+#include "sequence-alignment/sequence-alignment.h"
 
 #include <assert.h>
 #include <stdint.h>

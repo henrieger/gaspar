@@ -1,6 +1,6 @@
-#include <gaspar/tree/tree.h>
+#include "tree/tree.h"
 
-#include <gaspar/sequence-alignment/sequence-alignment.h>
+#include "sequence-alignment/sequence-alignment.h"
 
 #include <assert.h>
 #include <stdint.h>

@@ -1,6 +1,6 @@
-#include <gaspar/sequence-alignment/sequence-alignment.h>
+#include "sequence-alignment/sequence-alignment.h"
 
-#include <gaspar/utils/math.h>
+#include "utils/math.h"
 
 #include <assert.h>
 #include <stdint.h>

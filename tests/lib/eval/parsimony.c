@@ -1,7 +1,7 @@
-#include <gaspar/eval/parsimony.h>
+#include "eval/parsimony.h"
 
-#include <gaspar/sequence-alignment/sequence-alignment.h>
-#include <gaspar/tree/tree.h>
+#include "sequence-alignment/sequence-alignment.h"
+#include "tree/tree.h"
 
 #include <assert.h>
 #include <stdint.h>

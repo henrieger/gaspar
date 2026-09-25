@@ -1,7 +1,7 @@
-#include <gaspar/tree/iterator.h>
+#include "tree/iterator.h"
 
-#include <gaspar/sequence-alignment/sequence-alignment.h>
-#include <gaspar/tree/tree.h>
+#include "sequence-alignment/sequence-alignment.h"
+#include "tree/tree.h"
 
 #include <assert.h>
 #include <stdint.h>

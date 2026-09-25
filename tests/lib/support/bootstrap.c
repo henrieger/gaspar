@@ -1,11 +1,11 @@
-#include <gaspar/support/bootstrap.h>
+#include "support/bootstrap.h"
 
-#include <gaspar/answer/answer.h>
-#include <gaspar/base/config.h>
-#include <gaspar/eval/parsimony.h>
-#include <gaspar/operators/spr.h>
-#include <gaspar/search/genetic-algorithm.h>
-#include <gaspar/sequence-alignment/sequence-alignment.h>
+#include "answer/answer.h"
+#include "base/config.h"
+#include "eval/parsimony.h"
+#include "operators/spr.h"
+#include "search/genetic-algorithm.h"
+#include "sequence-alignment/sequence-alignment.h"
 
 #include <assert.h>
 #include <stdint.h>

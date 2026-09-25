@@ -1,9 +1,9 @@
-#include <gaspar/search/branch-and-bound.h>
+#include "search/branch-and-bound.h"
 
-#include <gaspar/answer/answer.h>
-#include <gaspar/base/config.h>
-#include <gaspar/eval/parsimony.h>
-#include <gaspar/sequence-alignment/sequence-alignment.h>
+#include "answer/answer.h"
+#include "base/config.h"
+#include "eval/parsimony.h"
+#include "sequence-alignment/sequence-alignment.h"
 
 #include <assert.h>
 #include <stdint.h>

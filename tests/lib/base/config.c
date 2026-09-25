@@ -1,8 +1,8 @@
-#include <gaspar/base/config.h>
+#include "base/config.h"
 
-#include <gaspar/eval/parsimony.h>
-#include <gaspar/operators/spr.h>
-#include <gaspar/search/genetic-algorithm.h>
+#include "eval/parsimony.h"
+#include "operators/spr.h"
+#include "search/genetic-algorithm.h"
 
 #include <assert.h>
 #include <string.h>

@@ -1,6 +1,6 @@
 #include "correct-tree.h"
 
-#include <gaspar/tree/tree.h>
+#include "tree/tree.h"
 
 #include <assert.h>
 

@@ -1,9 +1,9 @@
-#include <gaspar/operators/spr.h>
+#include "operators/spr.h"
 
-#include <gaspar/base/config.h>
-#include <gaspar/sequence-alignment/sequence-alignment.h>
-#include <gaspar/tree/iterator.h>
-#include <gaspar/tree/tree.h>
+#include "base/config.h"
+#include "sequence-alignment/sequence-alignment.h"
+#include "tree/iterator.h"
+#include "tree/tree.h"
 
 #include <assert.h>
 #include <stdlib.h>
