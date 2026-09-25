@@ -1,16 +1,50 @@
-gaspar
+# Objects
 *.o
-gaspar.tab.*
+
+# Bison files
 gaspar.output
-lex.yy.c
+
+# CLangD LSP definitions
 .clangd
+
+# Profiling and other checks
 gmon.*
+vgcore.*
+massif.*
+
+# GASPAR output files
 dat
 *.dat
 intree
 *.intree
+
+# PHYLIP input/output files
 infile
 outtree
 outfile
 *.outfile
-vgcore.*
+
+# Autotools
+.deps
+.dirstamp
+.libs
+aclocal.m4
+autom4te.cache/
+autoscan.log
+build-aux/
+config.guess
+config.h
+config.h.in~
+config.log
+config.status
+config.sub
+configure.scan
+configure~
+configure
+Makefile
+libtool
+stamp-h1
+*.in
+*.la
+*.lo
+libgaspar.pc
